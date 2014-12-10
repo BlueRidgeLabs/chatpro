@@ -1,9 +1,11 @@
 from __future__ import unicode_literals
 
 from dash.orgs.models import Org
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
+from temba import TembaClient
 
 
 class Room(models.Model):
@@ -75,6 +77,9 @@ class Supervisor(User):
     def name(self):
         return self.first_name
 
+    class Meta:
+        verbose_name_plural = "Supervisors"
+
 
 ######################### Monkey patching for the User class #########################
 
@@ -100,3 +105,12 @@ def _user_is_administrator(user):
 
 User.get_rooms = _user_get_rooms
 User.is_administrator = _user_is_administrator
+
+
+######################### Monkey patching for the Org class #########################
+
+
+def _org_get_temba_client(org):
+    return TembaClient(settings.SITE_API_HOST, org.api_token)
+
+Org.get_temba_client = _org_get_temba_client

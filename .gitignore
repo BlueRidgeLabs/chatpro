@@ -9,9 +9,6 @@ db/
 dash
 deploy
 
-fabfile.py
-fabconfig.py
-
 .idea/
 .DS_Store
 

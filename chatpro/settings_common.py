@@ -32,7 +32,7 @@ DEFAULT_FROM_EMAIL = 'server@nyaruka.com'
 EMAIL_HOST_PASSWORD = 'NOTREAL'
 EMAIL_USE_TLS = True
 
-API_ENDPOINT = 'http://localhost:8001'
+SITE_API_HOST = 'rapidpro.io'
 SITE_HOST_PATTERN = 'http://%s.localhost:8000'
 SITE_CHOOSER_TEMPLATE = 'public/org_chooser.haml'
 
@@ -287,6 +287,8 @@ PERMISSIONS = {
 
     'chat.contact': ('list',),
 
+    'chat.room': ('list', 'select'),
+
     'chat.supervisor': ('create', 'list', 'update')
 }
 
@@ -299,12 +301,12 @@ GROUP_PERMISSIONS = {
         'orgs.org_profile',
 
         'chat.contact.*',
-        'chat.supervisor_list',
+        'chat.room.*',
         'chat.supervisor.*',
 
         'users.user_profile',
     ),
-    "Editors": (
+    "Editors": (  # i.e. Supervisors
         'orgs.org_home',
         'orgs.org_profile',
         'orgs.org_contact_list',

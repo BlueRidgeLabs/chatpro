@@ -1,0 +1,16 @@
+- extends "smartmin/list.html"
+
+- load smartmin i18n
+
+- block pre-content
+  .page-header
+    %h2
+      -trans "Rooms"
+  - blocktrans
+    Each chat room is a contact group
+
+
+- block table-buttons
+  - if org_perms.chat.room_select
+    %a.btn.btn-primary.pull-right{ href:"{% url 'chat.room_select' %}" }
+      - trans "Select Groups"

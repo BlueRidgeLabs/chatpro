@@ -3,8 +3,9 @@ from __future__ import unicode_literals
 from dash.orgs.views import OrgPermsMixin
 from django import forms
 from django.core.validators import MinLengthValidator
+from django.http import HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
-from smartmin.users.views import SmartCRUDL, SmartCreateView, SmartUpdateView, SmartListView
+from smartmin.users.views import SmartCRUDL, SmartCreateView, SmartFormView, SmartListView, SmartUpdateView
 from .models import Contact, Room, Supervisor
 
 
@@ -32,6 +33,55 @@ class ContactCRUDL(SmartCRUDL):
             return qs
 
 
+class RoomCRUDL(SmartCRUDL):
+    model = Room
+    actions = ('list', 'select')
+
+    class List(OrgPermsMixin, SmartListView):
+        fields = ('name',)
+
+        def get_queryset(self, **kwargs):
+            org = self.request.user.get_org()
+
+            qs = super(RoomCRUDL.List, self).get_queryset(**kwargs)
+            return qs.filter(org=org)
+
+    class Select(OrgPermsMixin, SmartFormView):
+        class GroupsForm(forms.Form):
+            groups = forms.MultipleChoiceField(choices=(), label=_("Groups"),
+                                               help_text=_("Contact groups to be used as chat rooms"))
+
+            def __init__(self, *args, **kwargs):
+                self.org = kwargs['org']
+                del kwargs['org']
+                super(RoomCRUDL.Select.GroupsForm, self).__init__(*args, **kwargs)
+
+                choices = []
+                for group in self.org.get_temba_client().get_groups():
+                    choices.append((group['group'], "%s (%d)" % (group['name'], group['size'])))
+
+                self.fields['groups'].choices = choices
+
+        title = _("Room Groups")
+        form_class = GroupsForm
+        success_url = '@chat.room_list'
+        submit_button_name = _("Update")
+        success_message = _("Updated contact groups to use as chat rooms")
+
+        def get_form_kwargs(self):
+            kwargs = super(RoomCRUDL.Select, self).get_form_kwargs()
+            kwargs['org'] = self.request.user.get_org()
+            return kwargs
+
+        def form_valid(self, form):
+            groups = form.cleaned_data['groups']
+
+            # TODO implement syncing rooms with groups etc
+            print "USER SELECTED: %s" % str(groups)
+
+            return HttpResponseRedirect(self.get_success_url())
+
+
 class SupervisorForm(forms.Form):
     is_active = forms.BooleanField(label=_("Active"),
                                    help_text=_("Whether this user is active, disable to remove access"))
@@ -52,10 +102,10 @@ class SupervisorForm(forms.Form):
     rooms = forms.ModelMultipleChoiceField(queryset=Room.objects.filter(pk=-1),
                                            label=_("Rooms"), help_text=_("The chat rooms which this user can supervise"))
 
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         self.org = kwargs['org']
         del kwargs['org']
-        super(SupervisorForm, self).__init__(**kwargs)
+        super(SupervisorForm, self).__init__(*args, **kwargs)
 
         self.fields['rooms'].queryset = Room.objects.filter(org=self.org).order_by('name')
 
@@ -78,7 +128,9 @@ class SupervisorCRUDL(SmartCRUDL):
         fields = ('name', 'email', 'password', 'rooms')
 
         def get_form_kwargs(self):
-            return dict(org=self.request.user.get_org())
+            kwargs = super(SupervisorCRUDL.Create, self).get_form_kwargs()
+            kwargs['org'] = self.request.user.get_org()
+            return kwargs
 
         def save(self, obj):
             org = self.request.user.get_org()
