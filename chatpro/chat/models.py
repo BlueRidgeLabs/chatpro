@@ -2,10 +2,41 @@ from __future__ import unicode_literals
 
 from dash.orgs.models import Org
 from django.conf import settings
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User as AuthUser
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from temba import TembaClient
+
+
+class User(AuthUser):
+    """
+    An extended user who can use and/or manage chat rooms
+    """
+    org = models.ForeignKey(Org, verbose_name=_("Organization"), related_name='supervisors')
+
+    chatname = models.CharField(max_length=12)
+
+    @classmethod
+    def create(cls, org, name, chatname, email, password, rooms=(), manage_rooms=()):
+        user = cls.objects.create(is_active=True, org=org, chatname=chatname,
+                                  username=email, email=email, first_name=name)
+        user.set_password(password)
+        user.set_org(org)
+        user.org_editors.add(org)
+        user.save()
+
+        user.rooms.add(*rooms)
+        user.manage_rooms.add(*manage_rooms)
+
+        return user
+
+    @classmethod
+    def from_auth_user(cls, user):
+        return cls.objects.prefetch_related('rooms').filter(user_ptr_id=user.pk).first()
+
+    @property
+    def name(self):
+        return self.first_name
 
 
 class Room(models.Model):
@@ -18,6 +49,12 @@ class Room(models.Model):
 
     name = models.CharField(verbose_name=_("Name"), max_length=128, blank=True,
                             help_text=_("The name of this room"))
+
+    users = models.ManyToManyField(User, verbose_name=_("Users"), related_name='rooms',
+                                   help_text=_("Users who can chat in this room"))
+
+    managers = models.ManyToManyField(User, verbose_name=_("Managers"), related_name='manage_rooms',
+                                      help_text=_("Users who can manage contacts in this room"))
 
     @classmethod
     def create(cls, org, name, group_uuid):
@@ -51,60 +88,30 @@ class Contact(models.Model):
         return self.name if self.name else self.urn_path
 
 
-class Supervisor(User):
-    """
-    An editor user who can supervise chat rooms
-    """
-    org = models.ForeignKey(Org, verbose_name=_("Organization"), related_name='supervisors')
+######################### Monkey patching for the Auth User class #########################
 
-    rooms = models.ManyToManyField(Room, verbose_name=_("Rooms"), related_name='supervisors')
-
-    @classmethod
-    def create(cls, org, name, email, password, rooms):
-        supervisor = cls.objects.create(is_active=True, org=org, username=email, email=email, first_name=name)
-        supervisor.set_password(password)
-        supervisor.set_org(org)
-        supervisor.org_editors.add(org)
-        supervisor.rooms.add(*rooms)
-        supervisor.save()
-        return supervisor
-
-    @classmethod
-    def from_user(cls, user):
-        return cls.objects.prefetch_related('rooms').filter(user_ptr_id=user.pk).first()
-
-    @property
-    def name(self):
-        return self.first_name
-
-    class Meta:
-        verbose_name_plural = "Supervisors"
-
-
-######################### Monkey patching for the User class #########################
-
-def _user_get_rooms(user):
-    if not hasattr(user, '_rooms'):
+def _auth_user_get_rooms(auth_user):
+    if not hasattr(auth_user, '_rooms'):
         # org admins have implicit access to all rooms
-        if user.is_administrator():
-            user._rooms = None
+        if auth_user.is_administrator():
+            auth_user._rooms = None
         else:
-            supervisor = Supervisor.from_user(user)
-            if supervisor:
-                user._rooms = supervisor.rooms.all()
+            user = User.from_auth_user(auth_user)
+            if user:
+                auth_user._rooms = (user.rooms.all() | user.manage_rooms.all()).distinct()
             else:
-                user._rooms = []
+                auth_user._rooms = []
 
-    return user._rooms
+    return auth_user._rooms
 
 
-def _user_is_administrator(user):
+def _auth_user_is_administrator(user):
     org_group = user.get_org_group()
     return org_group and org_group.name == 'Administrators'
 
 
-User.get_rooms = _user_get_rooms
-User.is_administrator = _user_is_administrator
+AuthUser.get_rooms = _auth_user_get_rooms
+AuthUser.is_administrator = _auth_user_is_administrator
 
 
 ######################### Monkey patching for the Org class #########################

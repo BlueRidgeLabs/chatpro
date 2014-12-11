@@ -32,7 +32,7 @@ DEFAULT_FROM_EMAIL = 'server@nyaruka.com'
 EMAIL_HOST_PASSWORD = 'NOTREAL'
 EMAIL_USE_TLS = True
 
-SITE_API_HOST = 'rapidpro.io'
+SITE_API_HOST = 'http://localhost:8001/api/v1'
 SITE_HOST_PATTERN = 'http://%s.localhost:8000'
 SITE_CHOOSER_TEMPLATE = 'public/org_chooser.haml'
 
@@ -289,7 +289,7 @@ PERMISSIONS = {
 
     'chat.room': ('list', 'select'),
 
-    'chat.supervisor': ('create', 'list', 'update')
+    'chat.user': ('create', 'list', 'update')
 }
 
 # assigns the permissions that each group should have
@@ -302,7 +302,7 @@ GROUP_PERMISSIONS = {
 
         'chat.contact.*',
         'chat.room.*',
-        'chat.supervisor.*',
+        'chat.user.*',
 
         'users.user_profile',
     ),

@@ -1,9 +1,9 @@
 from __future__ import unicode_literals
 
 from dash.orgs.models import Org
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User as AuthUser
 from django.test import TestCase
-from chatpro.chat.models import Contact, Room, Supervisor
+from chatpro.chat.models import Contact, Room, User
 from uuid import uuid4
 
 
@@ -12,7 +12,7 @@ class ChatProTest(TestCase):
     Base class for all test cases in ChatPro
     """
     def setUp(self):
-        self.superuser = User.objects.create_superuser(username="super", email="super@user.com", password="super")
+        self.superuser = AuthUser.objects.create_superuser(username="super", email="super@user.com", password="super")
 
         self.unicef = Org.objects.create(name="UNICEF", timezone="Asia/Kabul", subdomain="unicef",
                                          created_by=self.superuser, modified_by=self.superuser)
@@ -28,10 +28,13 @@ class ChatProTest(TestCase):
         self.room3 = self.create_room(self.unicef, "Bags")
         self.room4 = self.create_room(self.nyaruka, "Code")
 
-        # create some room supervisors
-        self.supervisor1 = self.create_supervisor(self.unicef, "Sam", "sam@unicef.org", rooms=[self.room1, self.room2])
-        self.supervisor2 = self.create_supervisor(self.unicef, "Sue", "sue@unicef.org", rooms=[self.room2, self.room3])
-        self.supervisor3 = self.create_supervisor(self.nyaruka, "Eric", "eric@nyaruka.com", rooms=[self.room4])
+        # create some room users and managers
+        self.user1 = self.create_chatuser(self.unicef, "Sam Sims", "sammy", "sam@unicef.org",
+                                          rooms=[self.room1], manage_rooms=[self.room2])
+        self.user2 = self.create_chatuser(self.unicef, "Sue", "sue80", "sue@unicef.org",
+                                          rooms=[self.room2, self.room3], manage_rooms=[])
+        self.user3 = self.create_chatuser(self.nyaruka, "Eric", "newcomer", "eric@nyaruka.com",
+                                          rooms=[], manage_rooms=[self.room4])
 
         self.create_contact(self.unicef, "Ann", "1234", self.room1)
         self.create_contact(self.unicef, "Bob", "2345", self.room1)
@@ -40,15 +43,15 @@ class ChatProTest(TestCase):
         self.create_contact(self.unicef, "Eve", "5567", self.room3)
 
     def create_administator(self, org, username, **extra_fields):
-        user = self.create_user(org, username, **extra_fields)
+        user = self.create_authuser(org, username, **extra_fields)
         org.administrators.add(user)
         return user
 
-    def create_supervisor(self, org, name, email, rooms):
-        return Supervisor.create(org, name, email, email, rooms)
+    def create_chatuser(self, org, name, chatname, email, rooms, manage_rooms):
+        return User.create(org, name, chatname, email, email, rooms, manage_rooms)
 
-    def create_user(self, org, username, **extra_fields):
-        user = User.objects.create_user(username, "%s@nyaruka.com" % username, username, **extra_fields)
+    def create_authuser(self, org, username, **extra_fields):
+        user = AuthUser.objects.create_user(username, "%s@nyaruka.com" % username, username, **extra_fields)
         user.set_org(org)
         return user
 
@@ -83,14 +86,3 @@ class ChatProTest(TestCase):
         if subdomain:
             extra['HTTP_HOST'] = '%s.localhost' % subdomain
         return self.client.post(url, data, **extra)
-
-    def assertNoFormErrors(self, response, post_data=None):
-        if response.status_code == 200 and 'form' in response.context:
-            form = response.context['form']
-
-            if not form.is_valid():
-                errors = []
-                for k, v in form.errors.iteritems():
-                    errors.append("%s=%s" % (k, v.as_text()))
-                self.fail("Create failed with form errors: %s, Posted: %s" % (",".join(errors), post_data))
-

@@ -6,7 +6,7 @@ from django.core.validators import MinLengthValidator
 from django.http import HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
 from smartmin.users.views import SmartCRUDL, SmartCreateView, SmartFormView, SmartListView, SmartUpdateView
-from .models import Contact, Room, Supervisor
+from .models import Contact, Room, User
 
 
 class ContactCRUDL(SmartCRUDL):
@@ -58,7 +58,9 @@ class RoomCRUDL(SmartCRUDL):
 
                 choices = []
                 for group in self.org.get_temba_client().get_groups():
-                    choices.append((group['group'], "%s (%d)" % (group['name'], group['size'])))
+                    choice_id = '%s|%s' % (group['uuid'], group['name'])
+                    choice_label = "%s (%d)" % (group['name'], group['size'])
+                    choices.append((choice_id, choice_label))
 
                 self.fields['groups'].choices = choices
 
@@ -82,15 +84,18 @@ class RoomCRUDL(SmartCRUDL):
             return HttpResponseRedirect(self.get_success_url())
 
 
-class SupervisorForm(forms.Form):
+class UserForm(forms.ModelForm):
     is_active = forms.BooleanField(label=_("Active"),
                                    help_text=_("Whether this user is active, disable to remove access"))
 
     name = forms.CharField(max_length=255,
-                           label=_("Name"), help_text=_("The name of the user"))
+                           label=_("Name"), help_text=_("The full name of the user"))
+
+    chatname = forms.CharField(max_length=255,
+                               label=_("Chat Name"), help_text=_("The chat name of the user"))
 
     email = forms.CharField(max_length=256,
-                            label=_("Email"), help_text=_("The email address for the user"))
+                            label=_("Email"), help_text=_("The email address and login for the user"))
 
     new_password = forms.CharField(widget=forms.PasswordInput, validators=[MinLengthValidator(8)], required=False,
                                    label=_("New Password"),
@@ -99,58 +104,66 @@ class SupervisorForm(forms.Form):
     password = forms.CharField(widget=forms.PasswordInput, validators=[MinLengthValidator(8)],
                                label=_("Password"), help_text=_("The password used to log in (minimum of 8 characters)"))
 
-    rooms = forms.ModelMultipleChoiceField(queryset=Room.objects.filter(pk=-1),
-                                           label=_("Rooms"), help_text=_("The chat rooms which this user can supervise"))
+    rooms = forms.ModelMultipleChoiceField(label=_("Rooms (Chat)"), queryset=Room.objects.filter(pk=-1),
+                                           required=False,
+                                           help_text=_("The chat rooms which this user can chat in"))
+
+    manage_rooms = forms.ModelMultipleChoiceField(label=_("Rooms (Manage)"), queryset=Room.objects.filter(pk=-1),
+                                                  required=False,
+                                                  help_text=_("The chat rooms which this user can manage"))
 
     def __init__(self, *args, **kwargs):
         self.org = kwargs['org']
         del kwargs['org']
-        super(SupervisorForm, self).__init__(*args, **kwargs)
+        super(UserForm, self).__init__(*args, **kwargs)
 
-        self.fields['rooms'].queryset = Room.objects.filter(org=self.org).order_by('name')
+        org_rooms = Room.objects.filter(org=self.org).order_by('name')
+        self.fields['rooms'].queryset = org_rooms
+        self.fields['manage_rooms'].queryset = org_rooms
+
+    class Meta:
+        model = User
 
 
-class SupervisorCRUDL(SmartCRUDL):
-    model = Supervisor
+class UserCRUDL(SmartCRUDL):
+    model = User
     actions = ('create', 'list', 'update')
 
     class List(OrgPermsMixin, SmartListView):
         fields = ('name', 'username', 'rooms')
 
         def derive_queryset(self, **kwargs):
-            return super(SupervisorCRUDL.List, self).derive_queryset(**kwargs).filter(org=self.request.user.get_org())
+            return super(UserCRUDL.List, self).derive_queryset(**kwargs).filter(org=self.request.user.get_org())
 
         def get_rooms(self, obj):
             return ", ".join([unicode(room) for room in obj.get_rooms()])
 
     class Create(OrgPermsMixin, SmartCreateView):
-        form_class = SupervisorForm
-        fields = ('name', 'email', 'password', 'rooms')
+        form_class = UserForm
+        fields = ('name', 'chatname', 'email', 'password', 'rooms', 'manage_rooms')
 
         def get_form_kwargs(self):
-            kwargs = super(SupervisorCRUDL.Create, self).get_form_kwargs()
+            kwargs = super(UserCRUDL.Create, self).get_form_kwargs()
             kwargs['org'] = self.request.user.get_org()
             return kwargs
 
         def save(self, obj):
-            org = self.request.user.get_org()
-            name = self.form.cleaned_data['name']
-            email = self.form.cleaned_data['email']
-            password = self.form.cleaned_data['password']
-            rooms = self.form.cleaned_data['rooms']
-            self.object = Supervisor.create(org, name, email, password, rooms)
+            self.object = User.create(self.request.user.get_org(),
+                                      self.form.cleaned_data['name'], self.form.cleaned_data['chatname'],
+                                      self.form.cleaned_data['email'], self.form.cleaned_data['password'],
+                                      self.form.cleaned_data['rooms'], self.form.cleaned_data['manage_rooms'])
 
     class Update(OrgPermsMixin, SmartUpdateView):
-        form_class = SupervisorForm
-        fields = ('is_active', 'name', 'email', 'new_password', 'rooms')
+        form_class = UserForm
+        fields = ('is_active', 'name', 'chatname', 'email', 'new_password', 'rooms', 'manage_rooms')
 
         def derive_initial(self):
-            initial = super(SupervisorCRUDL.Update, self).derive_initial()
+            initial = super(UserCRUDL.Update, self).derive_initial()
             initial['rooms'] = self.object.get_rooms()
             return initial
 
         def pre_save(self, obj):
-            obj = super(SupervisorCRUDL.Update, self).pre_save(obj)
+            obj = super(UserCRUDL.Update, self).pre_save(obj)
             obj.username = obj.email
             new_password = self.form.cleaned_data.get('new_password', "")
             if new_password:

@@ -76,10 +76,10 @@
                     %a{ href:"{% url 'chat.room_list' %}" }
                       - trans "Rooms"
 
-                - if org_perms.chat.supervisor_list
+                - if org_perms.chat.user_list
                   %li
-                    %a{ href:"{% url 'chat.supervisor_list' %}" }
-                      - trans "Supervisors"
+                    %a{ href:"{% url 'chat.user_list' %}" }
+                      - trans "Users"
 
                 - if org_perms.chat.contact_list
                   %li
