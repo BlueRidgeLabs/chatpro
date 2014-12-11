@@ -17,18 +17,21 @@ class ContactCRUDL(SmartCRUDL):
         fields = ('room', 'name', 'urn')
 
     class List(OrgPermsMixin, SmartListView):
-        fields = ('room', 'name', 'urn')
+        fields = ('name', 'room', 'phone')
 
         def get_queryset(self, **kwargs):
-            org = self.request.user.get_org()
-
             qs = super(ContactCRUDL.List, self).get_queryset(**kwargs)
-            qs = qs.filter(org=org)
+
+            org = self.request.user.get_org()
+            qs = qs.filter(org=org, is_active=True).order_by('name')
 
             rooms = self.request.user.get_rooms()
             if rooms is not None:
                 qs = qs.filter(room__in=rooms)
             return qs
+
+        def get_phone(self, obj):
+            return obj.get_urn_as_tuple()[1]
 
 
 class RoomCRUDL(SmartCRUDL):
@@ -152,7 +155,7 @@ class UserCRUDL(SmartCRUDL):
 
     class Update(OrgPermsMixin, SmartUpdateView):
         form_class = UserForm
-        fields = ('is_active', 'name', 'chatname', 'email', 'new_password', 'rooms', 'manage_rooms')
+        fields = ('name', 'chatname', 'email', 'new_password', 'rooms', 'manage_rooms', 'is_active')
         success_url = '@chat.user_list'
         success_message = _("User updated")
 

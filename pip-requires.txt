@@ -3,6 +3,7 @@
 -e git+https://github.com/rapidpro/dash.git#egg=dash
 -e git+https://github.com/rapidpro/rapidpro-python#egg=rapidpro-python
 celery
+celery-with-redis
 coverage
 django-celery
 django-compressor
@@ -10,18 +11,17 @@ django-debug-toolbar
 django-digest
 django-guardian
 django-nose
+django-redis
 django-reversion
 django-rosetta
 django-storages
 dj-database-url
 boto
 Pillow
-celery-with-redis
 gunicorn
 nose
 pisa
 raven
-django-redis
 psycopg2
 xlutils
 mock

@@ -6,6 +6,7 @@ from django.contrib.auth.models import User as AuthUser
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from temba import TembaClient
+from .tasks import sync_room_groups_task
 
 
 class User(AuthUser):
@@ -34,6 +35,12 @@ class User(AuthUser):
     def from_auth_user(cls, user):
         return cls.objects.prefetch_related('rooms').filter(user_ptr_id=user.pk).first()
 
+    def get_all_rooms(self):
+        """
+        Gets all rooms which this user has access to
+        """
+        return (self.rooms.all() | self.manage_rooms.all()).distinct()
+
     @property
     def name(self):
         return self.first_name
@@ -56,8 +63,7 @@ class Room(models.Model):
     managers = models.ManyToManyField(User, verbose_name=_("Managers"), related_name='manage_rooms',
                                       help_text=_("Users who can manage contacts in this room"))
 
-    is_active = models.BooleanField(default=True,
-                                    help_text="Whether this room is active")
+    is_active = models.BooleanField(default=True, help_text="Whether this room is active")
 
     @classmethod
     def create(cls, org, name, group_uuid):
@@ -83,9 +89,14 @@ class Contact(models.Model):
 
     urn = models.CharField(verbose_name=_("URN"), max_length=255)
 
+    is_active = models.BooleanField(default=True, help_text="Whether this room is active")
+
     @classmethod
     def create(cls, org, name, urn, room, uuid):
         return cls.objects.create(org=org, name=name, urn=urn, room=room, uuid=uuid)
+
+    def get_urn_as_tuple(self):
+        return self.urn.split(':', 1)
 
     def __unicode__(self):
         return self.name if self.name else self.urn_path
@@ -101,7 +112,7 @@ def _auth_user_get_rooms(auth_user):
         else:
             user = User.from_auth_user(auth_user)
             if user:
-                auth_user._rooms = (user.rooms.all() | user.manage_rooms.all()).distinct()
+                auth_user._rooms = user.get_all_rooms()
             else:
                 auth_user._rooms = []
 
@@ -143,6 +154,8 @@ def _org_update_room_groups(org, group_uuids):
             existing.save()
         else:
             Room.create(org, group_names[group_uuid], group_uuid)
+
+    sync_room_groups_task.delay(org.id, group_uuids)
 
 
 Org.get_temba_client = _org_get_temba_client
