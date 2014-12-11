@@ -9,12 +9,66 @@ from smartmin.users.views import SmartCRUDL, SmartCreateView, SmartFormView, Sma
 from .models import Contact, Room, User
 
 
+class ContactForm(forms.ModelForm):
+    name = forms.CharField(max_length=255, label=_("Name"), help_text=_("The full name of the contact"))
+
+    phone = forms.CharField(max_length=255, label=_("Phone"), help_text=_("The phone number of the contact"))
+
+    room = forms.ModelChoiceField(label=_("Room"), queryset=Room.objects.filter(pk=-1),
+                                  required=False,
+                                  help_text=_("The chat rooms which this user can chat in."))
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs['user']
+        del kwargs['user']
+        super(ContactForm, self).__init__(*args, **kwargs)
+
+        if user.is_administrator():
+            self.fields['room'].queryset = Room.objects.filter(org=user.get_org()).order_by('name')
+        else:
+            self.fields['room'].queryset = user.get_rooms()
+
+    class Meta:
+        model = Contact
+
+
 class ContactCRUDL(SmartCRUDL):
     model = Contact
-    actions = ('create', 'list')
+    actions = ('create', 'update', 'list')
 
     class Create(OrgPermsMixin, SmartCreateView):
-        fields = ('room', 'name', 'urn')
+        form_class = ContactForm
+        fields = ('room', 'name', 'phone')
+
+        def get_form_kwargs(self):
+            kwargs = super(ContactCRUDL.Create, self).get_form_kwargs()
+            kwargs['user'] = self.request.user
+            return kwargs
+
+        def pre_save(self, obj):
+            obj = super(ContactCRUDL.Create, self).pre_save(obj)
+            obj.org = self.request.user.get_org()
+            obj.urn = 'tel:%s' % self.form.cleaned_data['phone']
+            return obj
+
+    class Update(OrgPermsMixin, SmartUpdateView):
+        form_class = ContactForm
+        fields = ('name', 'room', 'phone')
+
+        def get_form_kwargs(self):
+            kwargs = super(ContactCRUDL.Update, self).get_form_kwargs()
+            kwargs['user'] = self.request.user
+            return kwargs
+
+        def derive_initial(self):
+            initial = super(ContactCRUDL.Update, self).derive_initial()
+            initial['phone'] = self.object.get_urn()[1]
+            return initial
+
+        def pre_save(self, obj):
+            obj = super(ContactCRUDL.Update, self).pre_save(obj)
+            obj.urn = 'tel:%s' % self.form.cleaned_data['phone']
+            return obj
 
     class List(OrgPermsMixin, SmartListView):
         fields = ('name', 'room', 'phone')
@@ -31,7 +85,7 @@ class ContactCRUDL(SmartCRUDL):
             return qs
 
         def get_phone(self, obj):
-            return obj.get_urn_as_tuple()[1]
+            return obj.get_urn()[1]
 
 
 class RoomCRUDL(SmartCRUDL):
@@ -111,11 +165,11 @@ class UserForm(forms.ModelForm):
                                                   help_text=_("The chat rooms which this user can manage."))
 
     def __init__(self, *args, **kwargs):
-        self.org = kwargs['org']
+        org = kwargs['org']
         del kwargs['org']
         super(UserForm, self).__init__(*args, **kwargs)
 
-        org_rooms = Room.objects.filter(org=self.org).order_by('name')
+        org_rooms = Room.objects.filter(org=org).order_by('name')
         self.fields['rooms'].queryset = org_rooms
         self.fields['manage_rooms'].queryset = org_rooms
 
@@ -125,16 +179,7 @@ class UserForm(forms.ModelForm):
 
 class UserCRUDL(SmartCRUDL):
     model = User
-    actions = ('create', 'list', 'update')
-
-    class List(OrgPermsMixin, SmartListView):
-        fields = ('name', 'email', 'chatname', 'rooms')
-
-        def derive_queryset(self, **kwargs):
-            return super(UserCRUDL.List, self).derive_queryset(**kwargs).filter(org=self.request.user.get_org())
-
-        def get_rooms(self, obj):
-            return ", ".join([unicode(room) for room in obj.get_rooms()])
+    actions = ('create', 'update', 'list')
 
     class Create(OrgPermsMixin, SmartCreateView):
         form_class = UserForm
@@ -179,3 +224,12 @@ class UserCRUDL(SmartCRUDL):
             if new_password:
                 obj.set_password(new_password)
             return obj
+
+    class List(OrgPermsMixin, SmartListView):
+        fields = ('name', 'email', 'chatname', 'rooms')
+
+        def derive_queryset(self, **kwargs):
+            return super(UserCRUDL.List, self).derive_queryset(**kwargs).filter(org=self.request.user.get_org())
+
+        def get_rooms(self, obj):
+            return ", ".join([unicode(room) for room in obj.get_rooms()])

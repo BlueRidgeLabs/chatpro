@@ -95,7 +95,7 @@ class Contact(models.Model):
     def create(cls, org, name, urn, room, uuid):
         return cls.objects.create(org=org, name=name, urn=urn, room=room, uuid=uuid)
 
-    def get_urn_as_tuple(self):
+    def get_urn(self):
         return self.urn.split(':', 1)
 
     def __unicode__(self):

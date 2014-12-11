@@ -285,7 +285,7 @@ PERMISSIONS = {
     'orgs.org': ('choose', 'edit', 'home', 'manage_accounts', 'create_login', 'join',
                  'chat_list', 'contact_list'),
 
-    'chat.contact': ('create', 'list'),
+    'chat.contact': ('create', 'update', 'list'),
 
     'chat.room': ('list', 'select'),
 
