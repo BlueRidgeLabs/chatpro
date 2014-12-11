@@ -56,6 +56,9 @@ class Room(models.Model):
     managers = models.ManyToManyField(User, verbose_name=_("Managers"), related_name='manage_rooms',
                                       help_text=_("Users who can manage contacts in this room"))
 
+    is_active = models.BooleanField(default=True,
+                                    help_text="Whether this room is active")
+
     @classmethod
     def create(cls, org, name, group_uuid):
         return Room.objects.create(org=org, name=name, group_uuid=group_uuid)
@@ -120,4 +123,27 @@ AuthUser.is_administrator = _auth_user_is_administrator
 def _org_get_temba_client(org):
     return TembaClient(settings.SITE_API_HOST, org.api_token)
 
+
+def _org_update_room_groups(org, group_uuids):
+    """
+    Updates an orgs chat rooms based on the selected groups UUIDs
+    """
+    # de-activate rooms not included
+    org.rooms.exclude(group_uuid__in=group_uuids).update(is_active=False)
+
+    # fetch group details
+    groups = org.get_temba_client().get_groups()
+    group_names = {group['uuid']: group['name'] for group in groups}
+
+    for group_uuid in group_uuids:
+        existing = org.rooms.filter(group_uuid=group_uuid).first()
+        if existing:
+            existing.name = group_names[group_uuid]
+            existing.is_active = True
+            existing.save()
+        else:
+            Room.create(org, group_names[group_uuid], group_uuid)
+
+
 Org.get_temba_client = _org_get_temba_client
+Org.update_room_groups = _org_update_room_groups

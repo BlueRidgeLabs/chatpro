@@ -285,7 +285,7 @@ PERMISSIONS = {
     'orgs.org': ('choose', 'edit', 'home', 'manage_accounts', 'create_login', 'join',
                  'chat_list', 'contact_list'),
 
-    'chat.contact': ('list',),
+    'chat.contact': ('create', 'list'),
 
     'chat.room': ('list', 'select'),
 
@@ -306,7 +306,7 @@ GROUP_PERMISSIONS = {
 
         'users.user_profile',
     ),
-    "Editors": (  # i.e. Supervisors
+    "Editors": (
         'orgs.org_home',
         'orgs.org_profile',
         'orgs.org_contact_list',

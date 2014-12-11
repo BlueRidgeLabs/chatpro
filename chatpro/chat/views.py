@@ -11,15 +11,13 @@ from .models import Contact, Room, User
 
 class ContactCRUDL(SmartCRUDL):
     model = Contact
-    actions = ('list',)
+    actions = ('create', 'list')
+
+    class Create(OrgPermsMixin, SmartCreateView):
+        fields = ('room', 'name', 'urn')
 
     class List(OrgPermsMixin, SmartListView):
-        def derive_fields(self):
-            rooms = self.request.user.get_rooms()
-            if rooms is not None:
-                return 'name', 'urn'
-            else:
-                return 'room', 'name', 'urn'
+        fields = ('room', 'name', 'urn')
 
         def get_queryset(self, **kwargs):
             org = self.request.user.get_org()
@@ -41,10 +39,10 @@ class RoomCRUDL(SmartCRUDL):
         fields = ('name',)
 
         def get_queryset(self, **kwargs):
-            org = self.request.user.get_org()
-
             qs = super(RoomCRUDL.List, self).get_queryset(**kwargs)
-            return qs.filter(org=org)
+
+            org = self.request.user.get_org()
+            return qs.filter(org=org, is_active=True).order_by('name')
 
     class Select(OrgPermsMixin, SmartFormView):
         class GroupsForm(forms.Form):
@@ -52,17 +50,17 @@ class RoomCRUDL(SmartCRUDL):
                                                help_text=_("Contact groups to be used as chat rooms"))
 
             def __init__(self, *args, **kwargs):
-                self.org = kwargs['org']
+                org = kwargs['org']
                 del kwargs['org']
                 super(RoomCRUDL.Select.GroupsForm, self).__init__(*args, **kwargs)
 
                 choices = []
-                for group in self.org.get_temba_client().get_groups():
-                    choice_id = '%s|%s' % (group['uuid'], group['name'])
-                    choice_label = "%s (%d)" % (group['name'], group['size'])
-                    choices.append((choice_id, choice_label))
+                for group in org.get_temba_client().get_groups():
+                    choices.append((group['uuid'], "%s (%d)" % (group['name'], group['size'])))
 
                 self.fields['groups'].choices = choices
+                self.fields['groups'].initial = [room.group_uuid for room in org.rooms.filter(is_active=True)]
+
 
         title = _("Room Groups")
         form_class = GroupsForm
@@ -76,11 +74,8 @@ class RoomCRUDL(SmartCRUDL):
             return kwargs
 
         def form_valid(self, form):
-            groups = form.cleaned_data['groups']
-
-            # TODO implement syncing rooms with groups etc
-            print "USER SELECTED: %s" % str(groups)
-
+            org = self.request.user.get_org()
+            org.update_room_groups(form.cleaned_data['groups'])
             return HttpResponseRedirect(self.get_success_url())
 
 
@@ -106,11 +101,11 @@ class UserForm(forms.ModelForm):
 
     rooms = forms.ModelMultipleChoiceField(label=_("Rooms (Chat)"), queryset=Room.objects.filter(pk=-1),
                                            required=False,
-                                           help_text=_("The chat rooms which this user can chat in"))
+                                           help_text=_("The chat rooms which this user can chat in."))
 
     manage_rooms = forms.ModelMultipleChoiceField(label=_("Rooms (Manage)"), queryset=Room.objects.filter(pk=-1),
                                                   required=False,
-                                                  help_text=_("The chat rooms which this user can manage"))
+                                                  help_text=_("The chat rooms which this user can manage."))
 
     def __init__(self, *args, **kwargs):
         self.org = kwargs['org']
@@ -130,7 +125,7 @@ class UserCRUDL(SmartCRUDL):
     actions = ('create', 'list', 'update')
 
     class List(OrgPermsMixin, SmartListView):
-        fields = ('name', 'username', 'rooms')
+        fields = ('name', 'email', 'chatname', 'rooms')
 
         def derive_queryset(self, **kwargs):
             return super(UserCRUDL.List, self).derive_queryset(**kwargs).filter(org=self.request.user.get_org())
@@ -141,6 +136,8 @@ class UserCRUDL(SmartCRUDL):
     class Create(OrgPermsMixin, SmartCreateView):
         form_class = UserForm
         fields = ('name', 'chatname', 'email', 'password', 'rooms', 'manage_rooms')
+        success_url = '@chat.user_list'
+        success_message = _("New user created")
 
         def get_form_kwargs(self):
             kwargs = super(UserCRUDL.Create, self).get_form_kwargs()
@@ -148,22 +145,32 @@ class UserCRUDL(SmartCRUDL):
             return kwargs
 
         def save(self, obj):
-            self.object = User.create(self.request.user.get_org(),
-                                      self.form.cleaned_data['name'], self.form.cleaned_data['chatname'],
-                                      self.form.cleaned_data['email'], self.form.cleaned_data['password'],
+            name = self.form.cleaned_data['name']  # obj field is actually first_name
+            password = self.form.cleaned_data['password']
+            self.object = User.create(self.request.user.get_org(), name, obj.chatname, obj.email, password,
                                       self.form.cleaned_data['rooms'], self.form.cleaned_data['manage_rooms'])
 
     class Update(OrgPermsMixin, SmartUpdateView):
         form_class = UserForm
         fields = ('is_active', 'name', 'chatname', 'email', 'new_password', 'rooms', 'manage_rooms')
+        success_url = '@chat.user_list'
+        success_message = _("User updated")
+
+        def get_form_kwargs(self):
+            kwargs = super(UserCRUDL.Update, self).get_form_kwargs()
+            kwargs['org'] = self.request.user.get_org()
+            return kwargs
 
         def derive_initial(self):
             initial = super(UserCRUDL.Update, self).derive_initial()
-            initial['rooms'] = self.object.get_rooms()
+            initial['name'] = self.object.first_name
+            initial['rooms'] = self.object.rooms.all()
+            initial['manage_rooms'] = self.object.manage_rooms.all()
             return initial
 
         def pre_save(self, obj):
             obj = super(UserCRUDL.Update, self).pre_save(obj)
+            obj.first_name = self.form.cleaned_data['name']
             obj.username = obj.email
             new_password = self.form.cleaned_data.get('new_password', "")
             if new_password:
