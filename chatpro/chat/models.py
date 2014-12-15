@@ -69,6 +69,10 @@ class Room(models.Model):
     def create(cls, org, name, group_uuid):
         return Room.objects.create(org=org, name=name, group_uuid=group_uuid)
 
+    @classmethod
+    def get_all(cls, org):
+        return Room.objects.filter(org=org, is_active=True).order_by('name')
+
     def __unicode__(self):
         return self.name
 
@@ -106,11 +110,11 @@ class Contact(models.Model):
 
 ######################### Monkey patching for the Auth User class #########################
 
-def _auth_user_get_rooms(auth_user):
+def _auth_user_get_all_rooms(auth_user):
     if not hasattr(auth_user, '_rooms'):
         # org admins have implicit access to all rooms
         if auth_user.is_administrator():
-            auth_user._rooms = None
+            auth_user._rooms = Room.get_all(auth_user.get_org())
         else:
             user = User.from_auth_user(auth_user)
             if user:
@@ -126,7 +130,7 @@ def _auth_user_is_administrator(user):
     return org_group and org_group.name == 'Administrators'
 
 
-AuthUser.get_rooms = _auth_user_get_rooms
+AuthUser.get_all_rooms = _auth_user_get_all_rooms
 AuthUser.is_administrator = _auth_user_is_administrator
 
 

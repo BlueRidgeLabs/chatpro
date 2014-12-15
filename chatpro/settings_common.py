@@ -289,7 +289,7 @@ PERMISSIONS = {
 
     'chat.room': ('list', 'select'),
 
-    'chat.user': ('create', 'list', 'update')
+    'chat.user': ('create', 'list', 'update', 'chat')
 }
 
 # assigns the permissions that each group should have
@@ -312,6 +312,7 @@ GROUP_PERMISSIONS = {
         'orgs.org_contact_list',
 
         'chat.contact.*',
+        'chat.user_chat',
 
         'users.user_profile',
     ),

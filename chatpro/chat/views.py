@@ -5,7 +5,8 @@ from django import forms
 from django.core.validators import MinLengthValidator
 from django.http import HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
-from smartmin.users.views import SmartCRUDL, SmartCreateView, SmartFormView, SmartListView, SmartUpdateView
+from smartmin.users.views import SmartCreateView, SmartFormView, SmartListView, SmartTemplateView, SmartUpdateView
+from smartmin.users.views import SmartCRUDL
 from .models import Contact, Room, User
 
 
@@ -82,7 +83,7 @@ class ContactCRUDL(SmartCRUDL):
             org = self.request.user.get_org()
             qs = qs.filter(org=org, is_active=True).order_by('name')
 
-            rooms = self.request.user.get_rooms()
+            rooms = self.request.user.get_all_rooms()
             if rooms is not None:
                 qs = qs.filter(room__in=rooms)
             return qs
@@ -182,7 +183,7 @@ class UserForm(forms.ModelForm):
 
 class UserCRUDL(SmartCRUDL):
     model = User
-    actions = ('create', 'update', 'list')
+    actions = ('create', 'update', 'list', 'chat')
 
     class Create(OrgPermsMixin, SmartCreateView):
         form_class = UserForm
@@ -235,4 +236,16 @@ class UserCRUDL(SmartCRUDL):
             return super(UserCRUDL.List, self).derive_queryset(**kwargs).filter(org=self.request.user.get_org())
 
         def get_rooms(self, obj):
-            return ", ".join([unicode(room) for room in obj.get_rooms()])
+            return ", ".join([unicode(room) for room in obj.get_all_rooms()])
+
+    class Chat(OrgPermsMixin, SmartTemplateView):
+        title = _("Chat")
+
+        @classmethod
+        def derive_url_pattern(cls, path, action):
+            return r'^home/$'
+
+        def get_context_data(self, **kwargs):
+            context = super(UserCRUDL.Chat, self).get_context_data(**kwargs)
+            context['rooms'] = self.request.user.get_all_rooms()
+            return context
