@@ -89,6 +89,8 @@ class Contact(models.Model):
 
     urn = models.CharField(verbose_name=_("URN"), max_length=255)
 
+    comment = models.CharField(max_length=1000, blank=True)
+
     is_active = models.BooleanField(default=True, help_text="Whether this room is active")
 
     @classmethod

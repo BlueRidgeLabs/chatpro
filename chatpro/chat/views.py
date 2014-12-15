@@ -10,13 +10,16 @@ from .models import Contact, Room, User
 
 
 class ContactForm(forms.ModelForm):
-    name = forms.CharField(max_length=255, label=_("Name"), help_text=_("The full name of the contact"))
+    name = forms.CharField(max_length=255, label=_("Name"), help_text=_("The full name of the contact."))
 
-    phone = forms.CharField(max_length=255, label=_("Phone"), help_text=_("The phone number of the contact"))
+    phone = forms.CharField(max_length=255, label=_("Phone"), help_text=_("The phone number of the contact."))
 
     room = forms.ModelChoiceField(label=_("Room"), queryset=Room.objects.filter(pk=-1),
                                   required=False,
                                   help_text=_("The chat rooms which this user can chat in."))
+
+    comment = forms.CharField(max_length=1000, label=_("Notes"), widget=forms.Textarea,
+                              help_text=_("Additional information about this contact."))
 
     def __init__(self, *args, **kwargs):
         user = kwargs['user']
@@ -53,7 +56,7 @@ class ContactCRUDL(SmartCRUDL):
 
     class Update(OrgPermsMixin, SmartUpdateView):
         form_class = ContactForm
-        fields = ('name', 'room', 'phone')
+        fields = ('name', 'room', 'phone', 'comment')
 
         def get_form_kwargs(self):
             kwargs = super(ContactCRUDL.Update, self).get_form_kwargs()
