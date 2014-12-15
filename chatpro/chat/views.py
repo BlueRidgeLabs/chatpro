@@ -113,7 +113,7 @@ class RoomCRUDL(SmartCRUDL):
 
                 choices = []
                 for group in org.get_temba_client().get_groups():
-                    choices.append((group['uuid'], "%s (%d)" % (group['name'], group['size'])))
+                    choices.append((group.uuid, "%s (%d)" % (group.name, group.size)))
 
                 self.fields['groups'].choices = choices
                 self.fields['groups'].initial = [room.group_uuid for room in org.rooms.filter(is_active=True)]

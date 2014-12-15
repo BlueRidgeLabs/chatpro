@@ -144,7 +144,7 @@ def _org_update_room_groups(org, group_uuids):
 
     # fetch group details
     groups = org.get_temba_client().get_groups()
-    group_names = {group['uuid']: group['name'] for group in groups}
+    group_names = {group.uuid: group.name for group in groups}
 
     for group_uuid in group_uuids:
         existing = org.rooms.filter(group_uuid=group_uuid).first()
