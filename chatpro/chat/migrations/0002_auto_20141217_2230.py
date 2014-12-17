@@ -7,14 +7,14 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('chat', '0003_contact_is_active'),
+        ('chat', '0001_initial'),
     ]
 
     operations = [
-        migrations.AddField(
+        migrations.AlterField(
             model_name='contact',
-            name='comment',
-            field=models.CharField(max_length=1000, blank=True),
+            name='name',
+            field=models.CharField(help_text='The name of this contact', max_length=128, null=True, verbose_name='Name'),
             preserve_default=True,
         ),
     ]

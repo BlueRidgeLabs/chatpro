@@ -4,12 +4,13 @@ import datetime
 
 from dash.orgs.views import OrgPermsMixin
 from django import forms
+from django.contrib.auth.models import User
 from django.core.validators import MinLengthValidator
 from django.http import HttpResponseRedirect, JsonResponse
 from django.utils.translation import ugettext_lazy as _
 from smartmin.users.views import SmartCreateView, SmartFormView, SmartListView, SmartTemplateView, SmartUpdateView
 from smartmin.users.views import SmartCRUDL
-from .models import Contact, Room, User, Message
+from .models import Contact, Room, Message
 
 
 def parse_iso8601(text):
@@ -150,11 +151,11 @@ class UserForm(forms.ModelForm):
     is_active = forms.BooleanField(label=_("Active"),
                                    help_text=_("Whether this user is active, disable to remove access"))
 
-    name = forms.CharField(max_length=255,
-                           label=_("Name"), help_text=_("The full name of the user"))
+    full_name = forms.CharField(max_length=255,
+                                label=_("Full Name"), help_text=_("The full name of the user"))
 
-    chatname = forms.CharField(max_length=255,
-                               label=_("Chat Name"), help_text=_("The chat name of the user"))
+    chat_name = forms.CharField(max_length=255,
+                                label=_("Chat Name"), help_text=_("The chat name of the user"))
 
     email = forms.CharField(max_length=256,
                             label=_("Email"), help_text=_("The email address and login for the user"))
@@ -189,13 +190,14 @@ class UserForm(forms.ModelForm):
 
 class UserCRUDL(SmartCRUDL):
     model = User
-    actions = ('create', 'update', 'list', 'home', 'messages', 'send')
+    actions = ('create', 'update', 'list', 'home')
 
     class Create(OrgPermsMixin, SmartCreateView):
         form_class = UserForm
-        fields = ('name', 'chatname', 'email', 'password', 'rooms', 'manage_rooms')
+        fields = ('full_name', 'chat_name', 'email', 'password', 'rooms', 'manage_rooms')
         success_url = '@chat.user_list'
         success_message = _("New user created")
+        permission = 'chat.room_user_create'
 
         def get_form_kwargs(self):
             kwargs = super(UserCRUDL.Create, self).get_form_kwargs()
@@ -203,16 +205,18 @@ class UserCRUDL(SmartCRUDL):
             return kwargs
 
         def save(self, obj):
-            name = self.form.cleaned_data['name']  # obj field is actually first_name
+            full_name = self.form.cleaned_data['full_name']
+            chat_name = self.form.cleaned_data['chat_name']
             password = self.form.cleaned_data['password']
-            self.object = User.create(self.request.user.get_org(), name, obj.chatname, obj.email, password,
+            self.object = User.create(self.request.user.get_org(), full_name, chat_name, obj.email, password,
                                       self.form.cleaned_data['rooms'], self.form.cleaned_data['manage_rooms'])
 
     class Update(OrgPermsMixin, SmartUpdateView):
         form_class = UserForm
-        fields = ('name', 'chatname', 'email', 'new_password', 'rooms', 'manage_rooms', 'is_active')
+        fields = ('full_name', 'chat_name', 'email', 'new_password', 'rooms', 'manage_rooms', 'is_active')
         success_url = '@chat.user_list'
         success_message = _("User updated")
+        permission = 'chat.room_user_update'
 
         def get_form_kwargs(self):
             kwargs = super(UserCRUDL.Update, self).get_form_kwargs()
@@ -221,14 +225,16 @@ class UserCRUDL(SmartCRUDL):
 
         def derive_initial(self):
             initial = super(UserCRUDL.Update, self).derive_initial()
-            initial['name'] = self.object.first_name
+            initial['full_name'] = self.object.full_name
+            initial['full_name'] = self.object.chat_name
             initial['rooms'] = self.object.rooms.all()
             initial['manage_rooms'] = self.object.manage_rooms.all()
             return initial
 
         def pre_save(self, obj):
             obj = super(UserCRUDL.Update, self).pre_save(obj)
-            obj.first_name = self.form.cleaned_data['name']
+            obj.full_name = self.form.cleaned_data['full_name']
+            obj.chat_name = self.form.cleaned_data['chat_name']
             obj.username = obj.email
             new_password = self.form.cleaned_data.get('new_password', "")
             if new_password:
@@ -236,16 +242,21 @@ class UserCRUDL(SmartCRUDL):
             return obj
 
     class List(OrgPermsMixin, SmartListView):
-        fields = ('name', 'email', 'chatname', 'rooms')
+        fields = ('full_name', 'chat_name', 'email', 'rooms')
+        permission = 'chat.room_user_list'
 
-        def derive_queryset(self, **kwargs):
-            return super(UserCRUDL.List, self).derive_queryset(**kwargs).filter(org=self.request.user.get_org())
+        def get_queryset(self, **kwargs):
+            qs = super(UserCRUDL.List, self).get_queryset(**kwargs)
+            org = self.request.user.get_org()
+            qs = qs.filter(pk__in=org.editors.all())
+            return qs
 
         def get_rooms(self, obj):
             return ", ".join([unicode(room) for room in obj.get_all_rooms()])
 
     class Home(OrgPermsMixin, SmartTemplateView):
         title = _("Chat")
+        permission = 'chat.room_user_home'
 
         @classmethod
         def derive_url_pattern(cls, path, action):
@@ -256,7 +267,42 @@ class UserCRUDL(SmartCRUDL):
             context['rooms'] = self.request.user.get_all_rooms()
             return context
 
-    class Messages(OrgPermsMixin, SmartListView):
+
+class MessageCRUDL(SmartCRUDL):
+    model = Message
+    actions = ('list', 'send')
+
+    class Send(OrgPermsMixin, SmartCreateView):
+        class SendForm(forms.ModelForm):
+            room = forms.ModelChoiceField(label=_("Room"), queryset=Room.objects.filter(pk=-1),
+                                          help_text=_("The chat room to send this message to."))
+
+            def __init__(self, *args, **kwargs):
+                user = kwargs['user']
+                del kwargs['user']
+                super(MessageCRUDL.Send.SendForm, self).__init__(*args, **kwargs)
+
+                self.fields['room'].queryset = user.get_all_rooms().order_by('name')
+
+            class Meta:
+                model = Message
+                fields = ('text', 'room')
+
+        form_class = SendForm
+        title = _("Send Message")
+        submit_button_name = _("Send")
+
+        def get_form_kwargs(self):
+            kwargs = super(MessageCRUDL.Send, self).get_form_kwargs()
+            kwargs['user'] = User.from_auth_user(self.request.user)
+            return kwargs
+
+        def save(self, obj):
+            org = self.derive_org()
+            user = User.from_auth_user(self.request.user)
+            self.object = Message.create_from_user(org, user, obj.text, obj.room)
+
+    class List(OrgPermsMixin, SmartListView):
         paginate_by = None  # switch off Django pagination
         max_results = 10
         default_order = ('-time',)
@@ -289,33 +335,3 @@ class UserCRUDL(SmartCRUDL):
                                  'earliest_time': earliest_time,
                                  'more': has_more,
                                  'results': results})
-
-    class Send(OrgPermsMixin, SmartCreateView):
-        class SendForm(forms.ModelForm):
-            room = forms.ModelChoiceField(label=_("Room"), queryset=Room.objects.filter(pk=-1),
-                                          help_text=_("The chat room to send this message to."))
-
-            def __init__(self, *args, **kwargs):
-                user = kwargs['user']
-                del kwargs['user']
-                super(UserCRUDL.Send.SendForm, self).__init__(*args, **kwargs)
-
-                self.fields['room'].queryset = user.get_all_rooms().order_by('name')
-
-            class Meta:
-                model = Message
-                fields = ('text', 'room')
-
-        form_class = SendForm
-        title = _("Send Message")
-        submit_button_name = _("Send")
-
-        def get_form_kwargs(self):
-            kwargs = super(UserCRUDL.Send, self).get_form_kwargs()
-            kwargs['user'] = User.from_auth_user(self.request.user)
-            return kwargs
-
-        def save(self, obj):
-            org = self.derive_org()
-            user = User.from_auth_user(self.request.user)
-            self.object = Message.create_from_user(org, user, obj.text, obj.room)

@@ -82,7 +82,7 @@
                           %a{ href:"{% url 'chat.room_list' %}" }
                             - trans "Rooms"
 
-                      - if org_perms.chat.user_list
+                      - if org_perms.chat.room_user_list
                         %li
                           %a{ href:"{% url 'chat.user_list' %}" }
                             - trans "Users"

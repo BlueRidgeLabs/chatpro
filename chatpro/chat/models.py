@@ -2,49 +2,12 @@ from __future__ import unicode_literals
 
 from dash.orgs.models import Org
 from django.conf import settings
-from django.contrib.auth.models import User as AuthUser
+from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from temba import TembaClient
 from .tasks import sync_room_groups_task
-
-
-class User(AuthUser):
-    """
-    An extended user who can use and/or manage chat rooms
-    """
-    org = models.ForeignKey(Org, verbose_name=_("Organization"), related_name='supervisors')
-
-    chatname = models.CharField(max_length=12)
-
-    @classmethod
-    def create(cls, org, name, chatname, email, password, rooms=(), manage_rooms=()):
-        user = cls.objects.create(is_active=True, org=org, chatname=chatname,
-                                  username=email, email=email, first_name=name)
-        user.set_password(password)
-        user.set_org(org)
-        user.org_editors.add(org)
-        user.save()
-
-        user.rooms.add(*rooms)
-        user.manage_rooms.add(*manage_rooms)
-
-        return user
-
-    @classmethod
-    def from_auth_user(cls, user):
-        return cls.objects.prefetch_related('rooms').filter(user_ptr_id=user.pk).first()
-
-    def get_all_rooms(self):
-        """
-        Gets all rooms which this user has access to
-        """
-        return (self.rooms.filter(is_active=True) | self.manage_rooms.filter(is_active=True)).distinct()
-
-    @property
-    def name(self):
-        return self.first_name
 
 
 class Room(models.Model):
@@ -86,7 +49,7 @@ class Contact(models.Model):
 
     org = models.ForeignKey(Org, verbose_name=_("Organization"), related_name='contacts')
 
-    name = models.CharField(verbose_name=_("Name"), max_length=128, blank=True,
+    name = models.CharField(verbose_name=_("Name"), max_length=128, null=True,
                             help_text=_("The name of this contact"))
 
     room = models.ForeignKey(Room, verbose_name=_("Room"), related_name='contacts',
@@ -143,30 +106,43 @@ class Message(models.Model):
         return dict(contact_id=self.contact_id, text=self.text, room_id=self.room_id, time=self.time)
 
 
-######################### Monkey patching for the Auth User class #########################
+######################### Monkey patching for the User class #########################
 
-def _auth_user_get_all_rooms(auth_user):
-    if not hasattr(auth_user, '_rooms'):
+def _user_create(cls, org, full_name, chat_name, email, password, rooms=(), manage_rooms=()):
+    user = cls.objects.create(first_name=full_name, last_name=chat_name,
+                              is_active=True, username=email, email=email)
+    user.set_password(password)
+    user.set_org(org)
+    user.org_editors.add(org)
+    user.save()
+
+    user.rooms.add(*rooms)
+    user.manage_rooms.add(*manage_rooms)
+
+    return user
+
+
+def _user_get_all_rooms(user):
+    if not hasattr(user, '_rooms'):
         # org admins have implicit access to all rooms
-        if auth_user.is_administrator():
-            auth_user._rooms = Room.get_all(auth_user.get_org())
+        if user.is_administrator():
+            user._rooms = Room.get_all(user.get_org())
         else:
-            user = User.from_auth_user(auth_user)
-            if user:
-                auth_user._rooms = user.get_all_rooms()
-            else:
-                auth_user._rooms = []
+            user._rooms = (user.rooms.filter(is_active=True) | user.manage_rooms.filter(is_active=True)).distinct()
 
-    return auth_user._rooms
+    return user._rooms
 
 
-def _auth_user_is_administrator(user):
+def _user_is_administrator(user):
     org_group = user.get_org_group()
     return org_group and org_group.name == 'Administrators'
 
 
-AuthUser.get_all_rooms = _auth_user_get_all_rooms
-AuthUser.is_administrator = _auth_user_is_administrator
+User.create = classmethod(_user_create)
+User.full_name = property(lambda self: self.first_name)
+User.chat_name = property(lambda self: self.last_name)
+User.get_all_rooms = _user_get_all_rooms
+User.is_administrator = _user_is_administrator
 
 
 ######################### Monkey patching for the Org class #########################

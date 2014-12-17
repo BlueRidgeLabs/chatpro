@@ -38,7 +38,7 @@
 
       $('.room-sendform').each(function() {
         $(this).submit(function(event) {
-          send_url = "{% url 'chat.user_send' %}?" + $(this).serialize();
+          send_url = "{% url 'chat.message_send' %}?" + $(this).serialize();
           console.log(send_url);
           $.post(send_url).done(function(data) {
             console.log(data);
@@ -55,7 +55,7 @@
 
 
     function fetch_messages(room_id) {
-      messages_url = "{% url 'chat.user_messages' %}?room=" + room_id;
+      messages_url = "{% url 'chat.message_list' %}?room=" + room_id;
       $.get(messages_url).done(function(data) {
         console.log(data);
       });
