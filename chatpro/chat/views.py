@@ -1,13 +1,19 @@
 from __future__ import unicode_literals
 
+import datetime
+
 from dash.orgs.views import OrgPermsMixin
 from django import forms
 from django.core.validators import MinLengthValidator
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.utils.translation import ugettext_lazy as _
 from smartmin.users.views import SmartCreateView, SmartFormView, SmartListView, SmartTemplateView, SmartUpdateView
 from smartmin.users.views import SmartCRUDL
-from .models import Contact, Room, User
+from .models import Contact, Room, User, Message
+
+
+def parse_iso8601(text):
+    return datetime.datetime.strptime(text, "%Y-%m-%dT%H:%M:%S.%fZ")
 
 
 class ContactForm(forms.ModelForm):
@@ -173,7 +179,7 @@ class UserForm(forms.ModelForm):
         del kwargs['org']
         super(UserForm, self).__init__(*args, **kwargs)
 
-        org_rooms = Room.objects.filter(org=org).order_by('name')
+        org_rooms = Room.objects.filter(org=org, is_active=True).order_by('name')
         self.fields['rooms'].queryset = org_rooms
         self.fields['manage_rooms'].queryset = org_rooms
 
@@ -183,7 +189,7 @@ class UserForm(forms.ModelForm):
 
 class UserCRUDL(SmartCRUDL):
     model = User
-    actions = ('create', 'update', 'list', 'chat')
+    actions = ('create', 'update', 'list', 'home', 'messages', 'send')
 
     class Create(OrgPermsMixin, SmartCreateView):
         form_class = UserForm
@@ -238,7 +244,7 @@ class UserCRUDL(SmartCRUDL):
         def get_rooms(self, obj):
             return ", ".join([unicode(room) for room in obj.get_all_rooms()])
 
-    class Chat(OrgPermsMixin, SmartTemplateView):
+    class Home(OrgPermsMixin, SmartTemplateView):
         title = _("Chat")
 
         @classmethod
@@ -246,6 +252,70 @@ class UserCRUDL(SmartCRUDL):
             return r'^home/$'
 
         def get_context_data(self, **kwargs):
-            context = super(UserCRUDL.Chat, self).get_context_data(**kwargs)
+            context = super(UserCRUDL.Home, self).get_context_data(**kwargs)
             context['rooms'] = self.request.user.get_all_rooms()
             return context
+
+    class Messages(OrgPermsMixin, SmartListView):
+        paginate_by = None  # switch off Django pagination
+        max_results = 10
+        default_order = ('-time',)
+
+        def get_queryset(self, **kwargs):
+            org = self.derive_org()
+            room_id = self.request.REQUEST['room']
+            qs = Message.objects.filter(org=org, room_id=room_id)
+
+            if 'before' in self.request.REQUEST:
+                before = parse_iso8601(self.request.REQUEST['before'])
+                qs = qs.filter(time__lte=before)
+
+            return self.order_queryset(qs)
+
+        def render_to_response(self, context, **response_kwargs):
+            total = context['object_list'].count()
+            messages = list(context['object_list'][:self.max_results])
+
+            if messages:
+                earliest_time = messages[-1].time.isoformat()
+                has_more = len(messages) < total
+            else:
+                earliest_time = None
+                has_more = False
+
+            results = [msg.as_json() for msg in messages]
+
+            return JsonResponse({'count': len(results),
+                                 'earliest_time': earliest_time,
+                                 'more': has_more,
+                                 'results': results})
+
+    class Send(OrgPermsMixin, SmartCreateView):
+        class SendForm(forms.ModelForm):
+            room = forms.ModelChoiceField(label=_("Room"), queryset=Room.objects.filter(pk=-1),
+                                          help_text=_("The chat room to send this message to."))
+
+            def __init__(self, *args, **kwargs):
+                user = kwargs['user']
+                del kwargs['user']
+                super(UserCRUDL.Send.SendForm, self).__init__(*args, **kwargs)
+
+                self.fields['room'].queryset = user.get_all_rooms().order_by('name')
+
+            class Meta:
+                model = Message
+                fields = ('text', 'room')
+
+        form_class = SendForm
+        title = _("Send Message")
+        submit_button_name = _("Send")
+
+        def get_form_kwargs(self):
+            kwargs = super(UserCRUDL.Send, self).get_form_kwargs()
+            kwargs['user'] = User.from_auth_user(self.request.user)
+            return kwargs
+
+        def save(self, obj):
+            org = self.derive_org()
+            user = User.from_auth_user(self.request.user)
+            self.object = Message.create_from_user(org, user, obj.text, obj.room)

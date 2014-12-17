@@ -4,6 +4,7 @@ from dash.orgs.models import Org
 from django.conf import settings
 from django.contrib.auth.models import User as AuthUser
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from temba import TembaClient
 from .tasks import sync_room_groups_task
@@ -39,7 +40,7 @@ class User(AuthUser):
         """
         Gets all rooms which this user has access to
         """
-        return (self.rooms.all() | self.manage_rooms.all()).distinct()
+        return (self.rooms.filter(is_active=True) | self.manage_rooms.filter(is_active=True)).distinct()
 
     @property
     def name(self):
@@ -89,7 +90,7 @@ class Contact(models.Model):
                             help_text=_("The name of this contact"))
 
     room = models.ForeignKey(Room, verbose_name=_("Room"), related_name='contacts',
-                             help_text=_("The name of the room which this contact belongs in"))
+                             help_text=_("The room which this contact belongs in"))
 
     urn = models.CharField(verbose_name=_("URN"), max_length=255)
 
@@ -106,6 +107,40 @@ class Contact(models.Model):
 
     def __unicode__(self):
         return self.name if self.name else self.urn_path
+
+
+class Message(models.Model):
+    """
+    Corresponds to a RapidPro message sent to a room
+    """
+    org = models.ForeignKey(Org, verbose_name=_("Organization"), related_name='messages')
+
+    contact = models.ForeignKey(Contact, null=True, verbose_name=_("Contact"), related_name='messages',
+                                help_text=_("The contact who sent this message"))
+
+    user = models.ForeignKey(User, null=True, verbose_name=_("User"), related_name='messages',
+                             help_text=_("The user who sent this message"))
+
+    text = models.CharField(max_length=640)
+
+    room = models.ForeignKey(Room, verbose_name=_("Room"), related_name='messages',
+                             help_text=_("The room which this message was sent to"))
+
+    time = models.DateTimeField(verbose_name=_("Time"), help_text=_("The time when this message was sent"))
+
+    @classmethod
+    def create_from_contact(cls, org, contact, text, room, time):
+        return cls.objects.create(org=org, contact=contact, text=text, room=room, time=time)
+
+    @classmethod
+    def create_from_user(cls, org, user, text, room):
+        return cls.objects.create(org=org, user=user, text=text, room=room, time=timezone.now())
+
+    def get_sender(self):
+        return self.contact if self.contact_id else self.user
+
+    def as_json(self):
+        return dict(contact_id=self.contact_id, text=self.text, room_id=self.room_id, time=self.time)
 
 
 ######################### Monkey patching for the Auth User class #########################

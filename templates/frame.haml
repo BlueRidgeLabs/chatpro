@@ -88,8 +88,8 @@
                             - trans "Users"
 
                   %li
-                    %a{ href:"{% url 'chat.user_chat' %}" }
-                      - trans "Chat"
+                    %a{ href:"{% url 'chat.user_home' %}" }
+                      - trans "Home"
 
                 - if org_perms.chat.contact_list
                   %li
