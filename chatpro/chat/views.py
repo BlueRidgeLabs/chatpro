@@ -305,17 +305,20 @@ class MessageCRUDL(SmartCRUDL):
             messages = list(context['object_list'][:self.max_results])
 
             if messages:
-                earliest_time = messages[-1].time.isoformat()
-                has_more = len(messages) < total
+                newest_time = messages[0].time.isoformat()
+                oldest_time = messages[-1].time.isoformat()
+                has_older = len(messages) < total
             else:
-                earliest_time = None
-                has_more = False
+                newest_time = None
+                oldest_time = None
+                has_older = False
 
             results = [msg.as_json() for msg in messages]
 
             return JsonResponse({'count': len(results),
-                                 'earliest_time': earliest_time,
-                                 'more': has_more,
+                                 'newest_time': newest_time,
+                                 'oldest_time': oldest_time,
+                                 'has_older': has_older,
                                  'results': results})
 
 

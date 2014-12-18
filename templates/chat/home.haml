@@ -23,17 +23,16 @@
                     -trans "Send"
 
           %table.room-messages{ width:"100%" }
-            %tr.message{ ng-repeat:"message in messages" }
+            %tr.message{ ng-repeat:"message in messages", infinite-scroll:"load_old_messages()", infinite-scroll-disabled:"loading || !has_older" }
               %td.message-sender
                 [[ message.sender_name ]]
               %td.message-text
-                [[ message.text ]]
                 .message-time
                   [[ message.time | date:'short' ]]
+                [[ message.text ]]
+
           .room-loading{ ng-if:"loading" }
             %img{ src:"{{ STATIC_URL }}/img/loading.gif" }
-
-
 
 - block extra-script
   :javascript
@@ -64,7 +63,7 @@
       text-align: center;
     }
     .message {
-      border-bottom: 1px solid #eee;
+      border-bottom: 1px solid #DDDDDD;
     }
     .message:last-child {
       border: none;
