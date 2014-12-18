@@ -1,6 +1,5 @@
 - extends "smartmin/base.html"
-
-- load smartmin i18n
+- load smartmin i18n compress
 
 - block content
 
@@ -13,7 +12,7 @@
 
     .tab-content
       - for room in rooms
-        .tab-pane{role:"tabpanel", id:"room_{{ room.id }}", data-room-id:"{{ room.id }}"}
+        .tab-pane{role:"tabpanel", id:"room_{{ room.id }}", data-room-id:"{{ room.id }}", ng-controller:"RoomController", ng-init:"init({{ room.id }})"}
           .{style:"text-align: center; padding: 1em"}
             %form.room-sendform
               %input{type:"hidden", name:"room", value:"{{ room.id }}"}
@@ -23,7 +22,15 @@
                   %button.btn.btn-default{type:"button"}
                     -trans "Send"
 
-          .room-messages
+          %table.room-messages{ width:"100%" }
+            %tr.message{ ng-repeat:"message in messages" }
+              %td.message-sender
+                [[ message.sender_name ]]
+              %td.message-text
+                [[ message.text ]]
+                .message-time
+                  [[ message.time | date:'short' ]]
+
 
 
 - block extra-script
@@ -46,18 +53,29 @@
           event.preventDefault();
         });
       });
-
-      $('.room-messages').each(function() {
-        room_id = $(this).parent().data('room-id');
-        fetch_messages(room_id);
-      });
     });
 
-
-    function fetch_messages(room_id) {
-      messages_url = "{% url 'chat.message_list' %}?room=" + room_id;
-      $.get(messages_url).done(function(data) {
-        console.log(data);
-      });
+-block extra-style
+  {{ block.super }}
+  :css
+    .message {
+      border-bottom: 1px solid #eee;
+    }
+    .message:last-child {
+      border: none;
+    }
+    .message-sender {
+      background-color: #eee;
+      padding: 0.5em;
+      vertical-align: top;
+      width: 200px;
+    }
+    .message-text {
+      padding: 0.5em;
+      vertical-align: top;
+    }
+    .message-time {
+      float: right;
+      font-size: 0.7em;
     }
 

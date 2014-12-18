@@ -1,7 +1,5 @@
 from __future__ import unicode_literals
 
-import datetime
-
 from dash.orgs.views import OrgPermsMixin
 from django import forms
 from django.contrib.auth.models import User
@@ -11,10 +9,7 @@ from django.utils.translation import ugettext_lazy as _
 from smartmin.users.views import SmartCreateView, SmartFormView, SmartListView, SmartTemplateView, SmartUpdateView
 from smartmin.users.views import SmartCRUDL
 from .models import Contact, Room, Message
-
-
-def parse_iso8601(text):
-    return datetime.datetime.strptime(text, "%Y-%m-%dT%H:%M:%S.%fZ")
+from .utils import parse_iso8601
 
 
 class ContactForm(forms.ModelForm):
@@ -294,13 +289,12 @@ class MessageCRUDL(SmartCRUDL):
 
         def get_form_kwargs(self):
             kwargs = super(MessageCRUDL.Send, self).get_form_kwargs()
-            kwargs['user'] = User.from_auth_user(self.request.user)
+            kwargs['user'] = self.request.user
             return kwargs
 
         def save(self, obj):
             org = self.derive_org()
-            user = User.from_auth_user(self.request.user)
-            self.object = Message.create_from_user(org, user, obj.text, obj.room)
+            self.object = Message.create_for_user(org, self.request.user, obj.text, obj.room)
 
     class List(OrgPermsMixin, SmartListView):
         paginate_by = None  # switch off Django pagination

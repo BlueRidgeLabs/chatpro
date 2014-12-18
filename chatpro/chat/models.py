@@ -92,18 +92,27 @@ class Message(models.Model):
     time = models.DateTimeField(verbose_name=_("Time"), help_text=_("The time when this message was sent"))
 
     @classmethod
-    def create_from_contact(cls, org, contact, text, room, time):
+    def create_incoming(cls, org, urn, text, room, time):
+        if ':' in text:
+            chat_name, text = text.split(': ', 1)  # remove name: from text
+
+        contact = Contact.objects.get(urn=urn)
+
         return cls.objects.create(org=org, contact=contact, text=text, room=room, time=time)
 
     @classmethod
-    def create_from_user(cls, org, user, text, room):
+    def create_for_user(cls, org, user, text, room):
         return cls.objects.create(org=org, user=user, text=text, room=room, time=timezone.now())
 
     def get_sender(self):
         return self.contact if self.contact_id else self.user
 
     def as_json(self):
-        return dict(contact_id=self.contact_id, text=self.text, room_id=self.room_id, time=self.time)
+        sender = self.get_sender()
+        sender_name = sender.name if isinstance(sender, Contact) else sender.full_name
+
+        return dict(contact_id=self.contact_id, user_id=self.user_id, sender_name=sender_name,
+                    text=self.text, room_id=self.room_id, time=self.time)
 
 
 ######################### Monkey patching for the User class #########################
