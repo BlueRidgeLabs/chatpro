@@ -88,7 +88,7 @@
                             - trans "Users"
 
                   %li
-                    %a{ href:"{% url 'chat.user_home' %}" }
+                    %a{ href:"/" }
                       - trans "Home"
 
                 - if org_perms.chat.contact_list
@@ -160,7 +160,7 @@
 
     <script type="text/javascript" src="{{ STATIC_URL }}js/scripts.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}js/angular.min.js"></script>
+    <!--<script type="text/javascript" src="{{ STATIC_URL }}js/angular.min.js"></script>-->
 
     {% compress js %}
     %script{ type:"text/coffeescript", src:"{{ STATIC_URL }}coffee/chat.coffee" }

@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 from dash.orgs.views import OrgPermsMixin
 from django import forms
 from django.contrib.auth.models import User
+from django.core.urlresolvers import reverse
 from django.core.validators import MinLengthValidator
 from django.http import HttpResponseRedirect, JsonResponse
 from django.utils.translation import ugettext_lazy as _
@@ -185,7 +186,7 @@ class UserForm(forms.ModelForm):
 
 class UserCRUDL(SmartCRUDL):
     model = User
-    actions = ('create', 'update', 'list', 'home')
+    actions = ('create', 'update', 'list')
 
     class Create(OrgPermsMixin, SmartCreateView):
         form_class = UserForm
@@ -248,19 +249,6 @@ class UserCRUDL(SmartCRUDL):
 
         def get_rooms(self, obj):
             return ", ".join([unicode(room) for room in obj.get_all_rooms()])
-
-    class Home(OrgPermsMixin, SmartTemplateView):
-        title = _("Chat")
-        permission = 'chat.room_user_home'
-
-        @classmethod
-        def derive_url_pattern(cls, path, action):
-            return r'^home/$'
-
-        def get_context_data(self, **kwargs):
-            context = super(UserCRUDL.Home, self).get_context_data(**kwargs)
-            context['rooms'] = self.request.user.get_all_rooms()
-            return context
 
 
 class MessageCRUDL(SmartCRUDL):
@@ -329,3 +317,23 @@ class MessageCRUDL(SmartCRUDL):
                                  'earliest_time': earliest_time,
                                  'more': has_more,
                                  'results': results})
+
+
+class HomeView(OrgPermsMixin, SmartTemplateView):
+    """
+    Chat homepage
+    """
+    title = _("Chat")
+    template_name = 'chat/home.haml'
+    permission = 'chat.room_user_home'
+
+    def pre_process(self, request, *args, **kwargs):
+        if not request.user.is_authenticated():
+            return HttpResponseRedirect(reverse('users.user_login'))
+
+        return super(HomeView, self).pre_process(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(HomeView, self).get_context_data(**kwargs)
+        context['rooms'] = self.request.user.get_all_rooms()
+        return context
