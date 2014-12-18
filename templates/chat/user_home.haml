@@ -30,6 +30,8 @@
                 [[ message.text ]]
                 .message-time
                   [[ message.time | date:'short' ]]
+          .room-loading{ ng-if:"loading" }
+            %img{ src:"{{ STATIC_URL }}/img/loading.gif" }
 
 
 
@@ -58,6 +60,9 @@
 -block extra-style
   {{ block.super }}
   :css
+    .room-loading {
+      text-align: center;
+    }
     .message {
       border-bottom: 1px solid #eee;
     }
