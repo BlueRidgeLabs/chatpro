@@ -212,6 +212,7 @@ INSTALLED_APPS = (
     'dash.orgs',
 
     # custom
+    'chatpro.api',
     'chatpro.chat',
 )
 

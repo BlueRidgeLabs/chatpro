@@ -92,13 +92,11 @@ class Message(models.Model):
     time = models.DateTimeField(verbose_name=_("Time"), help_text=_("The time when this message was sent"))
 
     @classmethod
-    def create_incoming(cls, org, urn, text, room, time):
+    def create_for_contact(cls, org, contact, text, room):
         if ':' in text:
             chat_name, text = text.split(': ', 1)  # remove name: from text
 
-        contact = Contact.objects.get(urn=urn)
-
-        return cls.objects.create(org=org, contact=contact, text=text, room=room, time=time)
+        return cls.objects.create(org=org, contact=contact, text=text, room=room, time=timezone.now())
 
     @classmethod
     def create_for_user(cls, org, user, text, room):
