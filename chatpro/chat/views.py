@@ -255,10 +255,9 @@ class MessageCRUDL(SmartCRUDL):
     model = Message
     actions = ('list', 'send')
 
-    class Send(OrgPermsMixin, SmartCreateView):
+    class Send(OrgPermsMixin, SmartFormView):
         class SendForm(forms.ModelForm):
-            room = forms.ModelChoiceField(label=_("Room"), queryset=Room.objects.filter(pk=-1),
-                                          help_text=_("The chat room to send this message to."))
+            room = forms.ModelChoiceField(queryset=Room.objects.filter(pk=-1))
 
             def __init__(self, *args, **kwargs):
                 user = kwargs['user']
@@ -272,17 +271,18 @@ class MessageCRUDL(SmartCRUDL):
                 fields = ('text', 'room')
 
         form_class = SendForm
-        title = _("Send Message")
-        submit_button_name = _("Send")
 
         def get_form_kwargs(self):
             kwargs = super(MessageCRUDL.Send, self).get_form_kwargs()
             kwargs['user'] = self.request.user
             return kwargs
 
-        def save(self, obj):
+        def form_valid(self, form):
             org = self.derive_org()
-            self.object = Message.create_for_user(org, self.request.user, obj.text, obj.room)
+            room = form.cleaned_data['room']
+            text = form.cleaned_data['text']
+            msg = Message.create_for_user(org, self.request.user, text, room)
+            return JsonResponse({'message_id': msg.pk})
 
     class List(OrgPermsMixin, SmartListView):
         paginate_by = None  # switch off Django pagination

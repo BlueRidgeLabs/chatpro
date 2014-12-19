@@ -8,6 +8,8 @@ parse_iso8601 = (str) ->
 #============================================================================
 controllers.controller 'RoomController', [ '$scope', '$http', '$timeout', ($scope, $http, $timeout) ->
 
+  $scope.new_message = ''
+  $scope.sending = false
   $scope.loading = false
   $scope.messages = []
   $scope.newest_time = null
@@ -18,6 +20,22 @@ controllers.controller 'RoomController', [ '$scope', '$http', '$timeout', ($scop
     $scope.room_id = room_id
 
     $scope.load_old_messages()
+
+  $scope.send_new_message = ->
+    $scope.sending = true
+
+    data = new FormData();
+    data.append('room', $scope.room_id)
+    data.append('text', $scope.new_message)
+    $http.post '/chat/message/send/?', data, {
+            transformRequest: angular.identity,
+            headers: {'Content-Type': undefined}
+    }
+    .success (data) ->
+      console.log(data)
+
+    $scope.new_message = ''
+    $scope.sending = false
 
   $scope.load_old_messages = ->
     $scope.loading = true

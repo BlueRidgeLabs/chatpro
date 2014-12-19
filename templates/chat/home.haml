@@ -17,9 +17,9 @@
             %form.room-sendform
               %input{type:"hidden", name:"room", value:"{{ room.id }}"}
               .input-group
-                %input.form-control{type:"text", name:"text", autocomplete:"off"}
+                %input.form-control{type:"text", name:"text", autocomplete:"off", ng-model:"new_message"}
                 %span.input-group-btn
-                  %button.btn.btn-default{type:"button"}
+                  %button.btn.btn-default{type:"button", ng-click:"send_new_message()", ng-disabled:"sending"}
                     -trans "Send"
 
           %table.room-messages{ width:"100%" }
@@ -69,7 +69,7 @@
       border: none;
     }
     .message-sender {
-      background-color: #eee;
+      background-color: #EEEEF4;
       padding: 0.5em;
       vertical-align: top;
       width: 200px;
