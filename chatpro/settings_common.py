@@ -166,8 +166,9 @@ if 'test' in sys.argv:
     CACHES['default'] = {'BACKEND': 'django.core.cache.backends.dummy.DummyCache',}
 
 
-ORG_CONFIG_FIELDS =[dict(name='chat_api_token', field=dict(help_text=_("The API token for the chat organization for this org"),
-                         required=True))]
+ORG_CONFIG_FIELDS = [dict(name='chat_api_token',
+                          field=dict(help_text=_("The API token for the chat organization for this org"),
+                          required=True))]
 
 INSTALLED_APPS = (
     'django.contrib.auth',
@@ -214,6 +215,7 @@ INSTALLED_APPS = (
     # custom
     'chatpro.api',
     'chatpro.chat',
+    'chatpro.users_ext',
 )
 
 # A sample logging configuration. The only tangible logging
@@ -294,8 +296,6 @@ PERMISSIONS = {
     'chat.message': ('send', 'list'),
 
     'chat.room': ('list', 'select', 'user_create', 'user_update', 'user_list', 'user_home'),
-
-    'chat.user': ('create', 'list', 'update', 'home')
 }
 
 # assigns the permissions that each group should have

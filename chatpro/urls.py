@@ -2,14 +2,13 @@ from __future__ import unicode_literals
 
 from django.conf import settings
 from django.conf.urls import patterns, include, url
-from chatpro.chat.views import HomeView
 
 urlpatterns = patterns('',
     url(r'^manage/', include('dash.orgs.urls')),
     url(r'^users/', include('dash.users.urls')),
     url(r'^api/v1', include('chatpro.api.urls')),
-    url(r'^chat/', include('chatpro.chat.urls')),
-    url(r'^$', HomeView.as_view()),
+    url(r'', include('chatpro.chat.urls')),
+    url(r'', include('chatpro.users_ext.urls')),
     url(r'^i18n/', include('django.conf.urls.i18n')),
 )
 

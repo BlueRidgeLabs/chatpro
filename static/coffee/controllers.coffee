@@ -27,7 +27,7 @@ controllers.controller 'RoomController', [ '$scope', '$http', '$timeout', ($scop
     data = new FormData();
     data.append('room', $scope.room_id)
     data.append('text', $scope.new_message)
-    $http.post '/chat/message/send/?', data, {
+    $http.post '/message/send/?', data, {
             transformRequest: angular.identity,
             headers: {'Content-Type': undefined}
     }
@@ -45,7 +45,7 @@ controllers.controller 'RoomController', [ '$scope', '$http', '$timeout', ($scop
       # TODO provide backup when browser doesn't support toISOString
       params['before'] = $scope.min_time.toISOString()
 
-    $http.get '/chat/message/?' + $.param(params)
+    $http.get '/message/?' + $.param(params)
     .success (data) ->
       # returned data has time fields that need parsed
       for msg in data.results

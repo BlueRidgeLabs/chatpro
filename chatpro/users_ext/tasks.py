@@ -7,7 +7,7 @@ from dash.orgs.models import Org
 
 @shared_task
 def sync_room_groups_task(org_id, group_uuids):
-    from .models import Contact, Room
+    from chatpro.chat.models import Contact, Room
 
     org = Org.objects.get(pk=org_id)
     client = org.get_temba_client()
