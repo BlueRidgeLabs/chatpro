@@ -147,6 +147,7 @@
 
     {% compress js %}
     %script{ type:"text/coffeescript", src:"{{ STATIC_URL }}coffee/chat.coffee" }
+    %script{ type:"text/coffeescript", src:"{{ STATIC_URL }}coffee/services.coffee" }
     %script{ type:"text/coffeescript", src:"{{ STATIC_URL }}coffee/controllers.coffee" }
     {% endcompress %}
 

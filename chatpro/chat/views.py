@@ -57,8 +57,11 @@ class ContactCRUDL(SmartCRUDL):
             return obj
 
     class Read(OrgPermsMixin, SmartReadView):
-        fields = ('room', 'name', 'phone', 'comment')
-        edit_button = _("Edit")
+        fields = ('room', 'name', 'phone', 'comment', 'last_seen')
+
+        def get_last_seen(self, obj):
+            last_msg = Message.objects.filter(contact_id=obj.pk).order_by('-time').first()
+            return last_msg.time if last_msg else None
 
     class Update(OrgPermsMixin, SmartUpdateView):
         form_class = ContactForm
@@ -81,7 +84,7 @@ class ContactCRUDL(SmartCRUDL):
 
     class List(OrgPermsMixin, SmartListView):
         fields = ('name', 'room', 'phone')
-        link_fields = ('room',)
+        link_fields = ('name', 'room')
 
         def get_queryset(self, **kwargs):
             qs = super(ContactCRUDL.List, self).get_queryset(**kwargs)
@@ -221,12 +224,21 @@ class MessageCRUDL(SmartCRUDL):
 
         def get_queryset(self, **kwargs):
             org = self.derive_org()
-            room_id = self.request.REQUEST['room']
-            qs = Message.objects.filter(org=org, room_id=room_id)
+            qs = Message.objects.filter(org=org)
+
+            room_id = self.request.REQUEST.get('room', None)
+            if room_id:
+                qs = qs.filter(room_id=room_id)
+            else:
+                qs = qs.filter(room__in=self.request.user.get_all_rooms())
 
             if 'before' in self.request.REQUEST:
                 before = parse_iso8601(self.request.REQUEST['before'])
                 qs = qs.filter(time__lte=before)
+
+            if 'after' in self.request.REQUEST:
+                before = parse_iso8601(self.request.REQUEST['after'])
+                qs = qs.filter(time__gt=before)
 
             return self.order_queryset(qs)
 

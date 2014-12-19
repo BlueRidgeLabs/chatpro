@@ -1,25 +1,49 @@
-controllers = angular.module('chat.controllers', []);
+controllers = angular.module('chat.controllers', ['chat.services']);
 
 parse_iso8601 = (str) ->
   if str then new Date(Date.parse str) else null
 
 #============================================================================
-# Room controller
+# Chat controller (loads new messages for all rooms)
 #============================================================================
-controllers.controller 'RoomController', [ '$scope', '$http', '$timeout', ($scope, $http, $timeout) ->
+controllers.controller 'ChatController', [ '$scope', '$http', '$timeout', 'MessageService', ($scope, $http, $timeout, MessageService) ->
+
+  $scope.init = () ->
+    $scope.fetchNewMessages()
+
+  $scope.fetchNewMessages = () ->
+    MessageService.fetchNewMessages ->
+      $timeout($scope.fetchNewMessages, 5000)
+]
+
+#============================================================================
+# Room controller (loads old messages)
+#============================================================================
+controllers.controller 'RoomController', [ '$scope', '$http', 'MessageService', ($scope, $http, MessageService) ->
 
   $scope.new_message = ''
   $scope.sending = false
-  $scope.loading = false
+  $scope.loading_old = false
   $scope.messages = []
-  $scope.newest_time = null
   $scope.oldest_time = null
   $scope.has_older = true
 
   $scope.init = (room_id) ->
     $scope.room_id = room_id
-
     $scope.load_old_messages()
+
+    MessageService.onNewMessages (messages) ->
+      # extract messages for this room
+      room_messages = []
+      for msg in messages:
+        if msg.room_id = $scope.room_id
+          room_messages.append msg
+
+      # TODO display new messages
+
+      console.log('room #' + $scope.room_id + " new messages " + room_messages)
+
+  # TODO move functionality to MessageService
 
   $scope.send_new_message = ->
     $scope.sending = true
@@ -38,27 +62,24 @@ controllers.controller 'RoomController', [ '$scope', '$http', '$timeout', ($scop
     $scope.sending = false
 
   $scope.load_old_messages = ->
-    $scope.loading = true
+    $scope.loading_old = true
 
-    params = {room: $scope.room_id}
-    if $scope.min_time
+    if $scope.oldest_time
       # TODO provide backup when browser doesn't support toISOString
-      params['before'] = $scope.min_time.toISOString()
+      before = $scope.oldest_time.toISOString()
+    else
+      before = new Date().toISOString()
 
-    $http.get '/message/?' + $.param(params)
+    $http.get '/message/?' + $.param({room: $scope.room_id, before: before})
     .success (data) ->
       # returned data has time fields that need parsed
       for msg in data.results
           msg.time = parse_iso8601 msg.time
 
-      $scope.max_time = parse_iso8601 data.newest_time
-
-      $scope.min_time = parse_iso8601 data.oldest_time
+      $scope.oldest_time = parse_iso8601 data.oldest_time
       $scope.has_older = data.has_older
 
       Array::push.apply $scope.messages, data.results
 
-      $scope.loading = false
+      $scope.loading_old = false
 ]
-
-
