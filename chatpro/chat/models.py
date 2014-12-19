@@ -142,6 +142,10 @@ def _user_get_all_rooms(user):
     return user._rooms
 
 
+def _user_get_full_name(user):
+    return user.first_name
+
+
 def _user_is_administrator(user):
     org_group = user.get_org_group()
     return org_group and org_group.name == 'Administrators'

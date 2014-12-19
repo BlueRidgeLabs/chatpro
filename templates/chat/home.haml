@@ -27,9 +27,12 @@
               %td.message-sender
                 [[ message.sender_name ]]
               %td.message-text
-                .message-time
+                .message-time.pull-right
                   [[ message.time | date:'short' ]]
                 [[ message.text ]]
+
+          .room-no-messages{ ng-hide:"messages.length > 0" }
+            -trans "No messages"
 
           .room-loading{ ng-if:"loading" }
             %img{ src:"{{ STATIC_URL }}/img/loading.gif" }
@@ -62,6 +65,11 @@
     .room-loading {
       text-align: center;
     }
+    .room-no-messages {
+      text-align: center;
+      font-style: italic;
+      padding: 1em;
+    }
     .message {
       border-bottom: 1px solid #DDDDDD;
     }
@@ -79,7 +87,6 @@
       vertical-align: top;
     }
     .message-time {
-      float: right;
       font-size: 0.7em;
     }
 

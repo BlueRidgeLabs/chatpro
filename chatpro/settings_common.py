@@ -1,6 +1,8 @@
+from __future__ import unicode_literals
+
 import sys
+
 from django.utils.translation import ugettext_lazy as _
-from hamlpy import templatize
 
 # Django settings for tns_glass project.
 THUMBNAIL_DEBUG = False
@@ -286,7 +288,7 @@ PERMISSIONS = {
     'orgs.org': ('choose', 'edit', 'home', 'manage_accounts', 'create_login', 'join',
                  'chat_list', 'contact_list'),
 
-    'chat.contact': ('create', 'update', 'list'),
+    'chat.contact': ('create', 'read', 'update', 'list', 'filter'),
 
     'chat.message': ('send', 'list'),
 

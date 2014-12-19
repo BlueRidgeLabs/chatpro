@@ -163,6 +163,18 @@
       });
     </script>
 
+    {% if lang_direction == 'rtl' %}
+    <style type="text/css">
+      :css
+        .pull-left {
+          float:right !important;
+        }
+        .pull-right {
+          float:left !important;
+        }
+    </style>
+    {% endif %}
+
     {# media associated with any form we are displaying #}
     {% if form %}
     {{ form.media }}

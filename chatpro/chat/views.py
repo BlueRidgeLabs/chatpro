@@ -7,8 +7,8 @@ from django.core.urlresolvers import reverse
 from django.core.validators import MinLengthValidator
 from django.http import HttpResponseRedirect, JsonResponse
 from django.utils.translation import ugettext_lazy as _
-from smartmin.users.views import SmartCreateView, SmartFormView, SmartListView, SmartTemplateView, SmartUpdateView
-from smartmin.users.views import SmartCRUDL
+from smartmin.users.views import SmartCRUDL, SmartCreateView, SmartReadView, SmartUpdateView, SmartListView
+from smartmin.users.views import SmartFormView, SmartTemplateView
 from .models import Contact, Room, Message
 from .utils import parse_iso8601
 
@@ -41,7 +41,7 @@ class ContactForm(forms.ModelForm):
 
 class ContactCRUDL(SmartCRUDL):
     model = Contact
-    actions = ('create', 'update', 'list')
+    actions = ('create', 'read', 'update', 'list', 'filter')
 
     class Create(OrgPermsMixin, SmartCreateView):
         form_class = ContactForm
@@ -57,6 +57,10 @@ class ContactCRUDL(SmartCRUDL):
             obj.org = self.request.user.get_org()
             obj.urn = 'tel:%s' % self.form.cleaned_data['phone']
             return obj
+
+    class Read(OrgPermsMixin, SmartReadView):
+        fields = ('room', 'name', 'phone', 'comment')
+        edit_button = _("Edit")
 
     class Update(OrgPermsMixin, SmartUpdateView):
         form_class = ContactForm
@@ -79,6 +83,7 @@ class ContactCRUDL(SmartCRUDL):
 
     class List(OrgPermsMixin, SmartListView):
         fields = ('name', 'room', 'phone')
+        link_fields = ('room',)
 
         def get_queryset(self, **kwargs):
             qs = super(ContactCRUDL.List, self).get_queryset(**kwargs)
@@ -91,8 +96,43 @@ class ContactCRUDL(SmartCRUDL):
                 qs = qs.filter(room__in=rooms)
             return qs
 
+        def lookup_field_link(self, context, field, obj):
+            if field == 'room':
+                return reverse('chat.contact_filter', args=[obj.room.pk])
+
+            return super(ContactCRUDL.List, self).lookup_field_link(context, field, obj)
+
         def get_phone(self, obj):
             return obj.get_urn()[1]
+
+    class Filter(OrgPermsMixin, SmartListView):
+        fields = ('name', 'phone')
+        default_order = ('name',)
+
+        def derive_queryset(self, **kwargs):
+            room = self.derive_room()
+            return Contact.objects.filter(room=room, is_active=True, org=self.request.user.get_org())
+
+        def get_phone(self, obj):
+            return obj.get_urn()[1]
+
+        def derive_room(self):
+            if not hasattr(self, '_room'):
+                self._room = Room.objects.get(pk=self.kwargs['room'])
+            return self._room
+
+        def derive_title(self):
+            return _("Contacts in %s") % self.derive_room().name
+
+        def get_context_data(self, *args, **kwargs):
+            context = super(ContactCRUDL.Filter, self).get_context_data(**kwargs)
+            room = self.derive_room()
+            context['room'] = room
+            return context
+
+        @classmethod
+        def derive_url_pattern(cls, path, action):
+            return r'^%s/%s/(?P<room>\d+)/$' % (path, action)
 
 
 class RoomCRUDL(SmartCRUDL):
@@ -222,15 +262,21 @@ class UserCRUDL(SmartCRUDL):
         def derive_initial(self):
             initial = super(UserCRUDL.Update, self).derive_initial()
             initial['full_name'] = self.object.full_name
-            initial['full_name'] = self.object.chat_name
+            initial['chat_name'] = self.object.chat_name
             initial['rooms'] = self.object.rooms.all()
             initial['manage_rooms'] = self.object.manage_rooms.all()
             return initial
 
+        def lookup_field_label(self, context, field, default=None):
+            if field == 'email':
+                return _('Email / Login')
+
+            return super(UserCRUDL.Update, self).lookup_field_label(context, field, default)
+
         def pre_save(self, obj):
             obj = super(UserCRUDL.Update, self).pre_save(obj)
-            obj.full_name = self.form.cleaned_data['full_name']
-            obj.chat_name = self.form.cleaned_data['chat_name']
+            obj.first_name = self.form.cleaned_data['full_name']
+            obj.last_name = self.form.cleaned_data['chat_name']
             obj.username = obj.email
             new_password = self.form.cleaned_data.get('new_password', "")
             if new_password:

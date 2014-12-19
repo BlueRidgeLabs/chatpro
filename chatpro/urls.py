@@ -8,7 +8,7 @@ urlpatterns = patterns('',
     url(r'^manage/', include('dash.orgs.urls')),
     url(r'^users/', include('dash.users.urls')),
     url(r'^chat/', include('chatpro.chat.urls')),
-    url(r'', HomeView.as_view()),
+    url(r'^$', HomeView.as_view()),
     url(r'^i18n/', include('django.conf.urls.i18n')),
 )
 
