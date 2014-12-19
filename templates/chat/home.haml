@@ -25,7 +25,10 @@
           %table.room-messages{ width:"100%" }
             %tr.message{ ng-repeat:"message in messages", infinite-scroll:"load_old_messages()", infinite-scroll-disabled:"loading || !has_older" }
               %td.message-sender
-                [[ message.sender_name ]]
+                %a{ ng-if:"message.contact_id", href:"/contact/read/[[ message.contact_id ]]" }
+                  [[ message.sender_name ]]
+                %span{ ng-if:"message.user_id" }
+                  [[ message.sender_name ]]
               %td.message-text
                 .message-time.pull-right
                   [[ message.time | date:'short' ]]
