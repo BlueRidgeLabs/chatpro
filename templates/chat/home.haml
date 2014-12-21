@@ -3,7 +3,7 @@
 
 - block content
 
-  .{ role:"tabpanel", ng-controller:"ChatController", ng-init:"init()"}
+  .{ role:"tabpanel", ng-controller:"ChatController", ng-init:'init({{ request.user.id }}, "{{ request.user.full_name }}")'}
     %ul#room-tabs.nav.nav-tabs{role:"tablist"}
       - for room in rooms
         %li{role:"presentation"}

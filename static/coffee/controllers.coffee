@@ -5,8 +5,9 @@ controllers = angular.module('chat.controllers', ['chat.services']);
 #============================================================================
 controllers.controller 'ChatController', [ '$scope', 'MessageService', ($scope, MessageService) ->
 
-  $scope.init = () ->
-
+  $scope.init = (user_id, user_name) ->
+    $scope.user_id = user_id
+    $scope.user_name = user_name
 ]
 
 #============================================================================
@@ -26,11 +27,30 @@ controllers.controller 'RoomController', [ '$scope', '$http', 'MessageService', 
 
     MessageService.onNewMessages (room_id, messages) ->
       if room_id == $scope.room_id
-        # prepend new messages
-        $scope.messages = messages.concat $scope.messages
+        # remove temp messages
+        non_temp_messages = []
+        for msg in $scope.messages
+          if !msg.temp
+            non_temp_messages.push msg
 
+        # prepend new messages
+        $scope.messages = messages.concat non_temp_messages
+
+  #============================================================================
+  # Sends a new message
+  #============================================================================
   $scope.sendNewMessage = ->
     $scope.sending = true
+
+    # prepend as temp message immediately
+    $scope.messages.unshift {
+      user_id: $scope.user_id,
+      contact_id: null,
+      sender_name: $scope.user_name,
+      text: $scope.new_message,
+      room_id: $scope.room_id,
+      temp: true
+    }
 
     MessageService.sendMessage $scope.room_id, $scope.new_message, ->
       $scope.new_message = ''
