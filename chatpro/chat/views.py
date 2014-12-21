@@ -220,7 +220,7 @@ class MessageCRUDL(SmartCRUDL):
     class List(OrgPermsMixin, SmartListView):
         paginate_by = None  # switch off Django pagination
         max_results = 10
-        default_order = ('-time',)
+        default_order = ('-id',)
 
         def get_queryset(self, **kwargs):
             org = self.derive_org()
@@ -232,13 +232,17 @@ class MessageCRUDL(SmartCRUDL):
             else:
                 qs = qs.filter(room__in=self.request.user.get_all_rooms())
 
-            if 'before' in self.request.REQUEST:
-                before = parse_iso8601(self.request.REQUEST['before'])
-                qs = qs.filter(time__lte=before)
+            if 'before_id' in self.request.REQUEST:
+                qs = qs.filter(pk__lt=int(self.request.REQUEST['before_id']))
 
-            if 'after' in self.request.REQUEST:
-                before = parse_iso8601(self.request.REQUEST['after'])
-                qs = qs.filter(time__gt=before)
+            if 'before_time' in self.request.REQUEST:
+                qs = qs.filter(time__lt=parse_iso8601(self.request.REQUEST['before_time']))
+
+            if 'after_id' in self.request.REQUEST:
+                qs = qs.filter(pk__gt=int(self.request.REQUEST['after_id']))
+
+            if 'after_time' in self.request.REQUEST:
+                qs = qs.filter(time__gt=parse_iso8601(self.request.REQUEST['after_time']))
 
             return self.order_queryset(qs)
 
@@ -247,19 +251,19 @@ class MessageCRUDL(SmartCRUDL):
             messages = list(context['object_list'][:self.max_results])
 
             if messages:
-                newest_time = messages[0].time.isoformat()
-                oldest_time = messages[-1].time.isoformat()
+                max_id = messages[0].pk
+                min_id = messages[-1].pk
                 has_older = len(messages) < total
             else:
-                newest_time = None
-                oldest_time = None
+                max_id = None
+                min_id = None
                 has_older = False
 
             results = [msg.as_json() for msg in messages]
 
             return JsonResponse({'count': len(results),
-                                 'newest_time': newest_time,
-                                 'oldest_time': oldest_time,
+                                 'max_id': max_id,
+                                 'min_id': min_id,
                                  'has_older': has_older,
                                  'results': results})
 

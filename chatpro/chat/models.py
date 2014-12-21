@@ -106,5 +106,10 @@ class Message(models.Model):
         sender = self.get_sender()
         sender_name = sender.name if isinstance(sender, Contact) else sender.full_name
 
-        return dict(contact_id=self.contact_id, user_id=self.user_id, sender_name=sender_name,
-                    text=self.text, room_id=self.room_id, time=self.time)
+        return dict(message_id=self.pk,
+                    contact_id=self.contact_id,
+                    user_id=self.user_id,
+                    sender_name=sender_name,
+                    text=self.text,
+                    room_id=self.room_id,
+                    time=self.time)

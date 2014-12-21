@@ -19,11 +19,11 @@
               .input-group
                 %input.form-control{type:"text", name:"text", autocomplete:"off", ng-model:"new_message"}
                 %span.input-group-btn
-                  %button.btn.btn-default{type:"button", ng-click:"send_new_message()", ng-disabled:"sending"}
+                  %button.btn.btn-default{type:"button", ng-click:"sendNewMessage()", ng-disabled:"sending"}
                     -trans "Send"
 
           %table.room-messages{ width:"100%" }
-            %tr.message{ ng-repeat:"message in messages", infinite-scroll:"load_old_messages()", infinite-scroll-disabled:"loading_old || !has_older" }
+            %tr.message{ ng-repeat:"message in messages", infinite-scroll:"loadOldMessages()", infinite-scroll-disabled:"loading_old || !has_older" }
               %td.message-sender
                 %a{ ng-if:"message.contact_id", href:"/contact/read/[[ message.contact_id ]]" }
                   [[ message.sender_name ]]
@@ -49,17 +49,6 @@
       });
 
       $('#room-tabs a:first').tab('show');
-
-      $('.room-sendform').each(function() {
-        $(this).submit(function(event) {
-          send_url = "{% url 'chat.message_send' %}?" + $(this).serialize();
-          console.log(send_url);
-          $.post(send_url).done(function(data) {
-            console.log(data);
-          });
-          event.preventDefault();
-        });
-      });
     });
 
 -block extra-style
