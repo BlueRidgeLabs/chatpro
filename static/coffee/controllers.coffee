@@ -5,9 +5,28 @@ controllers = angular.module('chat.controllers', ['chat.services']);
 #============================================================================
 controllers.controller 'ChatController', [ '$scope', 'MessageService', ($scope, MessageService) ->
 
-  $scope.init = (user_id, user_name) ->
+  $scope.active_room_id = null
+  $scope.new_message = ''
+  $scope.sending = false
+
+  $scope.init = (user_id, user_name, initial_room_id) ->
     $scope.user_id = user_id
     $scope.user_name = user_name
+    $scope.active_room_id = initial_room_id
+
+  $scope.showRoom = (room_id) ->
+    $scope.active_room_id = room_id
+
+  #============================================================================
+  # Sends a new message to the active room
+  #============================================================================
+  $scope.sendMessage = ->
+    $scope.sending = true
+
+    MessageService.sendMessage $scope.active_room_id, $scope.new_message, $scope.user_id, $scope.user_name, ->
+      $scope.new_message = ''
+      $scope.sending = false
+
 ]
 
 #============================================================================
@@ -15,10 +34,8 @@ controllers.controller 'ChatController', [ '$scope', 'MessageService', ($scope, 
 #============================================================================
 controllers.controller 'RoomController', [ '$scope', '$http', 'MessageService', ($scope, $http, MessageService) ->
 
-  $scope.new_message = ''
-  $scope.sending = false
-  $scope.loading_old = false
   $scope.messages = []
+  $scope.loading_old = false
   $scope.has_older = true
 
   $scope.init = (room_id) ->
@@ -35,26 +52,6 @@ controllers.controller 'RoomController', [ '$scope', '$http', 'MessageService', 
 
         # prepend new messages
         $scope.messages = messages.concat non_temp_messages
-
-  #============================================================================
-  # Sends a new message
-  #============================================================================
-  $scope.sendNewMessage = ->
-    $scope.sending = true
-
-    # prepend as temp message immediately
-    $scope.messages.unshift {
-      user_id: $scope.user_id,
-      contact_id: null,
-      sender_name: $scope.user_name,
-      text: $scope.new_message,
-      room_id: $scope.room_id,
-      temp: true
-    }
-
-    MessageService.sendMessage $scope.room_id, $scope.new_message, ->
-      $scope.new_message = ''
-      $scope.sending = false
 
   #============================================================================
   # Loads old messages - called by infinite scroller

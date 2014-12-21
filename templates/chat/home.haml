@@ -3,58 +3,53 @@
 
 - block content
 
-  .{ role:"tabpanel", ng-controller:"ChatController", ng-init:'init({{ request.user.id }}, "{{ request.user.full_name }}")'}
-    %ul#room-tabs.nav.nav-tabs{role:"tablist"}
+  .{ role:"tabpanel", ng-controller:"ChatController", ng-init:'init({{ request.user.id }}, "{{ request.user.full_name }}", {{ rooms.0.id }})' }
+    %ul#room-tabs.nav.nav-tabs{ role:"tablist" }
       - for room in rooms
-        %li{role:"presentation"}
-          %a{role:"tab", href:"#room_{{ room.id }}", aria-controls:"room_{{ room.id }}", data-toggle:"tab"}
+        %li{ role:"presentation", ng-class:"{ active: active_room_id == {{ room.id }} }" }
+          %a{ role:"tab", href:"#", ng-click:"showRoom({{ room.id }})" }
             {{ room.name }}
 
-    .tab-content
-      - for room in rooms
-        .tab-pane{role:"tabpanel", id:"room_{{ room.id }}", data-room-id:"{{ room.id }}", ng-controller:"RoomController", ng-init:"init({{ room.id }})"}
-          .{style:"text-align: center; padding: 1em"}
-            %form.room-sendform
-              %input{type:"hidden", name:"room", value:"{{ room.id }}"}
-              .input-group
-                %input.form-control{type:"text", name:"text", autocomplete:"off", ng-model:"new_message"}
-                %span.input-group-btn
-                  %button.btn.btn-default{type:"button", ng-click:"sendNewMessage()", ng-disabled:"sending"}
-                    -trans "Send"
+    .room-sendform
+      .input-group
+        %input.form-control{ type:"text", autocomplete:"off", ng-model:"new_message", ng-disabled:"sending" }
+        %span.input-group-btn
+          %button.btn.btn-default{type:"button", ng-click:"sendMessage()", ng-disabled:"sending"}
+            -trans "Send"
 
-          %table.room-messages{ width:"100%" }
-            %tr.message{ ng-repeat:"message in messages", infinite-scroll:"loadOldMessages()", infinite-scroll-disabled:"loading_old || !has_older" }
-              %td.message-sender
-                %a{ ng-if:"message.contact_id", href:"/contact/read/[[ message.contact_id ]]" }
-                  [[ message.sender_name ]]
-                %span{ ng-if:"message.user_id" }
-                  [[ message.sender_name ]]
-              %td.message-text
-                .message-time.pull-away
-                  [[ message.time | date:'short' ]]
-                [[ message.text ]]
-              %td.message-time
+    - for room in rooms
+      .tab-pane{ role:"tabpanel", ng-controller:"RoomController", ng-init:"init({{ room.id }})", ng-show:"active_room_id == room_id" }
+        %table.room-messages{ width:"100%" }
+          %tr.message{ ng-repeat:"message in messages", infinite-scroll:"loadOldMessages()", infinite-scroll-disabled:"loading_old || !has_older" }
+            %td.message-sender
+              %a{ ng-if:"message.contact_id", href:"/contact/read/[[ message.contact_id ]]" }
+                [[ message.sender_name ]]
+              %span{ ng-if:"message.user_id" }
+                [[ message.sender_name ]]
+            %td.message-text
+              .message-time.pull-away
+                [[ message.time | date:'short' ]]
+              [[ message.text ]]
+            %td.message-time
 
-          .room-no-messages{ ng-hide:"messages.length > 0" }
-            -trans "No messages"
+        .room-no-messages{ ng-hide:"messages.length > 0" }
+          -trans "No messages"
 
-          .room-loading{ ng-if:"loading_old" }
-            %img{ src:"{{ STATIC_URL }}/img/loading.gif" }
+        .room-loading{ ng-if:"loading_old" }
+          %img{ src:"{{ STATIC_URL }}/img/loading.gif" }
 
 - block extra-script
   :javascript
     $(function () {
-      $('#room-tabs a').click(function (e) {
-        e.preventDefault();
-        $(this).tab('show');
-      });
-
-      $('#room-tabs a:first').tab('show');
     });
 
 -block extra-style
   {{ block.super }}
   :css
+    .room-sendform {
+      text-align: center;
+      padding: 1em;
+    }
     .room-loading {
       text-align: center;
     }

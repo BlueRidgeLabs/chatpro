@@ -76,10 +76,14 @@ services.factory 'MessageService', ['$rootScope', '$http', '$timeout', ($rootSco
     #=====================================================================
     # Sends a message to the given room
     #=====================================================================
-    sendMessage: (room, text, callback) ->
+    sendMessage: (room_id, text, user_id, user_name, callback) ->
+      # notify room to add as temp message immediately
+      temp_msg = { user_id: user_id, contact_id: null, sender_name: user_name, text: text, room_id: room_id, temp: true }
+      $rootScope.$broadcast 'new_messages', room_id, [temp_msg]
+
       data = new FormData();
       data.append('text', text)
-      data.append('room', room)
+      data.append('room', room_id)
       $http.post '/message/send/?', data, {
               transformRequest: angular.identity,
               headers: {'Content-Type': undefined}
