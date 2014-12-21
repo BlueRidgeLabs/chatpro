@@ -167,11 +167,34 @@
     {% if lang_direction == 'rtl' %}
     <style type="text/css">
       :css
-        .pull-left {
-          float:right !important;
+        /* Bootstrap tweaks for RTL */
+        /* TODO this isn't working for send message text box */
+        .input-group .form-control:first-child {
+          border-radius: 0 4px 4px 0;
         }
-        .pull-right {
-          float:left !important;
+        .input-group-btn:last-child > .btn  {
+          border-radius: 4px 0 0 4px;
+        }
+        .input-group-btn > .btn + .btn {
+          margin-right: -1px;
+        }
+        .input-group-btn:first-child > .btn,
+        .input-group-btn:first-child > .btn-group {
+          margin-left: -1px;
+        }
+        .input-group-btn:last-child > .btn,
+        .input-group-btn:last-child > .btn-group {
+          margin-right: -1px;
+        }
+
+        /* Smartmin tweaks for RTL */
+        .pagination-text {
+          text-align: left;
+        }
+
+        /* ChatPro tweaks for RTL */
+        .pull-away {
+          float: left;
         }
     </style>
     {% endif %}

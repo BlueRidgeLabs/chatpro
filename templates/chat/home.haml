@@ -30,9 +30,10 @@
                 %span{ ng-if:"message.user_id" }
                   [[ message.sender_name ]]
               %td.message-text
-                .message-time.pull-right
+                .message-time.pull-away
                   [[ message.time | date:'short' ]]
                 [[ message.text ]]
+              %td.message-time
 
           .room-no-messages{ ng-hide:"messages.length > 0" }
             -trans "No messages"
