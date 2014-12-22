@@ -288,11 +288,9 @@ class HomeView(OrgPermsMixin, SmartTemplateView):
 
         if 'initial_room' in self.request.REQUEST:
             initial_room = Room.objects.get(self.request.REQUEST['initial_room'])
-        elif rooms:
-            initial_room = rooms[0]
         else:
-            initial_room = None
+            initial_room = rooms.first()
 
         context['rooms'] = rooms
-        context['inital_room'] = initial_room
+        context['initial_room'] = initial_room
         return context
