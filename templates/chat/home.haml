@@ -4,13 +4,15 @@
 - block content
 
   .{ role:"tabpanel", ng-controller:"ChatController", ng-init:'init({{ request.user.id }}, "{{ request.user.full_name }}", {{ rooms.0.id }})' }
-    %ul#room-tabs.nav.nav-tabs{ role:"tablist" }
+    %ul.nav.nav-tabs{ role:"tablist" }
       - for room in rooms
-        %li{ role:"presentation", ng-class:"{ active: active_room_id == {{ room.id }} }" }
-          %a{ role:"tab", href:"#", ng-click:"showRoom({{ room.id }})" }
+        %li{ role:"presentation", ng-controller:"RoomTabController", ng-init:"init({{ room.id }})", ng-class:"{ active: isActive() }" }
+          %a{ role:"tab", href:"#", ng-click:"activateRoom()" }
             {{ room.name }}
+            %span.messages-unread-count{ ng-if:"unread_count > 0" }
+              [[ unread_count | unread ]]
 
-    .room-sendform
+    .messages-sendform
       .input-group
         %input.form-control{ type:"text", autocomplete:"off", ng-model:"new_message", ng-disabled:"sending" }
         %span.input-group-btn
@@ -18,7 +20,7 @@
             -trans "Send"
 
     - for room in rooms
-      .tab-pane{ role:"tabpanel", ng-controller:"RoomController", ng-init:"init({{ room.id }})", ng-show:"active_room_id == room_id" }
+      .tab-pane{ role:"tabpanel", ng-controller:"RoomMessagesController", ng-init:"init({{ room.id }})", ng-show:"active_room_id == room_id" }
         %table.room-messages{ width:"100%" }
           %tr.message{ ng-repeat:"message in messages", infinite-scroll:"loadOldMessages()", infinite-scroll-disabled:"loading_old || !has_older" }
             %td.message-sender
@@ -32,10 +34,10 @@
               [[ message.text ]]
             %td.message-time
 
-        .room-no-messages{ ng-hide:"messages.length > 0" }
+        .messages-none{ ng-hide:"messages.length > 0" }
           -trans "No messages"
 
-        .room-loading{ ng-if:"loading_old" }
+        .messages-loading{ ng-if:"loading_old" }
           %img{ src:"{{ STATIC_URL }}/img/loading.gif" }
 
 - block extra-script
@@ -46,14 +48,23 @@
 -block extra-style
   {{ block.super }}
   :css
-    .room-sendform {
+    .messages-unread-count {
+      background-color: #499a40;
+      border-radius: 1px;
+      color: white;
+      display: inline-block;
+      font-size: x-small;
+      padding: 0 3px;
+
+    }
+    .messages-sendform {
       text-align: center;
       padding: 1em;
     }
-    .room-loading {
+    .messages-loading {
       text-align: center;
     }
-    .room-no-messages {
+    .messages-none {
       text-align: center;
       font-style: italic;
       padding: 1em;

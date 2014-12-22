@@ -1,5 +1,8 @@
 services = angular.module('chat.services', []);
 
+#=====================================================================
+# Date utilities
+#=====================================================================
 parse_iso8601 = (str) ->
   if str then new Date(Date.parse str) else null
 
@@ -98,4 +101,16 @@ services.factory 'MessageService', ['$rootScope', '$http', '$timeout', ($rootSco
       for msg in messages
         msg.time = parse_iso8601 msg.time
       messages
+
+    #=====================================================================
+    # Broadcasts event to signal that active room has changed
+    #=====================================================================
+    activateRoom: (room_id) ->
+      $rootScope.$broadcast 'room_activated', room_id
+
+    #=====================================================================
+    # Registers a callback for active room changes
+    #=====================================================================
+    onActivateRoom: (callback) ->
+      $rootScope.$on('room_activated', (event, room_id) -> callback(parseInt room_id))
 ]

@@ -1,4 +1,4 @@
-app = angular.module('chat', ['infinite-scroll', 'chat.services', 'chat.controllers']);
+app = angular.module('chat', ['infinite-scroll', 'chat.services', 'chat.controllers', 'chat.filters']);
 
 app.config [ '$httpProvider', ($httpProvider) ->
   $httpProvider.defaults.xsrfCookieName = 'csrftoken'
