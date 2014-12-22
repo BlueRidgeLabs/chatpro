@@ -5,6 +5,13 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+from enum import Enum
+
+
+class RoomPermission(Enum):
+    read = 1
+    send = 2
+    manage = 3
 
 
 class Room(models.Model):

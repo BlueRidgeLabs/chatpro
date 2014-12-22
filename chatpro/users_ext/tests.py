@@ -1,19 +1,30 @@
 from __future__ import unicode_literals
 
+from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
-from chatpro.chat.models import User
+from chatpro.chat.models import RoomPermission
 from chatpro.test import ChatProTest
 
 
 class UserTest(ChatProTest):
     def test_create(self):
         user = User.create(self.unicef, "Mo Chats", "momo", "mo@chat.com", "Qwerty123",
-                           rooms=[self.room1], manage_rooms=[self.room2, self.room3])
+                           rooms=[self.room1], manage_rooms=[self.room2])
         self.assertEqual(user.full_name, "Mo Chats")
         self.assertEqual(user.chat_name, "momo")
         self.assertEqual(user.email, "mo@chat.com")
         self.assertEqual(user.rooms.count(), 1)
-        self.assertEqual(user.manage_rooms.count(), 2)
+        self.assertEqual(user.manage_rooms.count(), 1)
+
+        self.assertTrue(user.has_room_perm(self.room1, RoomPermission.read))
+        self.assertTrue(user.has_room_perm(self.room1, RoomPermission.send))
+        self.assertFalse(user.has_room_perm(self.room1, RoomPermission.manage))
+        self.assertTrue(user.has_room_perm(self.room2, RoomPermission.read))
+        self.assertTrue(user.has_room_perm(self.room2, RoomPermission.send))
+        self.assertTrue(user.has_room_perm(self.room2, RoomPermission.manage))
+        self.assertFalse(user.has_room_perm(self.room3, RoomPermission.read))
+        self.assertFalse(user.has_room_perm(self.room3, RoomPermission.send))
+        self.assertFalse(user.has_room_perm(self.room3, RoomPermission.manage))
 
 
 class UserCRUDLTest(ChatProTest):

@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-from chatpro.chat.models import Room
+from chatpro.chat.models import Room, RoomPermission
 from dash.orgs.models import Org
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -44,12 +44,22 @@ def _user_is_administrator(user):
     return org_group and org_group.name == 'Administrators'
 
 
+def _user_has_room_perm(user, room, access):
+    if user.is_administrator():
+        return True
+    elif access == RoomPermission.manage:
+        return user.manage_rooms.filter(pk=room.pk).exists()
+    elif access == RoomPermission.send or access == RoomPermission.read:
+        return user.manage_rooms.filter(pk=room.pk).exists() or user.rooms.filter(pk=room.pk).exists()
+
+
 User.create = classmethod(_user_create)
 User.full_name = property(lambda self: self.first_name)
 User.chat_name = property(lambda self: self.last_name)
 User.get_full_name = _user_get_full_name
 User.get_all_rooms = _user_get_all_rooms
 User.is_administrator = _user_is_administrator
+User.has_room_perm = _user_has_room_perm
 
 
 ######################### Monkey patching for the Org class #########################

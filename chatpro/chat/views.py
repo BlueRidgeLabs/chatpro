@@ -2,12 +2,13 @@ from __future__ import unicode_literals
 
 from dash.orgs.views import OrgPermsMixin
 from django import forms
+from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect, JsonResponse
 from django.utils.translation import ugettext_lazy as _
 from smartmin.users.views import SmartCRUDL, SmartCreateView, SmartReadView, SmartUpdateView, SmartListView
 from smartmin.users.views import SmartFormView, SmartTemplateView
-from .models import Contact, Room, Message
+from .models import Contact, Room, RoomPermission, Message
 from .utils import parse_iso8601
 
 
@@ -214,6 +215,10 @@ class MessageCRUDL(SmartCRUDL):
             org = self.derive_org()
             room = form.cleaned_data['room']
             text = form.cleaned_data['text']
+
+            if not self.request.user.has_room_perm(room, RoomPermission.send):
+                raise PermissionDenied()
+
             msg = Message.create_for_user(org, self.request.user, text, room)
             return JsonResponse({'message_id': msg.pk})
 
@@ -228,7 +233,11 @@ class MessageCRUDL(SmartCRUDL):
 
             room_id = self.request.REQUEST.get('room', None)
             if room_id:
-                qs = qs.filter(room_id=room_id)
+                room = Room.objects.get(pk=room_id)
+                if not self.request.user.has_room_perm(room, RoomPermission.read):
+                    raise PermissionDenied()
+
+                qs = qs.filter(room_id=room.id)
             else:
                 qs = qs.filter(room__in=self.request.user.get_all_rooms())
 
