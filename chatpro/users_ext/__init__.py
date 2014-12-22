@@ -47,6 +47,7 @@ def _user_is_administrator(user):
 User.create = classmethod(_user_create)
 User.full_name = property(lambda self: self.first_name)
 User.chat_name = property(lambda self: self.last_name)
+User.get_full_name = _user_get_full_name
 User.get_all_rooms = _user_get_all_rooms
 User.is_administrator = _user_is_administrator
 

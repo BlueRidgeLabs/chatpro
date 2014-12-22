@@ -3,7 +3,7 @@
 
 - block content
 
-  .{ role:"tabpanel", ng-controller:"ChatController", ng-init:'init({{ request.user.id }}, "{{ request.user.full_name }}", {{ rooms.0.id }})' }
+  .{ role:"tabpanel", ng-controller:"ChatController", ng-init:'init({{ request.user.id }}, "{{ request.user.full_name }}", {{ initial_room.id }})' }
     %ul.nav.nav-tabs{ role:"tablist" }
       - for room in rooms
         %li{ role:"presentation", ng-controller:"RoomTabController", ng-init:"init({{ room.id }})", ng-class:"{ active: isActive() }" }
@@ -42,8 +42,6 @@
 
 - block extra-script
   :javascript
-    $(function () {
-    });
 
 -block extra-style
   {{ block.super }}
