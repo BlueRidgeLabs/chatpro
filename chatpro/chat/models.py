@@ -6,6 +6,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from enum import Enum
+from .tasks import sync_room_groups_task
 
 
 class RoomPermission(Enum):
@@ -41,6 +42,29 @@ class Room(models.Model):
     def get_all(cls, org):
         return Room.objects.filter(org=org, is_active=True).order_by('name')
 
+    @classmethod
+    def update_room_groups(cls, org, group_uuids):
+        """
+        Updates an org's chat rooms based on the selected groups UUIDs
+        """
+        # de-activate rooms not included
+        org.rooms.exclude(group_uuid__in=group_uuids).update(is_active=False)
+
+        # fetch group details
+        groups = org.get_temba_client().get_groups()
+        group_names = {group.uuid: group.name for group in groups}
+
+        for group_uuid in group_uuids:
+            existing = org.rooms.filter(group_uuid=group_uuid).first()
+            if existing:
+                existing.name = group_names[group_uuid]
+                existing.is_active = True
+                existing.save()
+            else:
+                cls.create(org, group_names[group_uuid], group_uuid)
+
+        sync_room_groups_task.delay(org.id, group_uuids)
+
     def __unicode__(self):
         return self.name
 
@@ -70,7 +94,7 @@ class Contact(models.Model):
         return cls.objects.create(org=org, name=name, urn=urn, room=room, uuid=uuid)
 
     def get_urn(self):
-        return self.urn.split(':', 1)
+        return tuple(self.urn.split(':', 1))
 
     def __unicode__(self):
         return self.name if self.name else self.urn_path

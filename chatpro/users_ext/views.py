@@ -62,8 +62,9 @@ class UserFormViewMixin(object):
 
     def derive_initial(self):
         initial = super(UserFormViewMixin, self).derive_initial()
-        initial['full_name'] = self.object.profile.full_name
-        initial['chat_name'] = self.object.profile.chat_name
+        if self.object:
+            initial['full_name'] = self.object.profile.full_name
+            initial['chat_name'] = self.object.profile.chat_name
         return initial
 
 

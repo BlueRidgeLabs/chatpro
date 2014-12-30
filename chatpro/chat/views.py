@@ -180,8 +180,7 @@ class RoomCRUDL(SmartCRUDL):
             return kwargs
 
         def form_valid(self, form):
-            org = self.request.user.get_org()
-            org.update_room_groups(form.cleaned_data['groups'])
+            Room.update_room_groups(self.request.user.get_org(), form.cleaned_data['groups'])
             return HttpResponseRedirect(self.get_success_url())
 
 

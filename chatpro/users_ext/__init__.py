@@ -6,7 +6,6 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from temba import TembaClient
 from .models import Profile
-from .tasks import sync_room_groups_task
 
 
 ######################### Monkey patching for the User class #########################
@@ -95,28 +94,4 @@ def _org_get_temba_client(org):
     return TembaClient(settings.SITE_API_HOST, org.api_token)
 
 
-def _org_update_room_groups(org, group_uuids):
-    """
-    Updates an orgs chat rooms based on the selected groups UUIDs
-    """
-    # de-activate rooms not included
-    org.rooms.exclude(group_uuid__in=group_uuids).update(is_active=False)
-
-    # fetch group details
-    groups = org.get_temba_client().get_groups()
-    group_names = {group.uuid: group.name for group in groups}
-
-    for group_uuid in group_uuids:
-        existing = org.rooms.filter(group_uuid=group_uuid).first()
-        if existing:
-            existing.name = group_names[group_uuid]
-            existing.is_active = True
-            existing.save()
-        else:
-            Room.create(org, group_names[group_uuid], group_uuid)
-
-    sync_room_groups_task.delay(org.id, group_uuids)
-
-
 Org.get_temba_client = _org_get_temba_client
-Org.update_room_groups = _org_update_room_groups
