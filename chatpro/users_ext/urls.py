@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
-from .views import UserCRUDL
+from .views import AdministratorCRUDL, UserCRUDL
 
-urlpatterns = UserCRUDL().as_urlpatterns()
+urlpatterns = AdministratorCRUDL().as_urlpatterns()
+urlpatterns += UserCRUDL().as_urlpatterns()

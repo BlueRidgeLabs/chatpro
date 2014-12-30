@@ -4,11 +4,11 @@ from django.conf import settings
 from django.conf.urls import patterns, include, url
 
 urlpatterns = patterns('',
-    url(r'^manage/', include('dash.orgs.urls')),
-    url(r'^users/', include('dash.users.urls')),
-    url(r'^api/v1', include('chatpro.api.urls')),
     url(r'', include('chatpro.chat.urls')),
     url(r'', include('chatpro.users_ext.urls')),
+    url(r'^manage/', include('dash.orgs.urls')),
+    url(r'^users/', include('dash.users.urls')),  # TODO replace forget password views and remove
+    url(r'^api/v1', include('chatpro.api.urls')),
     url(r'^i18n/', include('django.conf.urls.i18n')),
 )
 

@@ -111,7 +111,7 @@ class Message(models.Model):
 
     def as_json(self):
         sender = self.get_sender()
-        sender_name = sender.name if isinstance(sender, Contact) else sender.full_name
+        sender_name = sender.name if isinstance(sender, Contact) else sender.profile.full_name
 
         return dict(message_id=self.pk,
                     contact_id=self.contact_id,

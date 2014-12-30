@@ -15,57 +15,123 @@ class UserForm(forms.ModelForm):
                                    help_text=_("Whether this user is active, disable to remove access"))
 
     full_name = forms.CharField(max_length=255,
-                                label=_("Full name"), help_text=_("The full name of the user"))
+                                label=_("Full name"))
 
     chat_name = forms.CharField(max_length=255,
-                                label=_("Chat name"), help_text=_("The chat name of the user"))
+                                label=_("Chat name"), help_text=_("Name used for sending chat messages"))
 
     email = forms.CharField(max_length=256,
-                            label=_("Email"), help_text=_("The email address and login for the user"))
+                            label=_("Email"), help_text=_("Email address and login"))
 
     new_password = forms.CharField(widget=forms.PasswordInput, validators=[MinLengthValidator(8)], required=False,
                                    label=_("New password"),
-                                   help_text=_("The password used to log in (minimum of 8 characters, optional)"))
+                                   help_text=_("Password used to log in (minimum of 8 characters, optional)"))
 
     password = forms.CharField(widget=forms.PasswordInput, validators=[MinLengthValidator(8)],
-                               label=_("Password"), help_text=_("The password used to log in (minimum of 8 characters)"))
+                               label=_("Password"), help_text=_("Password used to log in (minimum of 8 characters)"))
 
     rooms = forms.ModelMultipleChoiceField(label=_("Rooms (chatting)"), queryset=Room.objects.filter(pk=-1),
                                            required=False,
-                                           help_text=_("The chat rooms which this user can chat in."))
+                                           help_text=_("Chat rooms which this user can chat in"))
 
     manage_rooms = forms.ModelMultipleChoiceField(label=_("Rooms (manage)"), queryset=Room.objects.filter(pk=-1),
                                                   required=False,
-                                                  help_text=_("The chat rooms which this user can manage."))
+                                                  help_text=_("Chat rooms which this user can manage"))
 
     def __init__(self, *args, **kwargs):
         org = kwargs['org']
         del kwargs['org']
         super(UserForm, self).__init__(*args, **kwargs)
 
-        org_rooms = Room.objects.filter(org=org, is_active=True).order_by('name')
-        self.fields['rooms'].queryset = org_rooms
-        self.fields['manage_rooms'].queryset = org_rooms
+        if org:
+            org_rooms = Room.objects.filter(org=org, is_active=True).order_by('name')
+            self.fields['rooms'].queryset = org_rooms
+            self.fields['manage_rooms'].queryset = org_rooms
 
     class Meta:
         model = User
 
 
-class UserCRUDL(SmartCRUDL):
+class UserFormViewMixin(object):
+    form_class = UserForm
+
+    def get_form_kwargs(self):
+        kwargs = super(UserFormViewMixin, self).get_form_kwargs()
+        kwargs['org'] = self.request.user.get_org()
+        return kwargs
+
+    def derive_initial(self):
+        initial = super(UserFormViewMixin, self).derive_initial()
+        initial['full_name'] = self.object.profile.full_name
+        initial['chat_name'] = self.object.profile.chat_name
+        return initial
+
+
+class AdministratorCRUDL(SmartCRUDL):
     model = User
+    path = 'administrator'
+    model_name = 'administrator'
     actions = ('create', 'update', 'list')
 
-    class Create(OrgPermsMixin, SmartCreateView):
-        form_class = UserForm
+    class Create(OrgPermsMixin, UserFormViewMixin, SmartCreateView):
+        fields = ('full_name', 'chat_name', 'email', 'password')
+        success_message = _("New administrator created")
+        success_url = '@users_ext.administrator_list'
+        title = _("Create Administrator")
+
+        def save(self, obj):
+            org = self.request.user.get_org()
+            full_name = self.form.cleaned_data['full_name']
+            chat_name = self.form.cleaned_data['chat_name']
+            password = self.form.cleaned_data['password']
+            self.object = User.create_administrator(org, full_name, chat_name, obj.email, password)
+
+    class Update(OrgPermsMixin, UserFormViewMixin, SmartUpdateView):
+        fields = ('full_name', 'chat_name', 'email', 'new_password', 'is_active')
+        success_url = '@users_ext.administrator_list'
+        success_message = _("Administrator updated")
+        title = _("Edit Administrator")
+
+        def pre_save(self, obj):
+            obj = super(AdministratorCRUDL.Update, self).pre_save(obj)
+            obj.username = obj.email
+            new_password = self.form.cleaned_data.get('new_password', "")
+            if new_password:
+                obj.set_password(new_password)
+
+            obj.profile.full_name = self.form.cleaned_data['full_name']
+            obj.profile.chat_name = self.form.cleaned_data['chat_name']
+            obj.profile.save()
+
+            return obj
+
+    class List(OrgPermsMixin, SmartListView):
+        fields = ('full_name', 'chat_name', 'email')
+        title = _("Administrators")
+
+        def get_queryset(self, **kwargs):
+            qs = super(AdministratorCRUDL.List, self).get_queryset(**kwargs)
+            org = self.request.user.get_org()
+            if org:
+                qs = qs.filter(pk__in=org.administrators.all())
+            return qs
+
+        def get_full_name(self, obj):
+            return obj.profile.full_name
+
+        def get_chat_name(self, obj):
+            return obj.profile.chat_name
+
+
+class UserCRUDL(SmartCRUDL):
+    model = User
+    actions = ('create', 'update', 'list', 'profile')
+
+    class Create(OrgPermsMixin, UserFormViewMixin, SmartCreateView):
         fields = ('full_name', 'chat_name', 'email', 'password', 'rooms', 'manage_rooms')
         success_url = '@users_ext.user_list'
         success_message = _("New user created")
         permission = 'chat.room_user_create'
-
-        def get_form_kwargs(self):
-            kwargs = super(UserCRUDL.Create, self).get_form_kwargs()
-            kwargs['org'] = self.request.user.get_org()
-            return kwargs
 
         def save(self, obj):
             full_name = self.form.cleaned_data['full_name']
@@ -74,40 +140,29 @@ class UserCRUDL(SmartCRUDL):
             self.object = User.create(self.request.user.get_org(), full_name, chat_name, obj.email, password,
                                       self.form.cleaned_data['rooms'], self.form.cleaned_data['manage_rooms'])
 
-    class Update(OrgPermsMixin, SmartUpdateView):
-        form_class = UserForm
+    class Update(OrgPermsMixin, UserFormViewMixin, SmartUpdateView):
         fields = ('full_name', 'chat_name', 'email', 'new_password', 'rooms', 'manage_rooms', 'is_active')
         success_url = '@users_ext.user_list'
         success_message = _("User updated")
         permission = 'chat.room_user_update'
 
-        def get_form_kwargs(self):
-            kwargs = super(UserCRUDL.Update, self).get_form_kwargs()
-            kwargs['org'] = self.request.user.get_org()
-            return kwargs
-
         def derive_initial(self):
             initial = super(UserCRUDL.Update, self).derive_initial()
-            initial['full_name'] = self.object.full_name
-            initial['chat_name'] = self.object.chat_name
             initial['rooms'] = self.object.rooms.all()
             initial['manage_rooms'] = self.object.manage_rooms.all()
             return initial
 
-        def lookup_field_label(self, context, field, default=None):
-            if field == 'email':
-                return _('Email / Login')
-
-            return super(UserCRUDL.Update, self).lookup_field_label(context, field, default)
-
         def pre_save(self, obj):
             obj = super(UserCRUDL.Update, self).pre_save(obj)
-            obj.first_name = self.form.cleaned_data['full_name']
-            obj.last_name = self.form.cleaned_data['chat_name']
             obj.username = obj.email
             new_password = self.form.cleaned_data.get('new_password', "")
             if new_password:
                 obj.set_password(new_password)
+
+            obj.profile.full_name = self.form.cleaned_data['full_name']
+            obj.profile.chat_name = self.form.cleaned_data['chat_name']
+            obj.profile.save()
+
             return obj
 
     class List(OrgPermsMixin, SmartListView):
@@ -120,67 +175,33 @@ class UserCRUDL(SmartCRUDL):
             qs = qs.filter(pk__in=org.editors.all())
             return qs
 
+        def get_full_name(self, obj):
+            return obj.get_full_name()
+
+        def get_chat_name(self, obj):
+            return obj.profile.chat_name
+
         def get_rooms(self, obj):
             return ", ".join([unicode(room) for room in obj.get_all_rooms()])
 
-######################### Monkey patching for the Dash UserCRUDL class #########################
+    class Profile(OrgPermsMixin, UserFormViewMixin, SmartUpdateView):
+        fields = ('full_name', 'chat_name', 'email', 'new_password')
+        success_url = '@chat.home'
+        success_message = _("Profile updated")
+        title = _("Edit my profile")
 
-USER_FIELD_LABEL_OVERRIDES = {'first_name': _("Full name"),
-                              'last_name': _("Chat name")}
+        def has_permission(self, request, *args, **kwargs):
+            return self.request.user.is_authenticated() and self.request.user.pk == int(kwargs['pk'])
 
-USER_FIELD_HELP_OVERRIDES = {'first_name': _("The full name of the user"),
-                              'last_name': _("The chat name of the user")}
+        def pre_save(self, obj):
+            obj = super(UserCRUDL.Profile, self).pre_save(obj)
+            obj.username = obj.email
+            new_password = self.form.cleaned_data.get('new_password', "")
+            if new_password:
+                obj.set_password(new_password)
 
+            obj.profile.full_name = self.form.cleaned_data['full_name']
+            obj.profile.chat_name = self.form.cleaned_data['chat_name']
+            obj.profile.save()
 
-def _usercrudl_create_lookup_field_label(self, context, field, default):
-    if field in USER_FIELD_LABEL_OVERRIDES:
-        return USER_FIELD_LABEL_OVERRIDES[field]
-
-    return super(DashUserCRUDL.Create, self).lookup_field_label(context, field, default)
-
-
-def _usercrudl_create_lookup_field_help(self, field):
-    if field in USER_FIELD_HELP_OVERRIDES:
-        return USER_FIELD_HELP_OVERRIDES[field]
-
-    return super(DashUserCRUDL.Create, self).lookup_field_help(field)
-
-
-def _usercrudl_update_lookup_field_label(self, context, field, default):
-    if field in USER_FIELD_LABEL_OVERRIDES:
-        return USER_FIELD_LABEL_OVERRIDES[field]
-
-    return super(DashUserCRUDL.Update, self).lookup_field_label(context, field, default)
-
-
-def _usercrudl_update_lookup_field_help(self, field):
-    if field in USER_FIELD_HELP_OVERRIDES:
-        return USER_FIELD_HELP_OVERRIDES[field]
-
-    return super(DashUserCRUDL.Update, self).lookup_field_help(field)
-
-
-def _usercrudl_profile_lookup_field_label(self, context, field, default):
-    if field in USER_FIELD_LABEL_OVERRIDES:
-        return USER_FIELD_LABEL_OVERRIDES[field]
-
-    return super(DashUserCRUDL.Profile, self).lookup_field_label(context, field, default)
-
-
-def _usercrudl_profile_lookup_field_help(self, field):
-    if field == 'first_name':
-        return _("Your full name")
-    elif field == 'last_name':
-        return _("Your chat name which appears with messages you send")
-
-    return super(DashUserCRUDL.Profile, self).lookup_field_help(field)
-
-
-DashUserCRUDL.Create.derive_title = lambda crudl: _("Create Administrator")
-DashUserCRUDL.Create.lookup_field_label = _usercrudl_create_lookup_field_label
-DashUserCRUDL.Create.lookup_field_help = _usercrudl_create_lookup_field_help
-DashUserCRUDL.Update.derive_title = lambda crudl: _("Edit Administrator")
-DashUserCRUDL.Update.lookup_field_label = _usercrudl_update_lookup_field_label
-DashUserCRUDL.Update.lookup_field_help = _usercrudl_update_lookup_field_help
-DashUserCRUDL.Profile.lookup_field_label = _usercrudl_profile_lookup_field_label
-DashUserCRUDL.Profile.lookup_field_help = _usercrudl_profile_lookup_field_help
+            return obj

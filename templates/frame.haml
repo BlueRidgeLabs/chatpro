@@ -68,8 +68,8 @@
                         %a{href:"{% url 'orgs.org_list' %}"}
                           - trans "Orgs"
                       %li
-                        %a{ href:"{% url 'users.user_list' %}"}
-                          - trans "Users"
+                        %a{ href:"{% url 'users_ext.administrator_list' %}"}
+                          - trans "Administrators"
 
                 -if request.user.is_administrator
                   %li.dropdown

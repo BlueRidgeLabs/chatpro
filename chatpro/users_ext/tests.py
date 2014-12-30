@@ -10,9 +10,14 @@ class UserTest(ChatProTest):
     def test_create(self):
         user = User.create(self.unicef, "Mo Chats", "momo", "mo@chat.com", "Qwerty123",
                            rooms=[self.room1], manage_rooms=[self.room2])
-        self.assertEqual(user.full_name, "Mo Chats")
-        self.assertEqual(user.chat_name, "momo")
+        self.assertEqual(user.first_name, "")
+        self.assertEqual(user.last_name, "")
         self.assertEqual(user.email, "mo@chat.com")
+
+        self.assertEqual(user.get_full_name(), "Mo Chats")
+        self.assertEqual(user.profile.full_name, "Mo Chats")
+        self.assertEqual(user.profile.chat_name, "momo")
+
         self.assertEqual(user.rooms.count(), 1)
         self.assertEqual(user.manage_rooms.count(), 1)
 
@@ -25,6 +30,24 @@ class UserTest(ChatProTest):
         self.assertFalse(user.has_room_perm(self.room3, RoomPermission.read))
         self.assertFalse(user.has_room_perm(self.room3, RoomPermission.send))
         self.assertFalse(user.has_room_perm(self.room3, RoomPermission.manage))
+
+
+class AdministratorCRUDLTest(ChatProTest):
+    def test_list(self):
+        list_url = reverse('users_ext.administrator_list')
+
+        # log in as a non-superuser
+        self.login(self.admin)
+
+        response = self.url_get('unicef', list_url)
+        self.assertRedirects(response, 'http://unicef.localhost/users/login/?next=/administrator/')
+
+        # log in as a superuser
+        self.login(self.superuser)
+
+        response = self.url_get('unicef', list_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['object_list']), 1)
 
 
 class UserCRUDLTest(ChatProTest):
@@ -71,5 +94,13 @@ class UserCRUDLTest(ChatProTest):
         response = self.url_post('unicef', create_url, data)
 
         user = User.objects.get(email="mo@chat.com")
-        self.assertEqual(user.full_name, "Mo Chats")
-        self.assertEqual(user.chat_name, "momo")
+        self.assertEqual(user.profile.full_name, "Mo Chats")
+        self.assertEqual(user.profile.chat_name, "momo")
+
+    def test_update(self):
+        update_url = reverse('users_ext.user_update', args=[self.admin.pk])
+
+        # log in as an org administrator
+        self.login(self.admin)
+
+        # TODO

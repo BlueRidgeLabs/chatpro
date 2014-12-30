@@ -6,4 +6,4 @@ from .views import ContactCRUDL, MessageCRUDL, RoomCRUDL, HomeView
 urlpatterns = ContactCRUDL().as_urlpatterns()
 urlpatterns += MessageCRUDL().as_urlpatterns()
 urlpatterns += RoomCRUDL().as_urlpatterns()
-urlpatterns += patterns('', url(r'^$', HomeView.as_view()))
+urlpatterns += patterns('', url(r'^$', HomeView.as_view(), name='chat.home'))
