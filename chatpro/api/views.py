@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 from chatpro.chat.models import Contact, Message, Room
-from django.http import HttpResponseBadRequest, HttpResponseNotAllowed, JsonResponse
+from django.http import HttpResponseBadRequest, HttpResponseForbidden, HttpResponseNotAllowed, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 
@@ -18,6 +18,10 @@ class TembaHandler(View):
         entity = kwargs['entity'].lower()
         action = kwargs['action'].lower()
         org = request.org
+
+        token = request.REQUEST.get('token', None)
+        if org.get_secret_token() != token:
+            return HttpResponseForbidden("Secret token not provided or incorrect")
 
         if entity == 'message' and action == 'new':
             contact_uuid = request.REQUEST.get('contact', None)
