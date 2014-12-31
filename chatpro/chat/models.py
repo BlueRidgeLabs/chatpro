@@ -77,8 +77,11 @@ class Contact(models.Model):
 
     org = models.ForeignKey(Org, verbose_name=_("Organization"), related_name='contacts')
 
-    name = models.CharField(verbose_name=_("Name"), max_length=128, null=True,
-                            help_text=_("The name of this contact"))
+    full_name = models.CharField(verbose_name=_("Full name"), max_length=128, null=True,
+                                 help_text=_("The full name of this contact"))
+
+    chat_name = models.CharField(verbose_name=_("Chat name"), max_length=16, null=True,
+                                 help_text=_("The chat name of this contact"))
 
     room = models.ForeignKey(Room, verbose_name=_("Room"), related_name='contacts',
                              help_text=_("The room which this contact belongs in"))
@@ -90,14 +93,26 @@ class Contact(models.Model):
     is_active = models.BooleanField(default=True, help_text="Whether this room is active")
 
     @classmethod
-    def create(cls, org, name, urn, room, uuid):
-        return cls.objects.create(org=org, name=name, urn=urn, room=room, uuid=uuid)
+    def create(cls, org, full_name, chat_name, urn, room, uuid):
+        return cls.objects.create(org=org, full_name=full_name, chat_name=chat_name, urn=urn, room=room, uuid=uuid)
+
+    @classmethod
+    def from_temba(cls, org, room, temba_contact):
+        full_name = temba_contact.name
+        chat_name = temba_contact.fields.get(org.get_chat_name_field(), None)
+        urn = temba_contact.urns[0]
+        return Contact.create(org, full_name, chat_name, urn, room, temba_contact.uuid)
 
     def get_urn(self):
         return tuple(self.urn.split(':', 1))
 
     def __unicode__(self):
-        return self.name if self.name else self.urn
+        if self.full_name:
+            return self.full_name
+        elif self.chat_name:
+            return self.chat_name
+        else:
+            return self.get_urn()[1]
 
 
 class Message(models.Model):
@@ -135,7 +150,7 @@ class Message(models.Model):
 
     def as_json(self):
         sender = self.get_sender()
-        sender_name = sender.name if isinstance(sender, Contact) else sender.profile.full_name
+        sender_name = sender.full_name if isinstance(sender, Contact) else sender.profile.full_name
 
         return dict(message_id=self.pk,
                     contact_id=self.contact_id,

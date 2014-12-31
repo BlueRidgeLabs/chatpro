@@ -24,19 +24,21 @@ class TembaHandlerTest(ChatProTest):
 
         # make a valid request for new contact in an existing group
         mock_get_contact.return_value = TembaContact.deserialize(
-            dict(uuid='001-007', name="Jan", urns=['tel:123'], group_uuids=['000-001'], fields={}, language='eng', modified_on='2014-10-01T06:54:09.817Z')
+            dict(uuid='001-007', name="Jan", urns=['tel:123'], group_uuids=['000-001'], fields=dict(chat_name="jan"),
+                 language='eng', modified_on='2014-10-01T06:54:09.817Z')
         )
         response = self.url_post('unicef', '%s?%s' % (url, 'contact=001-007&group=000-001'))
         self.assertEqual(response.status_code, 200)
 
         # check new contact created
         contact = Contact.objects.get(uuid='001-007')
-        self.assertEqual(contact.name, "Jan")
+        self.assertEqual(contact.full_name, "Jan")
         self.assertEqual(contact.urn, 'tel:123')
 
         # try with new room/group that must be fetched
         mock_get_contact.return_value = TembaContact.deserialize(
-            dict(uuid='001-008', name="Ken", urns=['tel:234'], group_uuids=['000-001'], fields={}, language='eng', modified_on='2014-10-01T06:54:09.817Z')
+            dict(uuid='001-008', name="Ken", urns=['tel:234'], group_uuids=['000-001'], fields=dict(chat_name="ken"),
+                 language='eng', modified_on='2014-10-01T06:54:09.817Z')
         )
         mock_get_group.return_value = TembaGroup.deserialize(
             dict(uuid='001-007', name="New group", size=2)
@@ -47,7 +49,7 @@ class TembaHandlerTest(ChatProTest):
 
         # check new contact and room created
         contact = Contact.objects.get(uuid='001-008')
-        self.assertEqual(contact.name, "Ken")
+        self.assertEqual(contact.full_name, "Ken")
         self.assertEqual(contact.urn, 'tel:234')
         self.assertEqual(contact.room, new_room)
 
@@ -105,11 +107,12 @@ class TembaHandlerTest(ChatProTest):
             dict(uuid='001-008', name="Newest group", size=2)
         )
         mock_get_contact.return_value = TembaContact.deserialize(
-            dict(uuid='001-007', name="Ken", urns=['tel:234'], group_uuids=['001-108'], fields={}, language='eng', modified_on='2014-10-01T06:54:09.817Z')
+            dict(uuid='001-007', name="Ken", urns=['tel:234'], group_uuids=['001-108'], fields=dict(chat_name="ken"),
+                 language='eng', modified_on='2014-10-01T06:54:09.817Z')
         )
         response = self.url_post('unicef', '%s?%s' % (url, 'contact=001-007&text=Goodbye&group=001-008'))
         self.assertEqual(response.status_code, 200)
-        new_contact = Contact.objects.get(uuid='001-007', name="Ken")
+        new_contact = Contact.objects.get(uuid='001-007', full_name="Ken")
         new_room = Room.objects.get(group_uuid='001-008', name="Newest group")
 
         # check new message created

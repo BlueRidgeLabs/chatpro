@@ -9,8 +9,11 @@ from dash.orgs.models import Org
 def sync_room_groups_task(org_id, group_uuids):
     from chatpro.chat.models import Contact, Room
 
+    print 'Starting room group sync task: org_id=%d, group_uuids=[%s]' % (org_id, ",".join(group_uuids))
+
     org = Org.objects.get(pk=org_id)
     client = org.get_temba_client()
+    chat_name_field = org.get_chat_name_field()
 
     incoming_contacts = client.get_contacts(group_uuids=group_uuids)
 
@@ -31,18 +34,18 @@ def sync_room_groups_task(org_id, group_uuids):
     for room in Room.objects.filter(group_uuid__in=group_uuids):
         incoming_contacts = incoming_by_group[room.group_uuid]
 
-        for contact in incoming_contacts:
-            uuid = contact.uuid
-            if uuid in existing_by_uuid:
-                existing = existing_by_uuid[uuid]
+        for temba_contact in incoming_contacts:
+            if temba_contact.uuid in existing_by_uuid:
+                existing = existing_by_uuid[temba_contact.uuid]
                 existing.is_active = True
-                existing.name = contact.name
-                existing.urn = contact.urns[0]
+                existing.full_name = temba_contact.name
+                existing.chat_name = temba_contact.fields.get(chat_name_field, None)
+                existing.urn = temba_contact.urns[0]
                 existing.save()
-                updated_uuids.add(uuid)
+                updated_uuids.add(temba_contact.uuid)
             else:
-                contact = Contact.create(org, contact.name, contact.urns[0], room, contact.uuid)
-                created_uuids.append(contact.uuid)
+                Contact.from_temba(org, room, temba_contact)
+                created_uuids.append(temba_contact.uuid)
 
     for existing_uuid in existing_by_uuid.keys():
         if existing_uuid not in updated_uuids:

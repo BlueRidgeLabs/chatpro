@@ -46,7 +46,8 @@ class TembaHandler(View):
 
         return JsonResponse({})
 
-    def _get_or_create_room(self, org, group_uuid):
+    @staticmethod
+    def _get_or_create_room(org, group_uuid):
         """
         Gets a room by group UUID, or creates it by fetching from Temba instance
         """
@@ -61,7 +62,8 @@ class TembaHandler(View):
 
         return room
 
-    def _get_or_create_contact(self, org, room, contact_uuid):
+    @staticmethod
+    def _get_or_create_contact(org, room, contact_uuid):
         """
         Gets a contact by UUID, or creates it by fetching from Temba instance
         """
@@ -73,6 +75,6 @@ class TembaHandler(View):
                 contact.save(update_fields=('is_active', 'room'))
         else:
             temba_contact = org.get_temba_client().get_contact(contact_uuid)
-            contact = Contact.create(org, temba_contact.name, temba_contact.urns[0], room, temba_contact.uuid)
+            contact = Contact.from_temba(org, room, temba_contact)
 
         return contact

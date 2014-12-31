@@ -34,15 +34,21 @@ class ChatProTest(TestCase):
         self.user3 = self.create_user(self.nyaruka, "Eric", "newcomer", "eric@nyaruka.com",
                                       rooms=[], manage_rooms=[self.room4])
 
-        self.contact1 = self.create_contact(self.unicef, "Ann", "tel:1234", self.room1, '000-001')
-        self.contact2 = self.create_contact(self.unicef, "Bob", "tel:2345", self.room1, '000-002')
-        self.contact3 = self.create_contact(self.unicef, "Cat", "tel:3456", self.room2, '000-003')
-        self.contact4 = self.create_contact(self.unicef, "Dan", "twitter:danny", self.room2, '000-004')
-        self.contact5 = self.create_contact(self.unicef, "Eve", "tel:5567", self.room3, '000-005')
+        self.contact1 = self.create_contact(self.unicef, "Ann", "ann", "tel:1234", self.room1, '000-001')
+        self.contact2 = self.create_contact(self.unicef, "Bob", "bob", "tel:2345", self.room1, '000-002')
+        self.contact3 = self.create_contact(self.unicef, "Cat", "cat", "tel:3456", self.room2, '000-003')
+        self.contact4 = self.create_contact(self.unicef, "Dan", "dan", "twitter:danny", self.room2, '000-004')
+        self.contact5 = self.create_contact(self.unicef, "Eve", "eve", "tel:5567", self.room3, '000-005')
 
     def create_org(self, name, timezone, subdomain):
-        return Org.objects.create(name=name, timezone=timezone, subdomain=subdomain, api_token=unicode(uuid4()),
-                                  created_by=self.superuser, modified_by=self.superuser)
+        org = Org.objects.create(name=name, timezone=timezone, subdomain=subdomain, api_token=unicode(uuid4()),
+                                 created_by=self.superuser, modified_by=self.superuser)
+        org.set_config('secret_token', '1234567890')
+        org.set_config('chat_name_field', 'chat_name')
+        return org
+
+    def create_room(self, org, name, group_uuid):
+        return Room.create(org, name, group_uuid)
 
     def create_administrator(self, org, full_name, chat_name, email):
         return User.create_administrator(org, full_name, chat_name, email, password=email)
@@ -50,11 +56,8 @@ class ChatProTest(TestCase):
     def create_user(self, org, full_name, chat_name, email, rooms, manage_rooms):
         return User.create(org, full_name, chat_name, email, password=email, rooms=rooms, manage_rooms=manage_rooms)
 
-    def create_room(self, org, name, group_uuid):
-        return Room.create(org, name, group_uuid)
-
-    def create_contact(self, org, name, urn, room, uuid):
-        return Contact.create(org, name, urn, room, uuid)
+    def create_contact(self, org, full_name, chat_name, urn, room, uuid):
+        return Contact.create(org, full_name, chat_name, urn, room, uuid)
 
     def login(self, user):
         result = self.client.login(username=user.username, password=user.username)

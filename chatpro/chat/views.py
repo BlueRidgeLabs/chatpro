@@ -13,7 +13,9 @@ from .utils import parse_iso8601
 
 
 class ContactForm(forms.ModelForm):
-    name = forms.CharField(max_length=255, label=_("Name"), help_text=_("The full name of the contact."))
+    full_name = forms.CharField(max_length=255, label=_("Full name"), help_text=_("The full name of the contact."))
+
+    chat_name = forms.CharField(max_length=16, label=_("Chat name"), help_text=_("The chat name of the contact."))
 
     phone = forms.CharField(max_length=255, label=_("Phone"), help_text=_("The phone number of the contact."))
 
@@ -44,7 +46,7 @@ class ContactCRUDL(SmartCRUDL):
 
     class Create(OrgPermsMixin, SmartCreateView):
         form_class = ContactForm
-        fields = ('room', 'name', 'phone')
+        fields = ('room', 'full_name', 'chat_name', 'phone')
 
         def get_form_kwargs(self):
             kwargs = super(ContactCRUDL.Create, self).get_form_kwargs()
@@ -58,7 +60,7 @@ class ContactCRUDL(SmartCRUDL):
             return obj
 
     class Read(OrgPermsMixin, SmartReadView):
-        fields = ('room', 'name', 'phone', 'comment', 'last_seen')
+        fields = ('room', 'full_name', 'chat_name', 'phone', 'comment', 'last_seen')
 
         def get_last_seen(self, obj):
             last_msg = Message.objects.filter(contact_id=obj.pk).order_by('-time').first()
@@ -66,7 +68,7 @@ class ContactCRUDL(SmartCRUDL):
 
     class Update(OrgPermsMixin, SmartUpdateView):
         form_class = ContactForm
-        fields = ('name', 'room', 'phone', 'comment')
+        fields = ('full_name', 'chat_name', 'room', 'phone', 'comment')
 
         def get_form_kwargs(self):
             kwargs = super(ContactCRUDL.Update, self).get_form_kwargs()
@@ -84,14 +86,14 @@ class ContactCRUDL(SmartCRUDL):
             return obj
 
     class List(OrgPermsMixin, SmartListView):
-        fields = ('name', 'room', 'phone')
-        link_fields = ('name', 'room')
+        fields = ('full_name', 'chat_name', 'room', 'phone')
+        link_fields = ('full_name', 'room')
 
         def get_queryset(self, **kwargs):
             qs = super(ContactCRUDL.List, self).get_queryset(**kwargs)
 
             org = self.request.user.get_org()
-            qs = qs.filter(org=org, is_active=True).order_by('name')
+            qs = qs.filter(org=org, is_active=True).order_by('full_name')
 
             rooms = self.request.user.get_all_rooms()
             if rooms is not None:
@@ -108,8 +110,8 @@ class ContactCRUDL(SmartCRUDL):
             return obj.get_urn()[1]
 
     class Filter(OrgPermsMixin, SmartListView):
-        fields = ('name', 'phone')
-        default_order = ('name',)
+        fields = ('full_name', 'chat_name', 'phone')
+        default_order = ('full_name',)
 
         def derive_queryset(self, **kwargs):
             room = self.derive_room()
@@ -302,3 +304,10 @@ class HomeView(OrgPermsMixin, SmartTemplateView):
         context['rooms'] = rooms
         context['initial_room'] = initial_room
         return context
+
+
+######################### Monkey patching for the OrgCRUDL class #########################
+
+
+from dash.orgs.views import OrgCRUDL
+OrgCRUDL.Edit.success_url = '@chat.home'

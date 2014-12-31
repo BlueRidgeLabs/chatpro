@@ -166,8 +166,11 @@ if 'test' in sys.argv:
     CACHES['default'] = {'BACKEND': 'django.core.cache.backends.dummy.DummyCache',}
 
 
-ORG_CONFIG_FIELDS = [dict(name='chat_api_token',
-                          field=dict(help_text=_("The API token for the chat organization for this org"),
+ORG_CONFIG_FIELDS = [dict(name='secret_token',
+                          field=dict(help_text=_("Secret token to include in all webhook requests from RapidPro"),
+                          required=True)),
+                     dict(name='chat_name_field',
+                          field=dict(help_text=_("Contact field to use as the chat name"),
                           required=True))]
 
 INSTALLED_APPS = (
@@ -302,9 +305,6 @@ PERMISSIONS = {
 GROUP_PERMISSIONS = {
     "Administrators": (
         'orgs.org_edit',
-        'orgs.org_home',
-        'orgs.org_manage_accounts',
-        'orgs.org_profile',
 
         'chat.contact.*',
         'chat.message.*',

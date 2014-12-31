@@ -71,12 +71,17 @@
                         %a{ href:"{% url 'users_ext.administrator_list' %}"}
                           - trans "Administrators"
 
-                -if request.user.is_administrator
+                -if org_perms.orgs.org_edit or org_perms.chat.room_list or org_perms.chat.room_user_list
                   %li.dropdown
                     %a.dropdown-toggle{href:"#", data-toggle:"dropdown"}
                       - trans "Administration"
                       %b.caret
                     %ul.dropdown-menu
+                      - if org_perms.orgs.org_edit
+                        %li
+                          %a{ href:"{% url 'orgs.org_edit' %}" }
+                            - trans "Organization"
+
                       - if org_perms.chat.room_list
                         %li
                           %a{ href:"{% url 'chat.room_list' %}" }
