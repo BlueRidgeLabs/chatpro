@@ -48,20 +48,19 @@ class RoomTest(ChatProTest):
         self.assertEqual(len(Room.get_all(self.nyaruka)), 1)
 
     @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True, BROKER_BACKEND='memory')
-    @patch('temba.TembaClient')
-    def test_update_room_groups(self, MockTembaClient):
-        Org.get_temba_client = lambda org: MockTembaClient
-
-        MockTembaClient.get_groups.return_value = TembaGroup.deserialize_list([
-            dict(uuid='000-101', name='New group', size=2)
+    @patch('chatpro.users_ext.TembaClient.get_groups')
+    @patch('chatpro.users_ext.TembaClient.get_contacts')
+    def test_update_room_groups(self, mock_get_contacts, mock_get_groups):
+        mock_get_groups.return_value = TembaGroup.deserialize_list([
+            dict(uuid='000-007', name='New group', size=2)
         ])
-        MockTembaClient.get_contacts.return_value = TembaContact.deserialize_list([
-            dict(uuid='000-201', name="Jan", urns=['tel:123'], group_uuids=['000-101'], fields={}, language='eng', modified_on='2014-10-01T06:54:09.817Z'),
-            dict(uuid='000-202', name="Ken", urns=['tel:234'], group_uuids=['000-101'], fields={}, language='eng', modified_on='2014-10-01T06:54:09.817Z')
+        mock_get_contacts.return_value = TembaContact.deserialize_list([
+            dict(uuid='000-007', name="Jan", urns=['tel:123'], group_uuids=['000-007'], fields={}, language='eng', modified_on='2014-10-01T06:54:09.817Z'),
+            dict(uuid='000-008', name="Ken", urns=['tel:234'], group_uuids=['000-007'], fields={}, language='eng', modified_on='2014-10-01T06:54:09.817Z')
         ])
 
         # select one new group
-        Room.update_room_groups(self.unicef, ['000-001'])
+        Room.update_room_groups(self.unicef, ['000-007'])
         self.assertEqual(self.unicef.rooms.get(is_active=True).name, 'New group')
         self.assertEqual(self.unicef.rooms.filter(is_active=False).count(), 3)  # existing de-activated
 
@@ -75,7 +74,7 @@ class RoomTest(ChatProTest):
         Contact.objects.filter(name="Ken").update(is_active=False)
 
         # re-select new group
-        Room.update_room_groups(self.unicef, ['000-001'])
+        Room.update_room_groups(self.unicef, ['000-007'])
 
         # local changes should be overwritten
         self.assertEqual(self.unicef.rooms.get(is_active=True).name, 'New group')

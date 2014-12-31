@@ -14,10 +14,8 @@ class ChatProTest(TestCase):
     def setUp(self):
         self.superuser = User.objects.create_superuser(username="super", email="super@user.com", password="super")
 
-        self.unicef = Org.objects.create(name="UNICEF", timezone="Asia/Kabul", subdomain="unicef",
-                                         created_by=self.superuser, modified_by=self.superuser)
-        self.nyaruka = Org.objects.create(name="Nyaruka", timezone="Africa/Kigali", subdomain="nyaruka",
-                                          created_by=self.superuser, modified_by=self.superuser)
+        self.unicef = self.create_org("UNICEF", timezone="Asia/Kabul", subdomain="unicef")
+        self.nyaruka = self.create_org("Nyaruka", timezone="Africa/Kigali", subdomain="nyaruka")
 
         self.admin = self.create_administrator(self.unicef, "Richard", "admin", "admin@unicef.org")
         self.nic = self.create_administrator(self.nyaruka, "Nicholas", "nic", "nic@nyaruka.com")
@@ -42,22 +40,20 @@ class ChatProTest(TestCase):
         self.contact4 = self.create_contact(self.unicef, "Dan", "twitter:danny", self.room2, '000-004')
         self.contact5 = self.create_contact(self.unicef, "Eve", "tel:5567", self.room3, '000-005')
 
+    def create_org(self, name, timezone, subdomain):
+        return Org.objects.create(name=name, timezone=timezone, subdomain=subdomain, api_token=unicode(uuid4()),
+                                  created_by=self.superuser, modified_by=self.superuser)
+
     def create_administrator(self, org, full_name, chat_name, email):
         return User.create_administrator(org, full_name, chat_name, email, password=email)
 
     def create_user(self, org, full_name, chat_name, email, rooms, manage_rooms):
         return User.create(org, full_name, chat_name, email, password=email, rooms=rooms, manage_rooms=manage_rooms)
 
-    def create_room(self, org, name, group_uuid=None):
-        if not group_uuid:
-            group_uuid = unicode(uuid4())
-
+    def create_room(self, org, name, group_uuid):
         return Room.create(org, name, group_uuid)
 
-    def create_contact(self, org, name, urn, room, uuid=None):
-        if not uuid:
-            uuid = unicode(uuid4())
-
+    def create_contact(self, org, name, urn, room, uuid):
         return Contact.create(org, name, urn, room, uuid)
 
     def login(self, user):

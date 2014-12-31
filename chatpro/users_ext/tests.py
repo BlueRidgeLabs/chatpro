@@ -2,8 +2,17 @@ from __future__ import unicode_literals
 
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
+from django.test.utils import override_settings
 from chatpro.chat.models import RoomPermission
 from chatpro.test import ChatProTest
+
+
+class OrgTest(ChatProTest):
+    @override_settings(SITE_API_HOST='example.com')
+    def test_get_temba_client(self):
+        client = self.unicef.get_temba_client()
+        self.assertEqual(client.token, self.unicef.api_token)
+        self.assertEqual(client.root_url, 'https://example.com/api/v1')
 
 
 class UserTest(ChatProTest):

@@ -19,7 +19,7 @@ class Room(models.Model):
     """
     Corresponds to a RapidPro contact group
     """
-    group_uuid = models.CharField(max_length=36)
+    group_uuid = models.CharField(max_length=36, unique=True)
 
     org = models.ForeignKey(Org, verbose_name=_("Organization"), related_name='rooms')
 
@@ -73,7 +73,7 @@ class Contact(models.Model):
     """
     Corresponds to a RapidPro contact who is tied to a single room
     """
-    uuid = models.CharField(max_length=36)
+    uuid = models.CharField(max_length=36, unique=True)
 
     org = models.ForeignKey(Org, verbose_name=_("Organization"), related_name='contacts')
 
@@ -97,7 +97,7 @@ class Contact(models.Model):
         return tuple(self.urn.split(':', 1))
 
     def __unicode__(self):
-        return self.name if self.name else self.urn_path
+        return self.name if self.name else self.urn
 
 
 class Message(models.Model):

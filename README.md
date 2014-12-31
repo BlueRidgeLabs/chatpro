@@ -1,12 +1,10 @@
-ChatPro
-=======
+#ChatPro
 
 Dashboard for managing "Group Chat" applications hosted in [RapidPro](http://rapidpro.io)
 
 Built for UNICEF by [Nyaruka](http://nyaruka.com)
 
-Setting Up a Development Environment
-------------------------------------
+##Development Setup
 
 Install dependencies
 
@@ -47,8 +45,28 @@ To run background tasks, you'll also need to start celery and have a local redis
 % celery -A chatpro worker -l info
 ```
 
-Integrating with RapidPro 
--------------------------
+###Running Tests
+
+```
+% coverage run --source="." manage.py test --verbosity=2 --noinput
+% coverage report -m --include="chatpro/*" --omit="*/migrations/*,*/tests.py"
+```
+
+##RapidPro Integration 
+
+To notify ChatPro when a new chat contact has been registered, add the following webhook to your registration flow:
+
+ * URL: _/api/v1/contact/new/_
+ * Method: _POST_
+ * Query parameters:
+     * contact: the UUID of the contact that received the message
+     * group: the UUID of the contact group that contact has joined
+ 
+For example:
+
+```
+http://chat.rapidpro.io/api/v1/contact/new/?contact=@contact.uuid&group=bef530c4-5d84-4c1e-ad82-7a563866446c
+```
 
 To notify ChatPro when a new chat message has been received, add the following webhook to your group chat flow:
 
@@ -63,18 +81,4 @@ For example:
 
 ```
 http://chat.rapidpro.io/api/v1/message/new/?contact=@contact.uuid&text=@step.value&group=bef530c4-5d84-4c1e-ad82-7a563866446c
-```
-
-To notify ChatPro when a new chat contact has been registered, add the following webhook to your registration flow:
-
- * URL: _/api/v1/contact/new/_
- * Method: _POST_
- * Query parameters:
-     * contact: the UUID of the contact that received the message
-     * group: the UUID of the contact group that contact has joined
- 
-For example:
-
-```
-http://chat.rapidpro.io/api/v1/contact/new/?contact=@contact.uuid&group=bef530c4-5d84-4c1e-ad82-7a563866446c
 ```

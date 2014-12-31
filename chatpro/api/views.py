@@ -32,6 +32,8 @@ class TembaHandler(View):
 
             Message.create_for_contact(org, contact, text, room)
 
+            # TODO handle contact.room vs room mismatch
+
         elif entity == 'contact' and action == 'new':
             contact_uuid = request.REQUEST.get('contact', None)
             group_uuid = request.REQUEST.get('group', None)
