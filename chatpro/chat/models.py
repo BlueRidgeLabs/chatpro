@@ -94,6 +94,9 @@ class Contact(models.Model):
 
     @classmethod
     def create(cls, org, full_name, chat_name, urn, room, uuid):
+        if org.id != room.org_id:
+            raise ValueError("Room does not belong to org")
+
         return cls.objects.create(org=org, full_name=full_name, chat_name=chat_name, urn=urn, room=room, uuid=uuid)
 
     @classmethod

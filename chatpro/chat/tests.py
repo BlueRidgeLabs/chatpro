@@ -47,6 +47,52 @@ class ContactCRUDLTest(ChatProTest):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['object_list']), 0)
 
+    def test_read(self):
+        # log in as an administrator
+        self.login(self.admin)
+
+        # can view any contact from same org
+        response = self.url_get('unicef', reverse('chat.contact_read', args=[self.contact1.pk]))
+        self.assertEqual(response.status_code, 200)
+
+        # can't view contact from other org
+        contact = self.create_contact(self.nyaruka, "Ken", "ken", "tel:6789", self.room4, '000-007')
+        response = self.url_get('unicef', reverse('chat.contact_read', args=[contact.pk]))
+        self.assertEqual(response.status_code, 404)
+
+        # log in as a user without viewer access to the contact's room
+        self.login(self.user2)
+        response = self.url_get('unicef', reverse('chat.contact_read', args=[self.contact1.pk]))
+        self.assertEqual(response.status_code, 404)
+
+        # log in as a user with viewer access
+        self.login(self.user1)
+        response = self.url_get('unicef', reverse('chat.contact_read', args=[self.contact1.pk]))
+        self.assertEqual(response.status_code, 200)
+
+    def test_update(self):
+        # log in as an administrator
+        self.login(self.admin)
+
+        # can view update page for any contact from same org
+        response = self.url_get('unicef', reverse('chat.contact_update', args=[self.contact1.pk]))
+        self.assertEqual(response.status_code, 200)
+
+        # can't view update page for contact from other org
+        contact = self.create_contact(self.nyaruka, "Ken", "ken", "tel:6789", self.room4, '000-007')
+        response = self.url_get('unicef', reverse('chat.contact_update', args=[contact.pk]))
+        self.assertEqual(response.status_code, 404)
+
+        # log in as a user without manage access to the contact's room
+        self.login(self.user2)
+        response = self.url_get('unicef', reverse('chat.contact_update', args=[self.contact1.pk]))
+        self.assertEqual(response.status_code, 404)
+
+        # log in as a user with manage access
+        self.login(self.user1)
+        response = self.url_get('unicef', reverse('chat.contact_update', args=[self.contact1.pk]))
+        self.assertEqual(response.status_code, 200)
+
 
 class RoomTest(ChatProTest):
     def test_get_all(self):

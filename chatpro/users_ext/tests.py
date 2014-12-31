@@ -29,6 +29,7 @@ class UserTest(ChatProTest):
 
         self.assertEqual(user.rooms.count(), 1)
         self.assertEqual(user.manage_rooms.count(), 1)
+        self.assertEqual(user.get_all_rooms().count(), 2)
 
         self.assertTrue(user.has_room_perm(self.room1, RoomPermission.read))
         self.assertTrue(user.has_room_perm(self.room1, RoomPermission.send))

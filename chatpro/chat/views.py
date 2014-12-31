@@ -34,7 +34,7 @@ class ContactForm(forms.ModelForm):
         if user.is_administrator():
             self.fields['room'].queryset = Room.objects.filter(org=user.get_org()).order_by('name')
         else:
-            self.fields['room'].queryset = user.get_rooms()
+            self.fields['room'].queryset = user.manage_rooms.all()
 
     class Meta:
         model = Contact
@@ -62,6 +62,15 @@ class ContactCRUDL(SmartCRUDL):
     class Read(OrgPermsMixin, SmartReadView):
         fields = ('room', 'full_name', 'chat_name', 'phone', 'comment', 'last_seen')
 
+        def get_queryset(self):
+            qs = Contact.objects.filter(pk=self.kwargs.get('pk'), is_active=True)
+            if not self.request.user.is_superuser:
+                qs = qs.filter(org=self.request.user.get_org())
+                if not self.request.user.is_administrator():
+                    qs = qs.filter(room__in=self.request.user.get_all_rooms())
+
+            return qs
+
         def get_last_seen(self, obj):
             last_msg = Message.objects.filter(contact_id=obj.pk).order_by('-time').first()
             return last_msg.time if last_msg else None
@@ -79,6 +88,15 @@ class ContactCRUDL(SmartCRUDL):
             initial = super(ContactCRUDL.Update, self).derive_initial()
             initial['phone'] = self.object.get_urn()[1]
             return initial
+
+        def get_queryset(self):
+            qs = Contact.objects.filter(pk=self.kwargs.get('pk'), is_active=True)
+            if not self.request.user.is_superuser:
+                qs = qs.filter(org=self.request.user.get_org())
+                if not self.request.user.is_administrator():
+                    qs = qs.filter(room__in=self.request.user.get_all_rooms())
+
+            return qs
 
         def pre_save(self, obj):
             obj = super(ContactCRUDL.Update, self).pre_save(obj)
