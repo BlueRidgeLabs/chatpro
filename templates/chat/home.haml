@@ -15,7 +15,7 @@
 
       .messages-sendform
         .input-group
-          %input.form-control{ type:"text", autocomplete:"off", ng-model:"new_message", ng-disabled:"sending" }
+          %input.form-control{ type:"text", autocomplete:"off", placeholder:"Enter message", ng-model:"new_message", ng-disabled:"sending" }
           %span.input-group-btn
             %button.btn.btn-default{type:"button", ng-click:"sendMessage()", ng-disabled:"sending"}
               -trans "Send"
