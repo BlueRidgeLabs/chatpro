@@ -2,13 +2,14 @@ from __future__ import unicode_literals
 
 from dash.orgs.views import OrgPermsMixin
 from django import forms
+from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect, JsonResponse
 from django.utils.translation import ugettext_lazy as _
 from smartmin.users.views import SmartCRUDL, SmartCreateView, SmartReadView, SmartUpdateView, SmartListView
 from smartmin.users.views import SmartFormView, SmartTemplateView
-from .models import Contact, Room, RoomPermission, Message
+from .models import Contact, Room, Message
 from .utils import parse_iso8601
 
 
@@ -159,7 +160,7 @@ class ContactCRUDL(SmartCRUDL):
 
 class RoomCRUDL(SmartCRUDL):
     model = Room
-    actions = ('list', 'select')
+    actions = ('list', 'select', 'participants')
 
     class List(OrgPermsMixin, SmartListView):
         fields = ('name',)
@@ -203,6 +204,20 @@ class RoomCRUDL(SmartCRUDL):
             Room.update_room_groups(self.request.user.get_org(), form.cleaned_data['groups'])
             return HttpResponseRedirect(self.get_success_url())
 
+    class Participants(OrgPermsMixin, SmartReadView):
+        def get_context_data(self, **kwargs):
+            context = super(RoomCRUDL.Participants, self).get_context_data(**kwargs)
+
+            context['contacts'] = Contact.objects.filter(is_active=True, room=self.object)
+            context['users'] = []  # TODO User.objects.filter(is_active=True, rooms=)
+            return context
+
+        def render_to_response(self, context, **response_kwargs):
+            results = [c.as_json() for c in context['contacts']]
+            results += [u.profile.as_json() for u in context['users']]
+
+            return JsonResponse({'count': len(results), 'results': results})
+
 
 class MessageCRUDL(SmartCRUDL):
     model = Message
@@ -235,7 +250,7 @@ class MessageCRUDL(SmartCRUDL):
             room = form.cleaned_data['room']
             text = form.cleaned_data['text']
 
-            if not self.request.user.has_room_perm(room, RoomPermission.send):
+            if not self.request.user.has_room_access(room):
                 raise PermissionDenied()
 
             msg = Message.create_for_user(org, self.request.user, text, room)
@@ -253,7 +268,7 @@ class MessageCRUDL(SmartCRUDL):
             room_id = self.request.REQUEST.get('room', None)
             if room_id:
                 room = Room.objects.get(pk=room_id)
-                if not self.request.user.has_room_perm(room, RoomPermission.read):
+                if not self.request.user.has_room_access(room):
                     raise PermissionDenied()
 
                 qs = qs.filter(room_id=room.id)

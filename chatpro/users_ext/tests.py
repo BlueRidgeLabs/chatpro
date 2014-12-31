@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.test.utils import override_settings
-from chatpro.chat.models import RoomPermission
 from chatpro.test import ChatProTest
 
 
@@ -31,15 +30,12 @@ class UserTest(ChatProTest):
         self.assertEqual(user.manage_rooms.count(), 1)
         self.assertEqual(user.get_all_rooms().count(), 2)
 
-        self.assertTrue(user.has_room_perm(self.room1, RoomPermission.read))
-        self.assertTrue(user.has_room_perm(self.room1, RoomPermission.send))
-        self.assertFalse(user.has_room_perm(self.room1, RoomPermission.manage))
-        self.assertTrue(user.has_room_perm(self.room2, RoomPermission.read))
-        self.assertTrue(user.has_room_perm(self.room2, RoomPermission.send))
-        self.assertTrue(user.has_room_perm(self.room2, RoomPermission.manage))
-        self.assertFalse(user.has_room_perm(self.room3, RoomPermission.read))
-        self.assertFalse(user.has_room_perm(self.room3, RoomPermission.send))
-        self.assertFalse(user.has_room_perm(self.room3, RoomPermission.manage))
+        self.assertTrue(user.has_room_access(self.room1))
+        self.assertFalse(user.has_room_access(self.room1, manage=True))
+        self.assertTrue(user.has_room_access(self.room2))
+        self.assertTrue(user.has_room_access(self.room2, manage=True))
+        self.assertFalse(user.has_room_access(self.room3))
+        self.assertFalse(user.has_room_access(self.room3, manage=True))
 
 
 class AdministratorCRUDLTest(ChatProTest):

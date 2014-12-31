@@ -5,14 +5,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
-from enum import Enum
 from .tasks import sync_room_groups_task
-
-
-class RoomPermission(Enum):
-    read = 1
-    send = 2
-    manage = 3
 
 
 class Room(models.Model):
@@ -108,6 +101,9 @@ class Contact(models.Model):
 
     def get_urn(self):
         return tuple(self.urn.split(':', 1))
+
+    def as_json(self):
+        return dict(id=self.pk, type='C', full_name=self.full_name, chat_name=self.chat_name)
 
     def __unicode__(self):
         if self.full_name:

@@ -11,6 +11,34 @@ format_iso8601 = (date) ->
   if date then date.toISOString() else null
 
 #=====================================================================
+# Room service
+#=====================================================================
+services.factory 'RoomService', ['$rootScope', '$http', ($rootScope, $http) ->
+  new class RoomService
+
+    #=====================================================================
+    # Broadcasts event to signal that active room has changed
+    #=====================================================================
+    activateRoom: (room_id) ->
+      $rootScope.$broadcast 'room_activated', room_id
+
+    #=====================================================================
+    # Registers a callback for active room changes
+    #=====================================================================
+    onActivateRoom: (callback) ->
+      $rootScope.$on('room_activated', (event, room_id) -> callback(parseInt room_id))
+
+    #=====================================================================
+    # Fetches all contacts, users and managers for this room
+    #=====================================================================
+    fetchParticipants: (room_id, callback) ->
+      $http.get('/room/participants/' + room_id + '/')
+      .success (data) =>
+        callback(data.results)
+]
+
+
+#=====================================================================
 # Message service
 #=====================================================================
 services.factory 'MessageService', ['$rootScope', '$http', '$timeout', ($rootScope, $http, $timeout) ->
@@ -101,16 +129,4 @@ services.factory 'MessageService', ['$rootScope', '$http', '$timeout', ($rootSco
       for msg in messages
         msg.time = parse_iso8601 msg.time
       messages
-
-    #=====================================================================
-    # Broadcasts event to signal that active room has changed
-    #=====================================================================
-    activateRoom: (room_id) ->
-      $rootScope.$broadcast 'room_activated', room_id
-
-    #=====================================================================
-    # Registers a callback for active room changes
-    #=====================================================================
-    onActivateRoom: (callback) ->
-      $rootScope.$on('room_activated', (event, room_id) -> callback(parseInt room_id))
 ]

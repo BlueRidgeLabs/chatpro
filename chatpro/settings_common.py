@@ -298,7 +298,8 @@ PERMISSIONS = {
 
     'chat.message': ('send', 'list'),
 
-    'chat.room': ('list', 'select', 'user_create', 'user_update', 'user_list', 'user_home'),
+    'chat.room': ('list', 'select', 'participants',
+                  'user_create', 'user_update', 'user_list', 'user_home'),  # these are used by the UserCRUDL
 }
 
 # assigns the permissions that each group should have
@@ -322,6 +323,7 @@ GROUP_PERMISSIONS = {
         'chat.message_list',
         'chat.message_send',
         'chat.room_user_home',
+        'chat.room_participants',
 
         'users.user_profile',
     ),

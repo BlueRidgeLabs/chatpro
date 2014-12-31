@@ -4,42 +4,55 @@
 - block content
 
   - if rooms
-    .{ role:"tabpanel", ng-controller:"ChatController", ng-init:'init({{ request.user.id }}, "{{ request.user.full_name }}", {{ initial_room.id }})' }
-      %ul.nav.nav-tabs{ role:"tablist" }
+    .row{ ng-controller:"ChatController", ng-init:'init({{ request.user.id }}, "{{ request.user.full_name }}", {{ initial_room.id }})' }
+      .col-md-3
+        %ul.nav.nav-pills.nav-stacked
+          - for room in rooms
+            %li{ ng-controller:"RoomMenuController", ng-init:"init({{ room.id }})", ng-class:"{ active: isActive() }" }
+              %a{ href:"#", ng-click:"activateRoom()" }
+                {{ room.name }}
+                %span.messages-unread-count{ ng-if:"unread_count > 0" }
+                  [[ unread_count | unread ]]
+
+      .col-md-6
+        .messages-sendform
+          .input-group
+            %input.form-control{ type:"text", autocomplete:"off", placeholder:"Enter message", ng-model:"new_message", ng-disabled:"sending" }
+            %span.input-group-btn
+              %button.btn.btn-default{type:"button", ng-click:"sendMessage()", ng-disabled:"sending"}
+                -trans "Send"
+
         - for room in rooms
-          %li{ role:"presentation", ng-controller:"RoomTabController", ng-init:"init({{ room.id }})", ng-class:"{ active: isActive() }" }
-            %a{ role:"tab", href:"#", ng-click:"activateRoom()" }
-              {{ room.name }}
-              %span.messages-unread-count{ ng-if:"unread_count > 0" }
-                [[ unread_count | unread ]]
+          .{ ng-controller:"RoomMessagesController", ng-init:"init({{ room.id }})", ng-show:"active_room_id == room_id" }
+            %table.room-messages{ width:"100%" }
+              %tr.message{ ng-repeat:"message in messages", infinite-scroll:"loadOldMessages()", infinite-scroll-disabled:"loading_old || !has_older" }
+                %td.message-sender
+                  %a{ ng-if:"message.contact_id", href:"/contact/read/[[ message.contact_id ]]" }
+                    [[ message.sender_name ]]
+                  %span{ ng-if:"message.user_id" }
+                    [[ message.sender_name ]]
+                %td.message-text
+                  .message-time.pull-away
+                    [[ message.time | date:'short' ]]
+                  [[ message.text ]]
+                %td.message-time
 
-      .messages-sendform
-        .input-group
-          %input.form-control{ type:"text", autocomplete:"off", placeholder:"Enter message", ng-model:"new_message", ng-disabled:"sending" }
-          %span.input-group-btn
-            %button.btn.btn-default{type:"button", ng-click:"sendMessage()", ng-disabled:"sending"}
-              -trans "Send"
+            .messages-none{ ng-hide:"messages.length > 0" }
+              -trans "No messages"
 
-      - for room in rooms
-        .tab-pane{ role:"tabpanel", ng-controller:"RoomMessagesController", ng-init:"init({{ room.id }})", ng-show:"active_room_id == room_id" }
-          %table.room-messages{ width:"100%" }
-            %tr.message{ ng-repeat:"message in messages", infinite-scroll:"loadOldMessages()", infinite-scroll-disabled:"loading_old || !has_older" }
-              %td.message-sender
-                %a{ ng-if:"message.contact_id", href:"/contact/read/[[ message.contact_id ]]" }
-                  [[ message.sender_name ]]
-                %span{ ng-if:"message.user_id" }
-                  [[ message.sender_name ]]
-              %td.message-text
-                .message-time.pull-away
-                  [[ message.time | date:'short' ]]
-                [[ message.text ]]
-              %td.message-time
+            .loading{ ng-if:"loading_old" }
 
-          .messages-none{ ng-hide:"messages.length > 0" }
-            -trans "No messages"
+      .col-md-3
+        - for room in rooms
+          .{ ng-controller:"RoomParticipantsController", ng-init:"init({{ room.id }})", ng-show:"active_room_id == room_id" }
+            .loading{ ng-if:"loading" }
+            .participant{ ng-repeat:"participant in participants" }
+              %a{ ng-if:'participant.type == "C"', href:"/contact/read/[[ participant.id ]]" }
+                [[ participant.full_name ]]
+              .{ ng-if:'participant.type == "U"' }
+                [[ participant.full_name ]]
 
-          .messages-loading{ ng-if:"loading_old" }
-            %img{ src:"{{ STATIC_URL }}/img/loading.gif" }
+
   - else
     .rooms-none
       - trans "You don't have access to any chat rooms. Contact your administrator."
@@ -62,9 +75,6 @@
     .messages-sendform {
       text-align: center;
       padding: 1em;
-    }
-    .messages-loading {
-      text-align: center;
     }
     .rooms-none, .messages-none {
       text-align: center;

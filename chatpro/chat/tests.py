@@ -155,9 +155,18 @@ class RoomCRUDLTest(ChatProTest):
         response = self.url_get('unicef', list_url)
         self.assertRedirects(response, 'http://unicef.localhost/users/login/?next=/room/')
 
-        # log in as a non-administrator
+        # log in as an administrator
         self.login(self.admin)
 
         response = self.url_get('unicef', list_url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['object_list']), 3)
+
+    def test_participants(self):
+        # log in as an administrator
+        self.login(self.admin)
+
+        response = self.url_get('unicef', reverse('chat.room_participants', args=[self.room1.pk]))
+        self.assertEqual(response.status_code, 200)
+
+        # TODO

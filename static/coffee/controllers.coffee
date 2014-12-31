@@ -3,7 +3,7 @@ controllers = angular.module('chat.controllers', ['chat.services']);
 #============================================================================
 # Chat controller
 #============================================================================
-controllers.controller 'ChatController', [ '$scope', 'MessageService', ($scope, MessageService) ->
+controllers.controller 'ChatController', [ '$scope', 'RoomService', 'MessageService', ($scope, RoomService, MessageService) ->
 
   $scope.active_room_id = null
   $scope.new_message = ''
@@ -14,7 +14,7 @@ controllers.controller 'ChatController', [ '$scope', 'MessageService', ($scope, 
     $scope.user_name = user_name
     $scope.active_room_id = initial_room_id
 
-    MessageService.onActivateRoom (room_id) ->
+    RoomService.onActivateRoom (room_id) ->
       $scope.active_room_id = room_id
 
   #============================================================================
@@ -32,14 +32,14 @@ controllers.controller 'ChatController', [ '$scope', 'MessageService', ($scope, 
 #============================================================================
 # Room tab controller
 #============================================================================
-controllers.controller 'RoomTabController', [ '$scope', 'MessageService', ($scope, MessageService) ->
+controllers.controller 'RoomMenuController', [ '$scope', 'RoomService', 'MessageService', ($scope, RoomService, MessageService) ->
 
   $scope.unread_count = 0
 
   $scope.init = (room_id) ->
     $scope.room_id = room_id
 
-    MessageService.onActivateRoom (room_id) ->
+    RoomService.onActivateRoom (room_id) ->
       if room_id == $scope.room_id
         $scope.unread_count = 0
 
@@ -52,7 +52,7 @@ controllers.controller 'RoomTabController', [ '$scope', 'MessageService', ($scop
   # Activates this room
   #============================================================================
   $scope.activateRoom = ->
-    MessageService.activateRoom $scope.room_id
+    RoomService.activateRoom $scope.room_id
 
   #============================================================================
   # Whether this room is active
@@ -95,4 +95,23 @@ controllers.controller 'RoomMessagesController', [ '$scope', 'MessageService', (
       $scope.messages = $scope.messages.concat messages
       $scope.has_older = has_older
       $scope.loading_old = false
+]
+
+#============================================================================
+# Room participants controller
+#============================================================================
+controllers.controller 'RoomParticipantsController', [ '$scope', 'RoomService', ($scope, RoomService) ->
+
+  $scope.participants = []
+  $scope.loading = true
+
+  $scope.init = (room_id) ->
+    $scope.room_id = room_id
+
+    $scope.loadParticipants()
+
+  $scope.loadParticipants = ->
+    RoomService.fetchParticipants $scope.room_id, (participants) ->
+      $scope.participants = participants
+      $scope.loading = false
 ]
