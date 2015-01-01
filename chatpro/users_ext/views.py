@@ -2,12 +2,11 @@ from __future__ import unicode_literals
 
 from chatpro.chat.models import Room
 from dash.orgs.views import OrgPermsMixin
-from dash.users.views import UserCRUDL as DashUserCRUDL
 from django import forms
 from django.contrib.auth.models import User
 from django.core.validators import MinLengthValidator
 from django.utils.translation import ugettext_lazy as _
-from smartmin.users.views import SmartCRUDL, SmartCreateView, SmartUpdateView, SmartListView
+from smartmin.users.views import SmartCRUDL, SmartCreateView, SmartReadView, SmartUpdateView, SmartListView
 
 
 class UserForm(forms.ModelForm):
@@ -126,13 +125,13 @@ class AdministratorCRUDL(SmartCRUDL):
 
 class UserCRUDL(SmartCRUDL):
     model = User
-    actions = ('create', 'update', 'list', 'profile')
+    actions = ('create', 'read', 'update', 'list', 'profile')
 
     class Create(OrgPermsMixin, UserFormViewMixin, SmartCreateView):
         fields = ('full_name', 'chat_name', 'email', 'password', 'rooms', 'manage_rooms')
         success_url = '@users_ext.user_list'
         success_message = _("New user created")
-        permission = 'chat.room_user_create'
+        permission = 'users_ext.profile_create'
 
         def save(self, obj):
             full_name = self.form.cleaned_data['full_name']
@@ -141,11 +140,27 @@ class UserCRUDL(SmartCRUDL):
             self.object = User.create(self.request.user.get_org(), full_name, chat_name, obj.email, password,
                                       self.form.cleaned_data['rooms'], self.form.cleaned_data['manage_rooms'])
 
+    class Read(OrgPermsMixin, SmartReadView):
+        fields = ('full_name', 'chat_name', 'email', 'rooms', 'manage_rooms')
+        permission = 'users_ext.profile_read'
+
+        def get_full_name(self, obj):
+            return obj.profile.full_name
+
+        def get_chat_name(self, obj):
+            return obj.profile.chat_name
+
+        def get_rooms(self, obj):
+            return ", ".join([r.name for r in obj.rooms.all()])
+
+        def get_manage_rooms(self, obj):
+            return ", ".join([r.name for r in obj.manage_rooms.all()])
+
     class Update(OrgPermsMixin, UserFormViewMixin, SmartUpdateView):
         fields = ('full_name', 'chat_name', 'email', 'new_password', 'rooms', 'manage_rooms', 'is_active')
         success_url = '@users_ext.user_list'
         success_message = _("User updated")
-        permission = 'chat.room_user_update'
+        permission = 'users_ext.profile_update'
 
         def derive_initial(self):
             initial = super(UserCRUDL.Update, self).derive_initial()
@@ -168,7 +183,7 @@ class UserCRUDL(SmartCRUDL):
 
     class List(OrgPermsMixin, SmartListView):
         fields = ('full_name', 'chat_name', 'email', 'rooms')
-        permission = 'chat.room_user_list'
+        permission = 'users_ext.profile_list'
 
         def get_queryset(self, **kwargs):
             qs = super(UserCRUDL.List, self).get_queryset(**kwargs)

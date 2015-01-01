@@ -11,7 +11,7 @@
             %li{ ng-controller:"RoomMenuController", ng-init:"init({{ room.id }})", ng-class:"{ active: isActive() }" }
               %a{ href:"#", ng-click:"activateRoom()" }
                 {{ room.name }}
-                %span.messages-unread-count{ ng-if:"unread_count > 0" }
+                %span.badge{ ng-if:"unread_count > 0" }
                   [[ unread_count | unread ]]
 
       .col-md-6
@@ -27,10 +27,10 @@
             %table.room-messages{ width:"100%" }
               %tr.message{ ng-repeat:"message in messages", infinite-scroll:"loadOldMessages()", infinite-scroll-disabled:"loading_old || !has_older" }
                 %td.message-sender
-                  %a{ ng-if:"message.contact_id", href:"/contact/read/[[ message.contact_id ]]" }
-                    [[ message.sender_name ]]
-                  %span{ ng-if:"message.user_id" }
-                    [[ message.sender_name ]]
+                  %a{ ng-if:'message.sender.type == "C"', href:"/contact/read/[[ message.sender.id ]]" }
+                    [[ message.sender.full_name ]]
+                  %span{ ng-if:'message.sender.type == "U"' }
+                    [[ message.sender.full_name ]]
                 %td.message-text
                   .message-time.pull-away
                     [[ message.time | date:'short' ]]
@@ -47,11 +47,13 @@
           .{ ng-controller:"RoomParticipantsController", ng-init:"init({{ room.id }})", ng-show:"active_room_id == room_id" }
             .loading{ ng-if:"loading" }
             .participant{ ng-repeat:"participant in participants" }
-              %a{ ng-if:'participant.type == "C"', href:"/contact/read/[[ participant.id ]]" }
+              .contact{ ng-if:'participant.type == "C"' }
+                %span.glyphicon.glyphicon-phone
+                %a{ href:"/contact/read/[[ participant.id ]]" }
+                  [[ participant.full_name ]]
+              .user{ ng-if:'participant.type == "U"' }
+                %span.glyphicon.glyphicon-user
                 [[ participant.full_name ]]
-              .{ ng-if:'participant.type == "U"' }
-                [[ participant.full_name ]]
-
 
   - else
     .rooms-none
@@ -63,18 +65,9 @@
 -block extra-style
   {{ block.super }}
   :css
-    .messages-unread-count {
-      background-color: #499a40;
-      border-radius: 1px;
-      color: white;
-      display: inline-block;
-      font-size: x-small;
-      padding: 0 3px;
-
-    }
     .messages-sendform {
       text-align: center;
-      padding: 1em;
+      padding-bottom: 1em;
     }
     .rooms-none, .messages-none {
       text-align: center;
@@ -99,5 +92,9 @@
     }
     .message-time {
       font-size: 0.7em;
+      color: #888;
+    }
+    .participant {
+      padding: 0.2em;
     }
 

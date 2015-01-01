@@ -110,7 +110,7 @@ STATICFILES_FINDERS = (
 
 COMPRESS_PRECOMPILERS = (
     ('text/coffeescript', 'coffee --compile --stdio'),
-    ('text/less', 'lessc {infile} {outfile}'),
+    ('text/less', 'chatpro.compress.LessFilter'),
 )
 
 # Make this unique, and don't share it with anybody.
@@ -298,8 +298,9 @@ PERMISSIONS = {
 
     'chat.message': ('send', 'list'),
 
-    'chat.room': ('list', 'select', 'participants',
-                  'user_create', 'user_update', 'user_list', 'user_home'),  # these are used by the UserCRUDL
+    'chat.room': ('list', 'select', 'participants'),
+
+    'users_ext.profile': ('create', 'read', 'update', 'list')
 }
 
 # assigns the permissions that each group should have
@@ -310,9 +311,8 @@ GROUP_PERMISSIONS = {
         'chat.contact.*',
         'chat.message.*',
         'chat.room.*',
-        'chat.user.*',
 
-        'users.user_profile',
+        'users_ext.profile.*',
     ),
     "Editors": (
         'orgs.org_home',
@@ -325,7 +325,7 @@ GROUP_PERMISSIONS = {
         'chat.room_user_home',
         'chat.room_participants',
 
-        'users.user_profile',
+        'users_ext.profile_read',
     ),
 }
 

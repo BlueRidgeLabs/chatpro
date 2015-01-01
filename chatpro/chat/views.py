@@ -208,8 +208,8 @@ class RoomCRUDL(SmartCRUDL):
         def get_context_data(self, **kwargs):
             context = super(RoomCRUDL.Participants, self).get_context_data(**kwargs)
 
-            context['contacts'] = Contact.objects.filter(is_active=True, room=self.object)
-            context['users'] = []  # TODO User.objects.filter(is_active=True, rooms=)
+            context['contacts'] = self.object.get_contacts()
+            context['users'] = self.object.get_all_users()
             return context
 
         def render_to_response(self, context, **response_kwargs):
@@ -317,7 +317,9 @@ class HomeView(OrgPermsMixin, SmartTemplateView):
     """
     title = _("Chat")
     template_name = 'chat/home.haml'
-    permission = 'chat.room_user_home'
+
+    def has_permission(self, request, *args, **kwargs):
+        return request.user.is_authenticated()
 
     def pre_process(self, request, *args, **kwargs):
         if not request.user.is_authenticated():

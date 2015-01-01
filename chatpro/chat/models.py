@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 from dash.orgs.models import Org
 from django.contrib.auth.models import User
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from .tasks import sync_room_groups_task
@@ -57,6 +58,15 @@ class Room(models.Model):
                 cls.create(org, group_names[group_uuid], group_uuid)
 
         sync_room_groups_task.delay(org.id, group_uuids)
+
+    def get_contacts(self):
+        return self.contacts.filter(is_active=True)
+
+    def get_all_users(self):
+        """
+        Gets all users and managers
+        """
+        return User.objects.filter(is_active=True).filter(Q(rooms=self) | Q(manage_rooms=self)).distinct()
 
     def __unicode__(self):
         return self.name
@@ -149,12 +159,5 @@ class Message(models.Model):
 
     def as_json(self):
         sender = self.get_sender()
-        sender_name = sender.full_name if isinstance(sender, Contact) else sender.profile.full_name
-
-        return dict(message_id=self.pk,
-                    contact_id=self.contact_id,
-                    user_id=self.user_id,
-                    sender_name=sender_name,
-                    text=self.text,
-                    room_id=self.room_id,
-                    time=self.time)
+        sender_json = sender.as_json() if isinstance(sender, Contact) else sender.profile.as_json()
+        return dict(message_id=self.pk, sender=sender_json, text=self.text, room_id=self.room_id, time=self.time)

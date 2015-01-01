@@ -15,5 +15,5 @@ class Profile(models.Model):
                                  help_text=_("The chat name of this user"))
 
     def as_json(self):
-        return dict(id=self.pk, type='U', full_name=self.full_name, chat_name=self.chat_name)
+        return dict(id=self.user_id, type='U', full_name=self.full_name, chat_name=self.chat_name)
 
