@@ -42,10 +42,11 @@ class MessageCRUDL(SmartCRUDL):
             room = form.cleaned_data['room']
             text = form.cleaned_data['text']
 
+            # TODO this isn't used. This view should be a simpler AJAX endpoint rather than a SmartFormView
             if not self.request.user.has_room_access(room):
                 raise PermissionDenied()
 
-            msg = Message.create_for_user(org, self.request.user, text, room)
+            msg = Message.create(org, self.request.user, text, room)
             return JsonResponse({'message_id': msg.pk})
 
     class List(OrgPermsMixin, SmartListView):

@@ -109,7 +109,15 @@ services.factory 'MessageService', ['$rootScope', '$http', '$timeout', ($rootSco
     #=====================================================================
     sendMessage: (room_id, text, user_id, user_name, callback) ->
       # notify room to add as temp message immediately
-      temp_msg = { user_id: user_id, contact_id: null, sender_name: user_name, text: text, room_id: room_id, temp: true }
+      temp_msg = {
+        sender: {
+          id: user_id,
+          type: 'U',
+          full_name: user_name
+        }, text: text,
+        room_id: room_id,
+        temp: true
+      }
       $rootScope.$broadcast 'new_messages', room_id, [temp_msg]
 
       data = new FormData();

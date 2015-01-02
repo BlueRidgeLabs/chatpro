@@ -4,7 +4,7 @@
 - block content
 
   - if rooms
-    .row{ ng-controller:"ChatController", ng-init:'init({{ request.user.id }}, "{{ request.user.full_name }}", {{ initial_room.id }})' }
+    .row{ ng-controller:"ChatController", ng-init:'init({{ request.user.id }}, "{{ request.user.profile.full_name }}", {{ initial_room.id }})' }
       .col-md-3
         %ul.nav.nav-pills.nav-stacked
           - for room in rooms

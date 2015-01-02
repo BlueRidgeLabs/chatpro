@@ -108,8 +108,9 @@ class ProfileCRUDL(SmartCRUDL):
         def save(self, obj):
             email = self.form.cleaned_data['email']
             password = self.form.cleaned_data['password']
-            self.object = Profile.create_admin(self.request.user.get_org(), obj.full_name, obj.chat_name,
-                                               email, password)
+            user = Profile.create_admin(self.request.user.get_org(), obj.full_name, obj.chat_name,
+                                        email, password)
+            self.object = user.profile
 
     class CreateUser(OrgPermsMixin, SmartCreateView):
         fields = ('full_name', 'chat_name', 'email', 'password', 'rooms', 'manage_rooms')
@@ -124,9 +125,10 @@ class ProfileCRUDL(SmartCRUDL):
         def save(self, obj):
             email = self.form.cleaned_data['email']
             password = self.form.cleaned_data['password']
-            self.object = Profile.create_user(self.request.user.get_org(), obj.full_name, obj.chat_name,
-                                              email, password,
-                                              self.form.cleaned_data['rooms'], self.form.cleaned_data['manage_rooms'])
+            user = Profile.create_user(self.request.user.get_org(), obj.full_name, obj.chat_name,
+                                       email, password,
+                                       self.form.cleaned_data['rooms'], self.form.cleaned_data['manage_rooms'])
+            self.object = user.profile
 
     class CreateContact(OrgPermsMixin, SmartCreateView):
         fields = ('full_name', 'chat_name', 'phone')
@@ -141,9 +143,9 @@ class ProfileCRUDL(SmartCRUDL):
         def save(self, obj):
             urn = 'tel:%s' % self.form.cleaned_data['phone']
             uuid = unicode(uuid4())
-            self.object = Profile.create_contact(self.request.user.get_org(), obj.full_name, obj.chat_name,
-                                                 urn,
-                                                 self.form.cleaned_data['room'], uuid)
+            contact = Profile.create_contact(self.request.user.get_org(), obj.full_name, obj.chat_name, urn,
+                                             self.form.cleaned_data['room'], uuid)
+            self.object = contact.profile
 
     class Read(OrgPermsMixin, SmartReadView):
         fields = ('full_name', 'chat_name', 'type', 'rooms')

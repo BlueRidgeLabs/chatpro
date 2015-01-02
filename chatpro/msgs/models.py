@@ -25,8 +25,11 @@ class Message(models.Model):
     time = models.DateTimeField(verbose_name=_("Time"), help_text=_("The time when this message was sent"))
 
     @classmethod
-    def create(cls, org, sender, text, room):
-        return cls.objects.create(org=org, sender=sender, text=text, room=room, time=timezone.now())
+    def create(cls, org, user_or_contact, text, room):
+        if not user_or_contact.profile:
+            ValueError("Message sender does not have a profile")
+
+        return cls.objects.create(org=org, sender=user_or_contact.profile, text=text, room=room, time=timezone.now())
 
     def as_json(self):
         return dict(id=self.pk, sender=self.sender.as_json(),

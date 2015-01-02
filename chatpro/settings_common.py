@@ -310,20 +310,11 @@ GROUP_PERMISSIONS = {
 
         'msgs.message.*',
         'rooms.room.*',
-
         'profiles.profile.*',
     ),
     "Editors": (
-        'orgs.org_home',
-        'orgs.org_profile',
-        'orgs.org_contact_list',
-
-        'chat.contact.*',
-        'chat.message_list',
-        'chat.message_send',
-        'chat.room_user_home',
-        'chat.room_participants',
-
+        'msgs.message_list',
+        'msgs.message_send',
         'profiles.profile_read',
     ),
 }

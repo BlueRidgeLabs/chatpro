@@ -34,9 +34,9 @@ class TembaHandler(View):
                 return HttpResponseBadRequest("Missing contact, text or group parameter")
 
             room = self._get_or_create_room(org, group_uuid)
-            profile = self._get_or_create_profile(org, room, contact_uuid)
+            contact = self._get_or_create_contact(org, room, contact_uuid)
 
-            Message.create(org, profile, text, room)
+            Message.create(org, contact.profile, text, room)
 
             # TODO handle contact.room vs room mismatch
 
@@ -48,7 +48,7 @@ class TembaHandler(View):
                 return HttpResponseBadRequest("Missing contact or group parameter")
 
             room = self._get_or_create_room(org, group_uuid)
-            self._get_or_create_profile(org, room, contact_uuid)
+            self._get_or_create_contact(org, room, contact_uuid)
 
         return JsonResponse({})
 
@@ -69,9 +69,9 @@ class TembaHandler(View):
         return room
 
     @staticmethod
-    def _get_or_create_profile(org, room, contact_uuid):
+    def _get_or_create_contact(org, room, contact_uuid):
         """
-        Gets a contact profile by UUID, or creates it by fetching from Temba instance
+        Gets a contact by UUID, or creates it by fetching from Temba instance
         """
         contact = Contact.objects.filter(org=org, uuid=contact_uuid).select_related('profile').first()
         if contact:
@@ -80,7 +80,7 @@ class TembaHandler(View):
                 contact.room = room
                 contact.save(update_fields=('is_active', 'room'))
 
-            return contact.profile
+            return contact
         else:
             temba_contact = org.get_temba_client().get_contact(contact_uuid)
             return Profile.from_temba(org, room, temba_contact)

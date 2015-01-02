@@ -49,7 +49,7 @@ class Profile(models.Model):
         # setup as org admin
         if org:
             user.org_admins.add(org)
-        return profile
+        return user
 
     @classmethod
     def create_user(cls, org, full_name, chat_name, email, password, rooms=(), manage_rooms=()):
@@ -62,7 +62,7 @@ class Profile(models.Model):
         user.org_editors.add(org)
         user.rooms.add(*rooms)
         user.manage_rooms.add(*manage_rooms)
-        return profile
+        return user
 
     @classmethod
     def _create_base_user(cls, full_name, chat_name, email, password):
@@ -84,8 +84,8 @@ class Profile(models.Model):
         contact = Contact.objects.create(org=org, urn=urn, room=room, uuid=uuid)
 
         # add profile
-        profile = cls.objects.create(contact=contact, full_name=full_name, chat_name=chat_name)
-        return profile
+        cls.objects.create(contact=contact, full_name=full_name, chat_name=chat_name)
+        return contact
 
     @classmethod
     def from_temba(cls, org, room, temba_contact):

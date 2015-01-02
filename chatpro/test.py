@@ -52,16 +52,13 @@ class ChatProTest(TestCase):
         return Room.create(org, name, group_uuid)
 
     def create_admin(self, org, full_name, chat_name, email):
-        profile = Profile.create_admin(org, full_name, chat_name, email, password=email)
-        return profile.user
+        return Profile.create_admin(org, full_name, chat_name, email, password=email)
 
     def create_user(self, org, full_name, chat_name, email, rooms, manage_rooms):
-        profile = Profile.create_user(org, full_name, chat_name, email, password=email, rooms=rooms, manage_rooms=manage_rooms)
-        return profile.user
+        return Profile.create_user(org, full_name, chat_name, email, password=email, rooms=rooms, manage_rooms=manage_rooms)
 
     def create_contact(self, org, full_name, chat_name, urn, room, uuid):
-        profile = Profile.create_contact(org, full_name, chat_name, urn, room, uuid)
-        return profile.contact
+        return Profile.create_contact(org, full_name, chat_name, urn, room, uuid)
 
     def login(self, user):
         result = self.client.login(username=user.username, password=user.username)
