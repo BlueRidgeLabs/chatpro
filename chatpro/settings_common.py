@@ -293,14 +293,16 @@ PERMISSIONS = {
           'delete', # can delete an object,
           'list'),  # can view a list of the objects
 
-    'orgs.org': ('choose', 'edit', 'home', 'manage_accounts', 'create_login', 'join',
-                 'chat_list', 'contact_list'),
+    'orgs.org': ('choose', 'edit', 'home', 'manage_accounts', 'create_login', 'join'),
 
     'msgs.message': ('send', 'list'),
 
     'rooms.room': ('list', 'select', 'profiles'),
 
-    'profiles.profile': ('create', 'read', 'update', 'list', 'admins')
+    'profiles.profile': ('create_contact', 'create_user',
+                         'contacts', 'users',
+                         'update_contact', 'update_user',
+                         'read', 'profile')
 }
 
 # assigns the permissions that each group should have

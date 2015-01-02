@@ -58,10 +58,9 @@ class Profile(models.Model):
         """
         user, profile = cls._create_base_user(full_name, chat_name, email, password)
 
-        # setup as org supervisor
+        # setup as org editor with limited room permissions
         user.org_editors.add(org)
-        user.rooms.add(*rooms)
-        user.manage_rooms.add(*manage_rooms)
+        user.update_rooms(rooms, manage_rooms)
         return user
 
     @classmethod
@@ -103,7 +102,7 @@ class Profile(models.Model):
     def as_json(self):
         _type = 'C' if self.is_contact() else 'U'
 
-        return dict(id=self.user_id, type=_type, full_name=self.full_name, chat_name=self.chat_name)
+        return dict(id=self.id, type=_type, full_name=self.full_name, chat_name=self.chat_name)
 
     def __unicode__(self):
         if self.full_name:

@@ -26,7 +26,7 @@ class HomeView(OrgPermsMixin, SmartTemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(HomeView, self).get_context_data(**kwargs)
-        rooms = self.request.user.get_all_rooms()
+        rooms = self.request.user.get_rooms(self.request.org)
 
         if 'initial_room' in self.request.REQUEST:
             initial_room = Room.objects.get(self.request.REQUEST['initial_room'])

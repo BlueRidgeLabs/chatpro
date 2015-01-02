@@ -30,35 +30,30 @@ class BaseProfileForm(forms.ModelForm):
         model = Profile
 
 
-class AdminForm(BaseProfileForm):
+class UserForm(BaseProfileForm):
     """
-    Form for admin user profiles
+    Form for user profiles
     """
     is_active = forms.BooleanField(label=_("Active"),
-                                   help_text=_("Whether this user is active, disable to remove access"))
+                                   help_text=_("Whether this user is active, disable to remove access."))
 
     email = forms.CharField(max_length=256,
-                            label=_("Email"), help_text=_("Email address and login"))
+                            label=_("Email"), help_text=_("Email address and login."))
 
     new_password = forms.CharField(widget=forms.PasswordInput, validators=[MinLengthValidator(8)], required=False,
                                    label=_("New password"),
-                                   help_text=_("Password used to log in (minimum of 8 characters, optional)"))
+                                   help_text=_("Password used to log in (minimum of 8 characters, optional)."))
 
     password = forms.CharField(widget=forms.PasswordInput, validators=[MinLengthValidator(8)],
-                               label=_("Password"), help_text=_("Password used to log in (minimum of 8 characters)"))
+                               label=_("Password"), help_text=_("Password used to log in (minimum of 8 characters)."))
 
-
-class UserForm(AdminForm):
-    """
-    Form for regular user profiles
-    """
     rooms = forms.ModelMultipleChoiceField(label=_("Rooms (chatting)"), queryset=Room.objects.filter(pk=-1),
                                            required=False,
-                                           help_text=_("Chat rooms which this user can chat in"))
+                                           help_text=_("Chat rooms which this user can chat in."))
 
     manage_rooms = forms.ModelMultipleChoiceField(label=_("Rooms (manage)"), queryset=Room.objects.filter(pk=-1),
                                                   required=False,
-                                                  help_text=_("Chat rooms which this user can manage"))
+                                                  help_text=_("Chat rooms which this user can manage."))
 
     def __init__(self, *args, **kwargs):
         super(UserForm, self).__init__(*args, **kwargs)
@@ -69,7 +64,7 @@ class UserForm(AdminForm):
             self.fields['manage_rooms'].queryset = org_rooms
 
 
-class ContactForm(forms.ModelForm):
+class ContactForm(BaseProfileForm):
     """
     Form for contact profiles
     """
@@ -82,7 +77,7 @@ class ContactForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(ContactForm, self).__init__(*args, **kwargs)
 
-        if self.user.is_administrator():
+        if self.user.is_admin_for(self.user.get_org()):
             self.fields['room'].queryset = Room.objects.filter(org=self.user.get_org()).order_by('name')
         else:
             self.fields['room'].queryset = self.user.manage_rooms.all()
@@ -90,32 +85,36 @@ class ContactForm(forms.ModelForm):
 
 class ProfileCRUDL(SmartCRUDL):
     model = Profile
-    actions = ('create_admin', 'create_user', 'create_contact',
-               'list', 'admins',
-               'read', 'update', 'profile')
+    actions = ('create_contact', 'create_user',
+               'contacts', 'users',
+               'update_contact', 'update_user',
+               'read', 'profile')
 
-    class CreateAdmin(OrgPermsMixin, SmartCreateView):
-        fields = ('full_name', 'chat_name', 'email', 'password')
-        form_class = AdminForm
-        success_url = '@profiles.profile_list_admin'
-        success_message = _("New admin created")
+    class CreateContact(OrgPermsMixin, SmartCreateView):
+        fields = ('full_name', 'chat_name', 'phone')
+        form_class = ContactForm
+        success_message = _("New contact created")
+        success_url = '@profiles.profile_contacts'
+        title = _("Create Contact")
 
         def get_form_kwargs(self):
-            kwargs = super(ProfileCRUDL.CreateAdmin, self).get_form_kwargs()
+            kwargs = super(ProfileCRUDL.CreateContact, self).get_form_kwargs()
             kwargs['user'] = self.request.user
             return kwargs
 
         def save(self, obj):
-            email = self.form.cleaned_data['email']
-            password = self.form.cleaned_data['password']
-            user = Profile.create_admin(self.request.user.get_org(), obj.full_name, obj.chat_name,
-                                        email, password)
-            self.object = user.profile
+            urn = 'tel:%s' % self.form.cleaned_data['phone']
+            uuid = unicode(uuid4())
+            contact = Profile.create_contact(self.request.user.get_org(), obj.full_name, obj.chat_name, urn,
+                                             self.form.cleaned_data['room'], uuid)
+            self.object = contact.profile
 
     class CreateUser(OrgPermsMixin, SmartCreateView):
         fields = ('full_name', 'chat_name', 'email', 'password', 'rooms', 'manage_rooms')
         form_class = UserForm
         success_message = _("New user created")
+        success_url = '@profiles.profile_users'
+        title = _("Create User")
 
         def get_form_kwargs(self):
             kwargs = super(ProfileCRUDL.CreateUser, self).get_form_kwargs()
@@ -130,91 +129,116 @@ class ProfileCRUDL(SmartCRUDL):
                                        self.form.cleaned_data['rooms'], self.form.cleaned_data['manage_rooms'])
             self.object = user.profile
 
-    class CreateContact(OrgPermsMixin, SmartCreateView):
-        fields = ('full_name', 'chat_name', 'phone')
+    class Contacts(OrgPermsMixin, SmartListView):
+        fields = ('full_name', 'chat_name', 'phone', 'room')
+        title = _("Contacts")
+
+        def get_queryset(self, **kwargs):
+            qs = super(ProfileCRUDL.Contacts, self).get_queryset(**kwargs)
+            qs = qs.exclude(contact=None).select_related('contact')
+            return qs
+
+        def get_phone(self, obj):
+            return obj.contact.get_urn()[1]
+
+        def get_room(self, obj):
+            return obj.contact.room
+
+    class Users(OrgPermsMixin, SmartListView):
+        fields = ('full_name', 'chat_name', 'email', 'rooms', 'manage_rooms')
+        title = _("Users")
+
+        def get_queryset(self, **kwargs):
+            qs = super(ProfileCRUDL.Users, self).get_queryset(**kwargs)
+            qs = qs.filter(user__in=self.request.org.get_org_editors()).select_related('user')
+            return qs
+
+        def get_email(self, obj):
+            return obj.user.email
+
+        def get_rooms(self, obj):
+            return ", ".join([unicode(r) for r in obj.user.rooms.all()])
+
+        def get_manage_rooms(self, obj):
+            return ", ".join([unicode(r) for r in obj.user.manage_rooms.all()])
+
+        def lookup_field_label(self, context, field, default=None):
+            if field == 'manage_rooms':
+                return _("Manages")
+            else:
+                return super(ProfileCRUDL.Users, self).lookup_field_label(context, field, default)
+
+    class UpdateContact(OrgPermsMixin, SmartUpdateView):
+        fields = ('full_name', 'chat_name', 'phone', 'room')
         form_class = ContactForm
-        success_message = _("New contact created")
+        success_message = _("Contact updated")
+        title = _("Edit Contact")
 
         def get_form_kwargs(self):
-            kwargs = super(ProfileCRUDL.CreateContact, self).get_form_kwargs()
+            kwargs = super(ProfileCRUDL.UpdateContact, self).get_form_kwargs()
             kwargs['user'] = self.request.user
             return kwargs
 
-        def save(self, obj):
-            urn = 'tel:%s' % self.form.cleaned_data['phone']
-            uuid = unicode(uuid4())
-            contact = Profile.create_contact(self.request.user.get_org(), obj.full_name, obj.chat_name, urn,
-                                             self.form.cleaned_data['room'], uuid)
-            self.object = contact.profile
+        def derive_initial(self):
+            initial = super(ProfileCRUDL.UpdateContact, self).derive_initial()
+            initial['phone'] = self.object.contact.get_urn()[1]
+            initial['room'] = self.object.contact.room
+            return initial
+
+        def post_save(self, obj):
+            obj = super(ProfileCRUDL.UpdateContact, self).post_save(obj)
+            obj.contact.urn = 'tel:%s' % self.form.cleaned_data['phone']
+            obj.contact.room = self.form.cleaned_data['room']
+            obj.contact.save()
+
+    class UpdateUser(OrgPermsMixin, SmartUpdateView):
+        fields = ('full_name', 'chat_name', 'email', 'new_password', 'rooms', 'manage_rooms', 'is_active')
+        form_class = UserForm
+        success_message = _("User updated")
+        title = _("Edit User")
+
+        def get_form_kwargs(self):
+            kwargs = super(ProfileCRUDL.UpdateUser, self).get_form_kwargs()
+            kwargs['user'] = self.request.user
+            return kwargs
+
+        def derive_initial(self):
+            initial = super(ProfileCRUDL.UpdateUser, self).derive_initial()
+            initial['email'] = self.object.user.email
+            initial['rooms'] = self.object.user.rooms.all()
+            initial['manage_rooms'] = self.object.user.manage_rooms.all()
+            return initial
+
+        def post_save(self, obj):
+            obj = super(ProfileCRUDL.UpdateUser, self).post_save(obj)
+
+            new_password = self.form.cleaned_data.get('new_password', "")
+            if new_password:
+                obj.user.set_password(new_password)
+
+            obj.user.email = self.form.cleaned_data['email']
+            obj.user.is_active = self.form.cleaned_data['is_active']
+            obj.user.save()
+
+            obj.user.update_rooms(self.form.cleaned_data['rooms'], self.form.cleaned_data['manage_rooms'])
+            return obj
 
     class Read(OrgPermsMixin, SmartReadView):
         fields = ('full_name', 'chat_name', 'type', 'rooms')
 
         def get_type(self, obj):
-            return _("Contact") if obj.is_contact() else _("User")
+            if obj.is_contact():
+                return _("Contact")
+            elif obj.user.is_admin_for(self.request.org):
+                return _("Administrator")
+            else:
+                return _("User")
 
         def get_rooms(self, obj):
             if obj.is_contact():
                 return unicode(obj.contact.room)
             else:
                 return ", ".join([unicode(r) for r in obj.user.rooms.all()])
-
-    class Update(OrgPermsMixin, SmartUpdateView):
-        fields = ('full_name', 'chat_name', 'email', 'new_password', 'rooms', 'manage_rooms', 'is_active')
-        success_message = _("User updated")
-
-        def get_form_class(self):
-            if self.object.is_contact():
-                return ContactForm
-            elif self.object.user.is_administrator():
-                return AdminForm
-            else:
-                return UserForm
-
-        def derive_initial(self):
-            initial = super(ProfileCRUDL.Update, self).derive_initial()
-            initial['rooms'] = self.object.rooms.all()
-            initial['manage_rooms'] = self.object.manage_rooms.all()
-            return initial
-
-        def pre_save(self, obj):
-            obj = super(ProfileCRUDL.Update, self).pre_save(obj)
-            obj.username = obj.email
-            new_password = self.form.cleaned_data.get('new_password', "")
-            if new_password:
-                obj.set_password(new_password)
-
-            obj.profile.full_name = self.form.cleaned_data['full_name']
-            obj.profile.chat_name = self.form.cleaned_data['chat_name']
-            obj.profile.save()
-
-            return obj
-
-    class List(OrgPermsMixin, SmartListView):
-        fields = ('full_name', 'chat_name', 'rooms')
-
-        def get_queryset(self, **kwargs):
-            qs = super(ProfileCRUDL.List, self).get_queryset(**kwargs)
-            org = self.request.user.get_org()
-            qs = qs.filter(user__pk__in=org.editors.all())
-            return qs
-
-        def get_rooms(self, obj):
-            if obj.is_contact():
-                return unicode(obj.contact.room)
-            else:
-                return ", ".join([unicode(r) for r in obj.user.rooms.all()])
-
-    class Admins(OrgPermsMixin, SmartListView):
-        fields = ('full_name', 'chat_name', 'email')
-
-        def get_queryset(self, **kwargs):
-            qs = super(ProfileCRUDL.Admins, self).get_queryset(**kwargs)
-            qs = qs.exclude(user=None)
-            return qs
-
-        def get_email(self, obj):
-            return obj.user.email
 
     class Profile(OrgPermsMixin, SmartUpdateView):
         fields = ('full_name', 'chat_name', 'email', 'new_password')

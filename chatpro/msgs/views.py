@@ -24,7 +24,7 @@ class MessageCRUDL(SmartCRUDL):
                 del kwargs['user']
                 super(MessageCRUDL.Send.SendForm, self).__init__(*args, **kwargs)
 
-                self.fields['room'].queryset = user.get_all_rooms().order_by('name')
+                self.fields['room'].queryset = user.get_rooms(user.get_org()).order_by('name')
 
             class Meta:
                 model = Message
@@ -66,7 +66,7 @@ class MessageCRUDL(SmartCRUDL):
 
                 qs = qs.filter(room_id=room.id)
             else:
-                qs = qs.filter(room__in=self.request.user.get_all_rooms())
+                qs = qs.filter(room__in=self.request.user.get_rooms(org))
 
             if 'before_id' in self.request.REQUEST:
                 qs = qs.filter(pk__lt=int(self.request.REQUEST['before_id']))

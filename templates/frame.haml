@@ -68,10 +68,10 @@
                         %a{href:"{% url 'orgs.org_list' %}"}
                           - trans "Orgs"
                       %li
-                        %a{ href:"{% url 'profiles.profile_admins' %}"}
+                        %a{ href:"{% url 'profiles.profile_users' %}"}
                           - trans "Users"
 
-                -if org_perms.orgs.org_edit or org_perms.rooms.room_list or org_perms.profiles.user_list
+                -if org_perms.orgs.org_edit or org_perms.rooms.room_list or org_perms.profiles.profile_users
                   %li.dropdown
                     %a.dropdown-toggle{href:"#", data-toggle:"dropdown"}
                       - trans "Administration"
@@ -87,10 +87,15 @@
                           %a{ href:"{% url 'rooms.room_list' %}" }
                             - trans "Rooms"
 
-                      - if org_perms.profiles.user_list
+                      - if org_perms.profiles.profile_users
                         %li
-                          %a{ href:"{% url 'profiles.user_list' %}" }
+                          %a{ href:"{% url 'profiles.profile_users' %}" }
                             - trans "Users"
+
+                      - if org_perms.profiles.profile_contacts
+                        %li
+                          %a{ href:"{% url 'profiles.profile_contacts' %}" }
+                            - trans "Contacts"
 
                   %li
                     %a{ href:"/" }

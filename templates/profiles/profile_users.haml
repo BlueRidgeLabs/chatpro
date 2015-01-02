@@ -1,0 +1,7 @@
+- extends "smartmin/list.html"
+- load smartmin i18n
+
+- block table-buttons
+  - if org_perms.profiles.profile_create_user
+    %a.btn.btn-primary.pull-right{ href:"{% url 'profiles.profile_create_user' %}" }
+      - trans "Add"

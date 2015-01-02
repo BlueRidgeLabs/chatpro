@@ -36,7 +36,7 @@ class TembaHandler(View):
             room = self._get_or_create_room(org, group_uuid)
             contact = self._get_or_create_contact(org, room, contact_uuid)
 
-            Message.create(org, contact.profile, text, room)
+            Message.create(org, contact, text, room)
 
             # TODO handle contact.room vs room mismatch
 

@@ -10,16 +10,6 @@ from .models import Profile
 
 ######################### Monkey patching for the User class #########################
 
-def _user_get_all_rooms(user):
-    if not hasattr(user, '_rooms'):
-        # org admins have implicit access to all rooms
-        if user.is_administrator():
-            user._rooms = Room.get_all(user.get_org())
-        else:
-            user._rooms = (user.rooms.filter(is_active=True) | user.manage_rooms.filter(is_active=True)).distinct()
-
-    return user._rooms
-
 
 def _user_get_full_name(user):
     """
@@ -28,19 +18,45 @@ def _user_get_full_name(user):
     return user.profile.full_name
 
 
-def _user_is_administrator(user):
-    org_group = user.get_org_group()
-    return org_group and org_group.name == 'Administrators'
+def _user_get_rooms(user, org):
+    if not hasattr(user, '_rooms'):
+        # org admins have implicit access to all rooms
+        if user.is_admin_for(org):
+            user._rooms = Room.get_all(org)
+        else:
+            user._rooms = user.rooms.filter(is_active=True)
+
+    return user._rooms
+
+
+def _user_update_rooms(user, rooms, manage_rooms):
+    """
+    Updates the rooms which this user can access and manage
+    """
+    user.rooms.clear()
+    user.rooms.add(*rooms)
+    user.rooms.add(*manage_rooms)
+
+    user.manage_rooms.clear()
+    user.manage_rooms.add(*manage_rooms)
+
+    if hasattr(user, '_rooms'):
+        delattr(user, '_rooms')
+
+
+def _user_is_admin_for(user, org):
+    """
+    Whether this user is an administrator for the given org
+    """
+    return org.administrators.filter(pk=user.pk).exists()
 
 
 def _user_has_room_access(user, room, manage=False):
     """
     Whether the given user has access to the given room
     """
-    if user.is_superuser:
+    if user.is_superuser or user.is_admin_for(room.org):
         return True
-    elif user.is_administrator():
-        return room.org == user.get_org()
     elif manage:
         return user.manage_rooms.filter(pk=room.pk).exists()
     else:
@@ -48,8 +64,9 @@ def _user_has_room_access(user, room, manage=False):
 
 
 User.get_full_name = _user_get_full_name
-User.get_all_rooms = _user_get_all_rooms
-User.is_administrator = _user_is_administrator
+User.get_rooms = _user_get_rooms
+User.update_rooms = _user_update_rooms
+User.is_admin_for = _user_is_admin_for
 User.has_room_access = _user_has_room_access
 
 

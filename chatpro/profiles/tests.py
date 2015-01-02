@@ -7,6 +7,13 @@ from django.core.urlresolvers import reverse
 from django.test.utils import override_settings
 
 
+class UserTest(ChatProTest):
+    def test_is_admin_for(self):
+        self.assertTrue(self.admin.is_admin_for(self.unicef))
+        self.assertFalse(self.admin.is_admin_for(self.nyaruka))
+        self.assertFalse(self.user1.is_admin_for(self.unicef))
+
+
 class OrgTest(ChatProTest):
     @override_settings(SITE_API_HOST='example.com')
     def test_get_temba_client(self):
@@ -16,66 +23,66 @@ class OrgTest(ChatProTest):
 
 
 class ProfileTest(ChatProTest):
-    def test_create_administrator(self):
-        profile = Profile.create_administrator(self.unicef, "Mo Chats", "momo", "mo@chat.com", "Qwerty123")
-        self.assertEqual(profile.full_name, "Mo Chats")
-        self.assertEqual(profile.chat_name, "momo")
+    def test_create_admin(self):
+        user = Profile.create_admin(self.unicef, "Mo Chats", "momo", "mo@chat.com", "Qwerty123")
+        self.assertEqual(user.profile.full_name, "Mo Chats")
+        self.assertEqual(user.profile.chat_name, "momo")
 
-        self.assertEqual(profile.user.first_name, "")
-        self.assertEqual(profile.user.last_name, "")
-        self.assertEqual(profile.user.email, "mo@chat.com")
-        self.assertEqual(profile.user.get_full_name(), "Mo Chats")
+        self.assertEqual(user.first_name, "")
+        self.assertEqual(user.last_name, "")
+        self.assertEqual(user.email, "mo@chat.com")
+        self.assertEqual(user.get_full_name(), "Mo Chats")
 
-        self.assertEqual(profile.user.rooms.count(), 0)
-        self.assertEqual(profile.user.manage_rooms.count(), 0)
-        self.assertEqual(profile.user.get_all_rooms().count(), 3)
+        self.assertEqual(user.rooms.count(), 0)
+        self.assertEqual(user.manage_rooms.count(), 0)
+        self.assertEqual(user.get_rooms(self.unicef).count(), 3)
 
-        self.assertTrue(profile.user.has_room_access(self.room1))
-        self.assertTrue(profile.user.has_room_access(self.room1, manage=True))
-        self.assertTrue(profile.user.has_room_access(self.room2))
-        self.assertTrue(profile.user.has_room_access(self.room2, manage=True))
-        self.assertTrue(profile.user.has_room_access(self.room3))
-        self.assertTrue(profile.user.has_room_access(self.room3, manage=True))
-        self.assertFalse(profile.user.has_room_access(self.room4))
-        self.assertFalse(profile.user.has_room_access(self.room4, manage=True))
+        self.assertTrue(user.has_room_access(self.room1))
+        self.assertTrue(user.has_room_access(self.room1, manage=True))
+        self.assertTrue(user.has_room_access(self.room2))
+        self.assertTrue(user.has_room_access(self.room2, manage=True))
+        self.assertTrue(user.has_room_access(self.room3))
+        self.assertTrue(user.has_room_access(self.room3, manage=True))
+        self.assertFalse(user.has_room_access(self.room4))
+        self.assertFalse(user.has_room_access(self.room4, manage=True))
 
     def test_create_user(self):
-        profile = Profile.create_user(self.unicef, "Mo Chats", "momo", "mo@chat.com", "Qwerty123",
-                                      rooms=[self.room1], manage_rooms=[self.room2])
-        self.assertEqual(profile.full_name, "Mo Chats")
-        self.assertEqual(profile.chat_name, "momo")
+        user = Profile.create_user(self.unicef, "Mo Chats", "momo", "mo@chat.com", "Qwerty123",
+                                   rooms=[self.room1], manage_rooms=[self.room2])
+        self.assertEqual(user.profile.full_name, "Mo Chats")
+        self.assertEqual(user.profile.chat_name, "momo")
 
-        self.assertEqual(profile.user.first_name, "")
-        self.assertEqual(profile.user.last_name, "")
-        self.assertEqual(profile.user.email, "mo@chat.com")
-        self.assertEqual(profile.user.get_full_name(), "Mo Chats")
+        self.assertEqual(user.first_name, "")
+        self.assertEqual(user.last_name, "")
+        self.assertEqual(user.email, "mo@chat.com")
+        self.assertEqual(user.get_full_name(), "Mo Chats")
 
-        self.assertEqual(profile.user.rooms.count(), 1)
-        self.assertEqual(profile.user.manage_rooms.count(), 1)
-        self.assertEqual(profile.user.get_all_rooms().count(), 2)
+        self.assertEqual(user.rooms.count(), 2)
+        self.assertEqual(user.manage_rooms.count(), 1)
+        self.assertEqual(user.get_rooms(self.unicef).count(), 2)
 
-        self.assertTrue(profile.user.has_room_access(self.room1))
-        self.assertFalse(profile.user.has_room_access(self.room1, manage=True))
-        self.assertTrue(profile.user.has_room_access(self.room2))
-        self.assertTrue(profile.user.has_room_access(self.room2, manage=True))
-        self.assertFalse(profile.user.has_room_access(self.room3))
-        self.assertFalse(profile.user.has_room_access(self.room3, manage=True))
-        self.assertFalse(profile.user.has_room_access(self.room4))
-        self.assertFalse(profile.user.has_room_access(self.room4, manage=True))
+        self.assertTrue(user.has_room_access(self.room1))
+        self.assertFalse(user.has_room_access(self.room1, manage=True))
+        self.assertTrue(user.has_room_access(self.room2))
+        self.assertTrue(user.has_room_access(self.room2, manage=True))
+        self.assertFalse(user.has_room_access(self.room3))
+        self.assertFalse(user.has_room_access(self.room3, manage=True))
+        self.assertFalse(user.has_room_access(self.room4))
+        self.assertFalse(user.has_room_access(self.room4, manage=True))
 
     def test_create_contact(self):
-        profile = Profile.create_contact(self.unicef, "Mo Chats", "momo", 'tel:078123', self.room1, '000-007')
-        self.assertEqual(profile.full_name, "Mo Chats")
-        self.assertEqual(profile.chat_name, "momo")
+        contact = Profile.create_contact(self.unicef, "Mo Chats", "momo", 'tel:078123', self.room1, '000-007')
+        self.assertEqual(contact.profile.full_name, "Mo Chats")
+        self.assertEqual(contact.profile.chat_name, "momo")
 
-        self.assertEqual(profile.contact.urn, 'tel:078123')
-        self.assertEqual(profile.contact.room, self.room1)
-        self.assertEqual(profile.contact.uuid, '000-007')
+        self.assertEqual(contact.urn, 'tel:078123')
+        self.assertEqual(contact.room, self.room1)
+        self.assertEqual(contact.uuid, '000-007')
 
 
 class ProfileCRUDLTest(ChatProTest):
     def test_create(self):
-        create_url = reverse('users_ext.profile_create')
+        create_url = reverse('profiles.profile_create')
 
         # log in as an org administrator
         self.login(self.admin)
@@ -105,34 +112,34 @@ class ProfileCRUDLTest(ChatProTest):
         # log in as an org administrator
         self.login(self.admin)
 
-        response = self.url_get('unicef', reverse('users_ext.profile_read', args=[self.admin.profile.pk]))
+        response = self.url_get('unicef', reverse('profiles.profile_read', args=[self.admin.profile.pk]))
         self.assertEqual(response.status_code, 200)
 
         # log in as a user
         self.login(self.user1)
 
-        response = self.url_get('unicef', reverse('users_ext.profile_read', args=[self.admin.profile.pk]))
+        response = self.url_get('unicef', reverse('profiles.profile_read', args=[self.admin.profile.pk]))
         self.assertEqual(response.status_code, 200)
 
     def test_update(self):
-        update_url = reverse('users_ext.profile_update', args=[self.admin.pk])
+        update_url = reverse('profiles.profile_update', args=[self.admin.pk])
 
         # log in as an org administrator
         self.login(self.admin)
 
         # TODO
 
-    def test_list(self):
-        list_url = reverse('users_ext.profile_list')
+    def test_users(self):
+        list_url = reverse('profiles.profile_users')
 
         response = self.url_get('unicef', list_url)
-        self.assertRedirects(response, 'http://unicef.localhost/users/login/?next=/profile/')
+        self.assertRedirects(response, 'http://unicef.localhost/users/login/?next=/profile/users/')
 
         # log in as a non-administrator
         self.login(self.user1)
 
         response = self.url_get('unicef', list_url)
-        self.assertRedirects(response, 'http://unicef.localhost/users/login/?next=/profile/')
+        self.assertRedirects(response, 'http://unicef.localhost/users/login/?next=/profile/users/')
 
         # log in as an org administrator
         self.login(self.admin)
