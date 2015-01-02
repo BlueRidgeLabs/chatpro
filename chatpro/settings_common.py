@@ -36,7 +36,7 @@ EMAIL_USE_TLS = True
 
 SITE_API_HOST = 'rapidpro.io'  #'http://localhost:8001/api/v1'
 SITE_HOST_PATTERN = 'http://%s.localhost:8000'
-SITE_CHOOSER_TEMPLATE = 'chat/org_chooser.haml'
+SITE_CHOOSER_TEMPLATE = 'home/org_chooser.haml'
 SITE_USER_HOME = '/'
 
 # On Unix systems, a value of None will cause Django to use the same
@@ -217,8 +217,10 @@ INSTALLED_APPS = (
 
     # custom
     'chatpro.api',
-    'chatpro.chat',
-    'chatpro.users_ext',
+    'chatpro.rooms',
+    'chatpro.profiles',
+    'chatpro.msgs',
+    'chatpro.home',
 )
 
 # A sample logging configuration. The only tangible logging
@@ -294,13 +296,11 @@ PERMISSIONS = {
     'orgs.org': ('choose', 'edit', 'home', 'manage_accounts', 'create_login', 'join',
                  'chat_list', 'contact_list'),
 
-    'chat.contact': ('create', 'read', 'update', 'list', 'filter'),
+    'msgs.message': ('send', 'list'),
 
-    'chat.message': ('send', 'list'),
+    'rooms.room': ('list', 'select', 'profiles'),
 
-    'chat.room': ('list', 'select', 'participants'),
-
-    'users_ext.profile': ('create', 'read', 'update', 'list')
+    'profiles.profile': ('create', 'read', 'update', 'list', 'admins')
 }
 
 # assigns the permissions that each group should have
@@ -308,11 +308,10 @@ GROUP_PERMISSIONS = {
     "Administrators": (
         'orgs.org_edit',
 
-        'chat.contact.*',
-        'chat.message.*',
-        'chat.room.*',
+        'msgs.message.*',
+        'rooms.room.*',
 
-        'users_ext.profile.*',
+        'profiles.profile.*',
     ),
     "Editors": (
         'orgs.org_home',
@@ -325,7 +324,7 @@ GROUP_PERMISSIONS = {
         'chat.room_user_home',
         'chat.room_participants',
 
-        'users_ext.profile_read',
+        'profiles.profile_read',
     ),
 }
 

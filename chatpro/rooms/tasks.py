@@ -7,7 +7,8 @@ from dash.orgs.models import Org
 
 @shared_task
 def sync_room_groups_task(org_id, group_uuids):
-    from chatpro.chat.models import Contact, Room
+    from chatpro.rooms.models import Room
+    from chatpro.profiles.models import Profile
 
     print 'Starting room group sync task: org_id=%d, group_uuids=[%s]' % (org_id, ",".join(group_uuids))
 
@@ -37,14 +38,18 @@ def sync_room_groups_task(org_id, group_uuids):
         for temba_contact in incoming_contacts:
             if temba_contact.uuid in existing_by_uuid:
                 existing = existing_by_uuid[temba_contact.uuid]
+
                 existing.is_active = True
-                existing.full_name = temba_contact.name
-                existing.chat_name = temba_contact.fields.get(chat_name_field, None)
                 existing.urn = temba_contact.urns[0]
                 existing.save()
+
+                existing.profile.full_name = temba_contact.name
+                existing.profile.chat_name = temba_contact.fields.get(chat_name_field, None)
+                existing.profile.save()
+
                 updated_uuids.add(temba_contact.uuid)
             else:
-                Contact.from_temba(org, room, temba_contact)
+                Profile.from_temba(org, room, temba_contact)
                 created_uuids.append(temba_contact.uuid)
 
     for existing_uuid in existing_by_uuid.keys():

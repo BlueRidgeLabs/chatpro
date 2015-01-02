@@ -11,6 +11,6 @@
 
 
 - block table-buttons
-  - if org_perms.chat.room_select
-    %a.btn.btn-primary.pull-right{ href:"{% url 'chat.room_select' %}" }
+  - if org_perms.rooms.room_select
+    %a.btn.btn-primary.pull-right{ href:"{% url 'rooms.room_select' %}" }
       - trans "Select Groups"

@@ -1,6 +1,8 @@
 from __future__ import unicode_literals
 
-from chatpro.chat.models import Contact, Message, Room
+from chatpro.profiles.models import Contact, Profile
+from chatpro.rooms.models import Room
+from chatpro.msgs.models import Message
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, HttpResponseNotAllowed, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
@@ -32,9 +34,9 @@ class TembaHandler(View):
                 return HttpResponseBadRequest("Missing contact, text or group parameter")
 
             room = self._get_or_create_room(org, group_uuid)
-            contact = self._get_or_create_contact(org, room, contact_uuid)
+            profile = self._get_or_create_profile(org, room, contact_uuid)
 
-            Message.create_for_contact(org, contact, text, room)
+            Message.create(org, profile, text, room)
 
             # TODO handle contact.room vs room mismatch
 
@@ -46,7 +48,7 @@ class TembaHandler(View):
                 return HttpResponseBadRequest("Missing contact or group parameter")
 
             room = self._get_or_create_room(org, group_uuid)
-            self._get_or_create_contact(org, room, contact_uuid)
+            self._get_or_create_profile(org, room, contact_uuid)
 
         return JsonResponse({})
 
@@ -67,18 +69,18 @@ class TembaHandler(View):
         return room
 
     @staticmethod
-    def _get_or_create_contact(org, room, contact_uuid):
+    def _get_or_create_profile(org, room, contact_uuid):
         """
-        Gets a contact by UUID, or creates it by fetching from Temba instance
+        Gets a contact profile by UUID, or creates it by fetching from Temba instance
         """
-        contact = Contact.objects.filter(org=org, uuid=contact_uuid).first()
+        contact = Contact.objects.filter(org=org, uuid=contact_uuid).select_related('profile').first()
         if contact:
             if not contact.is_active or contact.room_id != room.pk:
                 contact.is_active = True
                 contact.room = room
                 contact.save(update_fields=('is_active', 'room'))
+
+            return contact.profile
         else:
             temba_contact = org.get_temba_client().get_contact(contact_uuid)
-            contact = Contact.from_temba(org, room, temba_contact)
-
-        return contact
+            return Profile.from_temba(org, room, temba_contact)

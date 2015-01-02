@@ -1,9 +1,10 @@
 from __future__ import unicode_literals
 
+from chatpro.rooms.models import Room
+from chatpro.profiles.models import Profile
 from dash.orgs.models import Org
 from django.contrib.auth.models import User
 from django.test import TestCase
-from chatpro.chat.models import Contact, Room
 from uuid import uuid4
 
 
@@ -17,8 +18,8 @@ class ChatProTest(TestCase):
         self.unicef = self.create_org("UNICEF", timezone="Asia/Kabul", subdomain="unicef")
         self.nyaruka = self.create_org("Nyaruka", timezone="Africa/Kigali", subdomain="nyaruka")
 
-        self.admin = self.create_administrator(self.unicef, "Richard", "admin", "admin@unicef.org")
-        self.nic = self.create_administrator(self.nyaruka, "Nicholas", "nic", "nic@nyaruka.com")
+        self.admin = self.create_admin(self.unicef, "Richard", "admin", "admin@unicef.org")
+        self.nic = self.create_admin(self.nyaruka, "Nicholas", "nic", "nic@nyaruka.com")
 
         # create some chat rooms
         self.room1 = self.create_room(self.unicef, "Cars", '000-001')
@@ -50,14 +51,17 @@ class ChatProTest(TestCase):
     def create_room(self, org, name, group_uuid):
         return Room.create(org, name, group_uuid)
 
-    def create_administrator(self, org, full_name, chat_name, email):
-        return User.create_administrator(org, full_name, chat_name, email, password=email)
+    def create_admin(self, org, full_name, chat_name, email):
+        profile = Profile.create_admin(org, full_name, chat_name, email, password=email)
+        return profile.user
 
     def create_user(self, org, full_name, chat_name, email, rooms, manage_rooms):
-        return User.create(org, full_name, chat_name, email, password=email, rooms=rooms, manage_rooms=manage_rooms)
+        profile = Profile.create_user(org, full_name, chat_name, email, password=email, rooms=rooms, manage_rooms=manage_rooms)
+        return profile.user
 
     def create_contact(self, org, full_name, chat_name, urn, room, uuid):
-        return Contact.create(org, full_name, chat_name, urn, room, uuid)
+        profile = Profile.create_contact(org, full_name, chat_name, urn, room, uuid)
+        return profile.contact
 
     def login(self, user):
         result = self.client.login(username=user.username, password=user.username)

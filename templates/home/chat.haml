@@ -44,16 +44,16 @@
 
       .col-md-3
         - for room in rooms
-          .{ ng-controller:"RoomParticipantsController", ng-init:"init({{ room.id }})", ng-show:"active_room_id == room_id" }
+          .{ ng-controller:"RoomProfilesController", ng-init:"init({{ room.id }})", ng-show:"active_room_id == room_id" }
             .loading{ ng-if:"loading" }
-            .participant{ ng-repeat:"participant in participants" }
-              .contact{ ng-if:'participant.type == "C"' }
+            .participant{ ng-repeat:"profile in profiles" }
+              .contact{ ng-if:'profile.type == "C"' }
                 %span.glyphicon.glyphicon-phone
-                %a{ href:"/contact/read/[[ participant.id ]]" }
-                  [[ participant.full_name ]]
-              .user{ ng-if:'participant.type == "U"' }
+                %a{ href:"/contact/read/[[ profile.id ]]" }
+                  [[ profile.full_name ]]
+              .user{ ng-if:'profile.type == "U"' }
                 %span.glyphicon.glyphicon-user
-                [[ participant.full_name ]]
+                [[ profile.full_name ]]
 
   - else
     .rooms-none

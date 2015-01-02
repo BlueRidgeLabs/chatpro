@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-from chatpro.chat.models import Room
+from chatpro.rooms.models import Room
 from dash.orgs.models import Org
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -9,43 +9,6 @@ from .models import Profile
 
 
 ######################### Monkey patching for the User class #########################
-
-
-def _user_create_administrator(cls, org, full_name, chat_name, email, password):
-    """
-    Creates an administrator user with access to all rooms
-    """
-    user = _user_create_base(cls, org, full_name, chat_name, email, password)
-
-    # setup as org administrator
-    user.org_admins.add(org)
-    return user
-
-
-def _user_create(cls, org, full_name, chat_name, email, password, rooms=(), manage_rooms=()):
-    """
-    Creates a regular user with specific room-level permissions
-    """
-    user = _user_create_base(cls, org, full_name, chat_name, email, password)
-
-    # setup as org supervisor
-    user.org_editors.add(org)
-    user.rooms.add(*rooms)
-    user.manage_rooms.add(*manage_rooms)
-    return user
-
-
-def _user_create_base(cls, org, full_name, chat_name, email, password):
-    # create auth user
-    user = cls.objects.create(is_active=True, username=email, email=email)
-    user.set_password(password)
-    user.set_org(org)
-    user.save()
-
-    # add chat profile
-    Profile.objects.create(user=user, full_name=full_name, chat_name=chat_name)
-    return user
-
 
 def _user_get_all_rooms(user):
     if not hasattr(user, '_rooms'):
@@ -74,16 +37,16 @@ def _user_has_room_access(user, room, manage=False):
     """
     Whether the given user has access to the given room
     """
-    if user.is_superuser or user.is_administrator():
+    if user.is_superuser:
         return True
+    elif user.is_administrator():
+        return room.org == user.get_org()
     elif manage:
         return user.manage_rooms.filter(pk=room.pk).exists()
     else:
         return user.manage_rooms.filter(pk=room.pk).exists() or user.rooms.filter(pk=room.pk).exists()
 
 
-User.create_administrator = classmethod(_user_create_administrator)
-User.create = classmethod(_user_create)
 User.get_full_name = _user_get_full_name
 User.get_all_rooms = _user_get_all_rooms
 User.is_administrator = _user_is_administrator
