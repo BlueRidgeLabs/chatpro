@@ -4,6 +4,7 @@ from chatpro.rooms.models import Room
 from dash.orgs.views import OrgPermsMixin
 from django import forms
 from django.core.validators import MinLengthValidator
+from django.http import Http404
 from django.utils.translation import ugettext_lazy as _
 from smartmin.users.views import SmartCRUDL, SmartCreateView, SmartReadView, SmartUpdateView, SmartListView
 from uuid import uuid4
@@ -18,7 +19,7 @@ class BaseProfileForm(forms.ModelForm):
                                 label=_("Full name"))
 
     chat_name = forms.CharField(max_length=255,
-                                label=_("Chat name"), help_text=_("Name used for sending chat messages"))
+                                label=_("Chat name"), help_text=_("Name used for sending chat messages."))
 
     def __init__(self, *args, **kwargs):
         user = kwargs['user']
@@ -68,11 +69,10 @@ class ContactForm(BaseProfileForm):
     """
     Form for contact profiles
     """
-    phone = forms.CharField(max_length=255, label=_("Phone"), help_text=_("The phone number of the contact."))
+    phone = forms.CharField(max_length=255, label=_("Phone"), help_text=_("Phone number of this contact."))
 
     room = forms.ModelChoiceField(label=_("Room"), queryset=Room.objects.filter(pk=-1),
-                                  required=False,
-                                  help_text=_("The chat rooms which this user can chat in."))
+                                  help_text=_("Chat rooms which this contact can chat in."))
 
     def __init__(self, *args, **kwargs):
         super(ContactForm, self).__init__(*args, **kwargs)
@@ -85,16 +85,15 @@ class ContactForm(BaseProfileForm):
 
 class ProfileCRUDL(SmartCRUDL):
     model = Profile
-    actions = ('create_contact', 'create_user',
-               'contacts', 'users',
-               'update_contact', 'update_user',
-               'read', 'profile')
+    actions = ('create_contact', 'list_contacts', 'update_contact',
+               'create_user', 'list_users', 'update_user',
+               'read', 'self')
 
     class CreateContact(OrgPermsMixin, SmartCreateView):
-        fields = ('full_name', 'chat_name', 'phone')
+        fields = ('full_name', 'chat_name', 'phone', 'room')
         form_class = ContactForm
         success_message = _("New contact created")
-        success_url = '@profiles.profile_contacts'
+        success_url = '@profiles.profile_list_contacts'
         title = _("Create Contact")
 
         def get_form_kwargs(self):
@@ -103,17 +102,17 @@ class ProfileCRUDL(SmartCRUDL):
             return kwargs
 
         def save(self, obj):
+            org = self.request.user.get_org()
             urn = 'tel:%s' % self.form.cleaned_data['phone']
-            uuid = unicode(uuid4())
-            contact = Profile.create_contact(self.request.user.get_org(), obj.full_name, obj.chat_name, urn,
-                                             self.form.cleaned_data['room'], uuid)
+            room = self.form.cleaned_data['room']
+            contact = Profile.create_contact(org, obj.full_name, obj.chat_name, urn, room, unicode(uuid4()))
             self.object = contact.profile
 
     class CreateUser(OrgPermsMixin, SmartCreateView):
         fields = ('full_name', 'chat_name', 'email', 'password', 'rooms', 'manage_rooms')
         form_class = UserForm
         success_message = _("New user created")
-        success_url = '@profiles.profile_users'
+        success_url = '@profiles.profile_list_users'
         title = _("Create User")
 
         def get_form_kwargs(self):
@@ -129,12 +128,16 @@ class ProfileCRUDL(SmartCRUDL):
                                        self.form.cleaned_data['rooms'], self.form.cleaned_data['manage_rooms'])
             self.object = user.profile
 
-    class Contacts(OrgPermsMixin, SmartListView):
+    class ListContacts(OrgPermsMixin, SmartListView):
         fields = ('full_name', 'chat_name', 'phone', 'room')
         title = _("Contacts")
 
+        @classmethod
+        def derive_url_pattern(cls, path, action):
+            return r'^%s/contacts/$' % path
+
         def get_queryset(self, **kwargs):
-            qs = super(ProfileCRUDL.Contacts, self).get_queryset(**kwargs)
+            qs = super(ProfileCRUDL.ListContacts, self).get_queryset(**kwargs)
             qs = qs.exclude(contact=None).select_related('contact')
             return qs
 
@@ -144,12 +147,16 @@ class ProfileCRUDL(SmartCRUDL):
         def get_room(self, obj):
             return obj.contact.room
 
-    class Users(OrgPermsMixin, SmartListView):
+    class ListUsers(OrgPermsMixin, SmartListView):
         fields = ('full_name', 'chat_name', 'email', 'rooms', 'manage_rooms')
         title = _("Users")
 
+        @classmethod
+        def derive_url_pattern(cls, path, action):
+            return r'^%s/users/$' % path
+
         def get_queryset(self, **kwargs):
-            qs = super(ProfileCRUDL.Users, self).get_queryset(**kwargs)
+            qs = super(ProfileCRUDL.ListUsers, self).get_queryset(**kwargs)
             qs = qs.filter(user__in=self.request.org.get_org_editors()).select_related('user')
             return qs
 
@@ -166,7 +173,7 @@ class ProfileCRUDL(SmartCRUDL):
             if field == 'manage_rooms':
                 return _("Manages")
             else:
-                return super(ProfileCRUDL.Users, self).lookup_field_label(context, field, default)
+                return super(ProfileCRUDL.ListUsers, self).lookup_field_label(context, field, default)
 
     class UpdateContact(OrgPermsMixin, SmartUpdateView):
         fields = ('full_name', 'chat_name', 'phone', 'room')
@@ -240,17 +247,34 @@ class ProfileCRUDL(SmartCRUDL):
             else:
                 return ", ".join([unicode(r) for r in obj.user.rooms.all()])
 
-    class Profile(OrgPermsMixin, SmartUpdateView):
+    class Self(OrgPermsMixin, SmartUpdateView):
         fields = ('full_name', 'chat_name', 'email', 'new_password')
-        success_url = '@chat.home'
+        form_class = UserForm
+        success_url = '@home.chat'
         success_message = _("Profile updated")
-        title = _("Edit my profile")
+        title = _("Edit My Profile")
+
+        @classmethod
+        def derive_url_pattern(cls, path, action):
+            return r'^%s/self/$' % path
+
+        def get_form_kwargs(self):
+            kwargs = super(ProfileCRUDL.Self, self).get_form_kwargs()
+            kwargs['user'] = self.request.user
+            return kwargs
+
+        def get_object(self, queryset=None):
+            queryset = Profile.objects.filter(user=self.request.user)
+            try:
+                return queryset.get()
+            except queryset.model.DoesNotExist:
+                raise Http404(_("User doesn't have a chat profile"))
 
         def has_permission(self, request, *args, **kwargs):
-            return self.request.user.is_authenticated() and self.request.user.pk == int(kwargs['pk'])
+            return self.request.user.is_authenticated()
 
         def post_save(self, obj):
-            obj = super(ProfileCRUDL.Profile, self).post_save(obj)
+            obj = super(ProfileCRUDL.Self, self).post_save(obj)
 
             # update associated user
             obj.user.username = self.form.cleaned_data['email']

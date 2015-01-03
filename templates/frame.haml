@@ -89,28 +89,23 @@
 
                       - if org_perms.profiles.profile_users
                         %li
-                          %a{ href:"{% url 'profiles.profile_users' %}" }
+                          %a{ href:"{% url 'profiles.profile_list_users' %}" }
                             - trans "Users"
 
                       - if org_perms.profiles.profile_contacts
                         %li
-                          %a{ href:"{% url 'profiles.profile_contacts' %}" }
+                          %a{ href:"{% url 'profiles.profile_list_contacts' %}" }
                             - trans "Contacts"
 
-                  %li
-                    %a{ href:"/" }
-                      - trans "Home"
-
-                - if org_perms.profiles.contact_list
-                  %li
-                    %a{ href:"{% url 'profiles.contact_list' %}" }
-                      - trans "Contacts"
+                %li
+                  %a{ href:"/" }
+                    - trans "Home"
 
               %ul.nav.navbar-nav.navbar-right
                 - block login
                   - if request.user and request.user.is_authenticated
                     %li
-                      %a{ href:"{% url 'users.user_profile' request.user.pk %}", style:"float: left;"}
+                      %a{ href:"{% url 'profiles.profile_self' %}", style:"float: left;"}
                         {{ request.user.username }}
                       %a{ href:"{% url 'users.user_logout' %}?go=/", style:"float: right;"}
                         - trans "Logout"

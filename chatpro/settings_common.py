@@ -299,9 +299,8 @@ PERMISSIONS = {
 
     'rooms.room': ('list', 'select', 'profiles'),
 
-    'profiles.profile': ('create_contact', 'create_user',
-                         'contacts', 'users',
-                         'update_contact', 'update_user',
+    'profiles.profile': ('create_contact', 'list_contacts', 'update_contact',
+                         'create_user', 'list_users', 'update_user',
                          'read', 'profile')
 }
 
