@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
-from .views import ProfileCRUDL
+from .views import ContactCRUDL, UserCRUDL, ProfileCRUDL
 
-urlpatterns = ProfileCRUDL().as_urlpatterns()
+urlpatterns = ContactCRUDL().as_urlpatterns()
+urlpatterns += UserCRUDL().as_urlpatterns()
+urlpatterns += ProfileCRUDL().as_urlpatterns()

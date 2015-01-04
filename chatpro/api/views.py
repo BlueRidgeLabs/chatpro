@@ -83,4 +83,4 @@ class TembaHandler(View):
             return contact
         else:
             temba_contact = org.get_temba_client().get_contact(contact_uuid)
-            return Profile.from_temba(org, room, temba_contact)
+            return Contact.from_temba(org, room, temba_contact)

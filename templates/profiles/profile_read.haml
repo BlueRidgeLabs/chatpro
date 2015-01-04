@@ -2,9 +2,13 @@
 - load smartmin i18n
 
 - block read-buttons
-  - if object.is_contact and org_perms.profiles.profile_update_contact
-    %a.btn.btn-primary.pull-right{ href:"{% url 'profiles.profile_update_contact' object.pk %}" }
+  - if object.is_contact and org_perms.profiles.contact_update
+    %a.btn.btn-primary.pull-right{ href:"{% url 'profiles.contact_update' object.pk %}" }
       - trans "Edit"
-  - if object.is_user and org_perms.profiles.profile_update_user
-    %a.btn.btn-primary.pull-right{ href:"{% url 'profiles.profile_update_user' object.pk %}" }
-      - trans "Edit"
+  - if object.is_user
+    - if object.user == request.user
+      %a.btn.btn-primary.pull-right{ href:"{% url 'profiles.profile_self' %}" }
+        - trans "Edit"
+    - elif org_perms.profiles.profile_update_user
+      %a.btn.btn-primary.pull-right{ href:"{% url 'profiles.profile_update_user' object.pk %}" }
+        - trans "Edit"

@@ -5,6 +5,7 @@ from dash.orgs.models import Org
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
+from temba.types import Contact as TembaContact
 
 
 class Contact(models.Model):
@@ -21,6 +22,38 @@ class Contact(models.Model):
     urn = models.CharField(verbose_name=_("URN"), max_length=255)
 
     is_active = models.BooleanField(default=True, help_text="Whether this contact is active")
+
+    @classmethod
+    def create(cls, org, full_name, chat_name, urn, room, uuid, do_push=False):
+        if org.id != room.org_id:
+            raise ValueError("Room does not belong to org")
+
+        # create contact
+        contact = cls.objects.create(org=org, urn=urn, room=room, uuid=uuid)
+
+        # add profile
+        Profile.objects.create(contact=contact, full_name=full_name, chat_name=chat_name)
+
+        if do_push:
+            # TODO
+            pass
+
+        return contact
+
+    @classmethod
+    def from_temba(cls, org, room, temba_contact):
+        full_name = temba_contact.name
+        chat_name = temba_contact.fields.get(org.get_chat_name_field(), None)
+        urn = temba_contact.urns[0]
+        return cls.create(org, full_name, chat_name, urn, room, temba_contact.uuid)
+
+    def to_temba(self):
+        temba_contact = TembaContact()
+        temba_contact.name = self.profile.full_name
+        temba_contact.urns = [self.urn]
+        temba_contact.fields = {self.org.get_chat_name_field(): self.profile.chat_name}
+        temba_contact.group_uuids = [self.room.group_uuid]
+        return temba_contact
 
     def get_urn(self):
         return tuple(self.urn.split(':', 1))
@@ -44,7 +77,7 @@ class Profile(models.Model):
         """
         Creates an admin user with access to all rooms
         """
-        user, profile = cls._create_base_user(full_name, chat_name, email, password)
+        user = cls._create_base_user(full_name, chat_name, email, password)
 
         # setup as org admin
         if org:
@@ -56,11 +89,13 @@ class Profile(models.Model):
         """
         Creates a regular user with specific room-level permissions
         """
-        user, profile = cls._create_base_user(full_name, chat_name, email, password)
+        user = cls._create_base_user(full_name, chat_name, email, password)
 
         # setup as org editor with limited room permissions
         user.org_editors.add(org)
-        user.update_rooms(rooms, manage_rooms)
+        user.rooms.add(*rooms)
+        user.rooms.add(*manage_rooms)
+        user.manage_rooms.add(*manage_rooms)
         return user
 
     @classmethod
@@ -71,27 +106,8 @@ class Profile(models.Model):
         user.save()
 
         # add profile
-        profile = cls.objects.create(user=user, full_name=full_name, chat_name=chat_name)
-        return user, profile
-
-    @classmethod
-    def create_contact(cls, org, full_name, chat_name, urn, room, uuid):
-        if org.id != room.org_id:
-            raise ValueError("Room does not belong to org")
-
-        # create contact
-        contact = Contact.objects.create(org=org, urn=urn, room=room, uuid=uuid)
-
-        # add profile
-        cls.objects.create(contact=contact, full_name=full_name, chat_name=chat_name)
-        return contact
-
-    @classmethod
-    def from_temba(cls, org, room, temba_contact):
-        full_name = temba_contact.name
-        chat_name = temba_contact.fields.get(org.get_chat_name_field(), None)
-        urn = temba_contact.urns[0]
-        return cls.create_contact(org, full_name, chat_name, urn, room, temba_contact.uuid)
+        cls.objects.create(user=user, full_name=full_name, chat_name=chat_name)
+        return user
 
     def is_contact(self):
         return bool(self.contact_id)

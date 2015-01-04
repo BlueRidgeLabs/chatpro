@@ -8,7 +8,7 @@ from dash.orgs.models import Org
 @shared_task
 def sync_room_groups_task(org_id, group_uuids):
     from chatpro.rooms.models import Room
-    from chatpro.profiles.models import Profile
+    from chatpro.profiles.models import Contact
 
     print 'Starting room group sync task: org_id=%d, group_uuids=[%s]' % (org_id, ",".join(group_uuids))
 
@@ -49,7 +49,7 @@ def sync_room_groups_task(org_id, group_uuids):
 
                 updated_uuids.add(temba_contact.uuid)
             else:
-                Profile.from_temba(org, room, temba_contact)
+                Contact.from_temba(org, room, temba_contact)
                 created_uuids.append(temba_contact.uuid)
 
     for existing_uuid in existing_by_uuid.keys():

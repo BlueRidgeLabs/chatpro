@@ -216,6 +216,7 @@ INSTALLED_APPS = (
     'dash.orgs',
 
     # custom
+    'chatpro.dash_ext',
     'chatpro.api',
     'chatpro.rooms',
     'chatpro.profiles',
@@ -299,8 +300,9 @@ PERMISSIONS = {
 
     'rooms.room': ('list', 'select', 'profiles'),
 
-    'profiles.profile': ('create_contact', 'list_contacts', 'update_contact',
-                         'create_user', 'list_users', 'update_user',
+    'profiles.contact': ('create', 'update', 'list'),
+
+    'profiles.profile': ('user_create', 'user_update', 'user_list',  # can't create profiles.user.* permissions because we don't own User
                          'read', 'profile')
 }
 
@@ -311,11 +313,13 @@ GROUP_PERMISSIONS = {
 
         'msgs.message.*',
         'rooms.room.*',
+        'profiles.contact.*',
         'profiles.profile.*',
     ),
     "Editors": (
         'msgs.message_list',
         'msgs.message_send',
+        'profiles.contact.*',
         'profiles.profile_read',
     ),
 }

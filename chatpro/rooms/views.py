@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 from dash.orgs.views import OrgPermsMixin
 from django import forms
+from django.db.models import Count
 from django.http import HttpResponseRedirect, JsonResponse
 from django.utils.translation import ugettext_lazy as _
 from smartmin.users.views import SmartCRUDL, SmartReadView, SmartListView
@@ -14,13 +15,16 @@ class RoomCRUDL(SmartCRUDL):
     actions = ('list', 'select', 'profiles')
 
     class List(OrgPermsMixin, SmartListView):
-        fields = ('name',)
+        fields = ('name', 'contacts')
 
         def get_queryset(self, **kwargs):
             qs = super(RoomCRUDL.List, self).get_queryset(**kwargs)
 
             org = self.request.user.get_org()
-            return qs.filter(org=org, is_active=True).order_by('name')
+            return qs.filter(org=org, is_active=True).order_by('name').annotate(num_contacts=Count('contacts'))
+
+        def get_contacts(self, obj):
+            return obj.num_contacts
 
     class Select(OrgPermsMixin, SmartFormView):
         class GroupsForm(forms.Form):

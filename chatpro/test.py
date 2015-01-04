@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 from chatpro.rooms.models import Room
-from chatpro.profiles.models import Profile
+from chatpro.profiles.models import Contact, Profile
 from dash.orgs.models import Org
 from django.contrib.auth.models import User
 from django.test import TestCase
@@ -58,7 +58,7 @@ class ChatProTest(TestCase):
         return Profile.create_user(org, full_name, chat_name, email, password=email, rooms=rooms, manage_rooms=manage_rooms)
 
     def create_contact(self, org, full_name, chat_name, urn, room, uuid):
-        return Profile.create_contact(org, full_name, chat_name, urn, room, uuid)
+        return Contact.create(org, full_name, chat_name, urn, room, uuid)
 
     def login(self, user):
         result = self.client.login(username=user.username, password=user.username)

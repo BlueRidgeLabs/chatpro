@@ -11,8 +11,8 @@ from temba.types import Contact as TembaContact, Group as TembaGroup
 
 class TembaHandlerTest(ChatProTest):
 
-    @patch('chatpro.profiles.TembaClient.get_group')
-    @patch('chatpro.profiles.TembaClient.get_contact')
+    @patch('chatpro.dash_ext.TembaClient.get_group')
+    @patch('chatpro.dash_ext.TembaClient.get_contact')
     def test_new_contact(self, mock_get_contact, mock_get_group):
         url = reverse('api.temba_handler', kwargs=dict(entity='contact', action='new'))
 
@@ -74,8 +74,8 @@ class TembaHandlerTest(ChatProTest):
         response = self.url_post('unicef', '%s?%s' % (url, 'contact=001-008&group=001-007&token=1234567890'))
         self.assertEqual(response.status_code, 200)
 
-    @patch('chatpro.profiles.TembaClient.get_group')
-    @patch('chatpro.profiles.TembaClient.get_contact')
+    @patch('chatpro.dash_ext.TembaClient.get_group')
+    @patch('chatpro.dash_ext.TembaClient.get_contact')
     def test_new_message(self, mock_get_contact, mock_get_group):
         url = reverse('api.temba_handler', kwargs=dict(entity='message', action='new'))
 
