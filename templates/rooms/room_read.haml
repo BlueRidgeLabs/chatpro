@@ -1,0 +1,7 @@
+- extends "smartmin/read.html"
+- load smartmin i18n
+
+- block read-buttons
+  - if user_can_manage
+    %a.btn.btn-primary.pull-right{ href:"{% url 'profiles.contact_list' %}" }
+      - trans "Manage Contacts"

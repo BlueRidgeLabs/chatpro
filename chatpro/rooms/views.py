@@ -12,16 +12,38 @@ from .models import Room
 
 class RoomCRUDL(SmartCRUDL):
     model = Room
-    actions = ('list', 'select', 'profiles')
+    actions = ('read', 'list', 'select', 'profiles')
+
+    class Read(OrgPermsMixin, SmartReadView):
+        fields = ('contacts', 'messages', 'last_active')
+
+        def get_queryset(self):
+            queryset = self.request.user.get_rooms(self.request.org)
+            queryset = queryset.annotate(num_contacts=Count('contacts'))
+            queryset = queryset.annotate(num_messages=Count('messages'))
+            return queryset
+
+        def get_context_data(self, **kwargs):
+            context = super(RoomCRUDL.Read, self).get_context_data(**kwargs)
+            context['user_can_manage'] = self.request.user.has_room_access(self.object, manage=True)
+            return context
+
+        def get_contacts(self, obj):
+            return obj.num_contacts
+
+        def get_messages(self, obj):
+            return obj.num_messages
+
+        def get_last_active(self, obj):
+            last_msg = obj.messages.order_by('-time').first()
+            return last_msg.time if last_msg else _("Never")
 
     class List(OrgPermsMixin, SmartListView):
         fields = ('name', 'contacts')
 
         def get_queryset(self, **kwargs):
-            qs = super(RoomCRUDL.List, self).get_queryset(**kwargs)
-
             org = self.request.user.get_org()
-            return qs.filter(org=org, is_active=True).order_by('name').annotate(num_contacts=Count('contacts'))
+            return Room.get_all(org).order_by('name').annotate(num_contacts=Count('contacts'))
 
         def get_contacts(self, obj):
             return obj.num_contacts
@@ -43,7 +65,6 @@ class RoomCRUDL(SmartCRUDL):
                 self.fields['groups'].choices = choices
                 self.fields['groups'].initial = [room.group_uuid for room in org.rooms.filter(is_active=True)]
 
-
         title = _("Room Groups")
         form_class = GroupsForm
         success_url = '@rooms.room_list'
@@ -63,8 +84,8 @@ class RoomCRUDL(SmartCRUDL):
         def get_context_data(self, **kwargs):
             context = super(RoomCRUDL.Profiles, self).get_context_data(**kwargs)
 
-            context['contacts'] = self.object.get_contacts().select_related('profile')
-            context['users'] = self.object.get_all_users().select_related('profile')
+            context['contacts'] = self.object.get_contacts()
+            context['users'] = self.object.get_users()
             return context
 
         def render_to_response(self, context, **response_kwargs):

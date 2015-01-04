@@ -44,7 +44,7 @@ def _user_has_room_access(user, room, manage=False):
     elif manage:
         return user.manage_rooms.filter(pk=room.pk).exists()
     else:
-        return user.manage_rooms.filter(pk=room.pk).exists() or user.rooms.filter(pk=room.pk).exists()
+        return user.rooms.filter(pk=room.pk).exists()
 
 
 User.get_full_name = _user_get_full_name

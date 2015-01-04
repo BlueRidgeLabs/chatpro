@@ -12,7 +12,7 @@ class HomeView(OrgPermsMixin, SmartTemplateView):
     """
     Chat homepage
     """
-    title = _("Chat")
+    title = _("Chat Rooms")
     template_name = 'home/chat.haml'
 
     def has_permission(self, request, *args, **kwargs):

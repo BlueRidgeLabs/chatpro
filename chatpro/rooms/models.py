@@ -33,7 +33,7 @@ class Room(models.Model):
 
     @classmethod
     def get_all(cls, org):
-        return Room.objects.filter(org=org, is_active=True).order_by('name')
+        return Room.objects.filter(org=org, is_active=True)
 
     @classmethod
     def update_room_groups(cls, org, group_uuids):
@@ -61,12 +61,8 @@ class Room(models.Model):
     def get_contacts(self):
         return self.contacts.filter(is_active=True).select_related('profile')
 
-    def get_all_users(self):
-        """
-        Gets all users and managers
-        """
-        both = User.objects.filter(is_active=True).filter(Q(rooms=self) | Q(manage_rooms=self)).distinct()
-        return both.select_related('profile')
+    def get_users(self):
+        return self.users.filter(is_active=True).select_related('profile')
 
     def __unicode__(self):
         return self.name

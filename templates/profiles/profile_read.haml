@@ -7,7 +7,7 @@
       - trans "Edit"
   - if object.is_user
     - if object.user == request.user
-      %a.btn.btn-primary.pull-right{ href:"{% url 'profiles.profile_self' %}" }
+      %a.btn.btn-primary.pull-right{ href:"{% url 'profiles.user_self' %}" }
         - trans "Edit"
     - elif org_perms.profiles.profile_update_user
       %a.btn.btn-primary.pull-right{ href:"{% url 'profiles.profile_update_user' object.pk %}" }

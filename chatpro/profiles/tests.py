@@ -89,8 +89,22 @@ class ContactCRUDLTest(ChatProTest):
         self.assertEqual(contact.room, self.room1)
 
     def test_update(self):
-        # TODO
-        pass
+        # log in as an org administrator
+        self.login(self.admin)
+
+        response = self.url_get('unicef', reverse('profiles.contact_update', args=[self.contact1.pk]))
+        self.assertEqual(response.status_code, 200)
+
+        data = dict(full_name="Morris", chat_name="momo2", phone="6789", room=self.room2.pk)
+        response = self.url_post('unicef', reverse('profiles.contact_update', args=[self.contact1.pk]), data)
+        self.assertEqual(response.status_code, 302)
+
+        # check updated contact and profile
+        contact = Contact.objects.get(pk=self.contact1.pk)
+        self.assertEqual(contact.profile.full_name, "Morris")
+        self.assertEqual(contact.profile.chat_name, "momo2")
+        self.assertEqual(contact.urn, 'tel:6789')
+        self.assertEqual(contact.room, self.room2)
 
     def test_list(self):
         url = reverse('profiles.contact_list')
@@ -134,10 +148,35 @@ class UserCRUDLTest(ChatProTest):
         self.assertEqual(user.profile.chat_name, "momo")
 
     def test_update(self):
-        # TODO
-        pass
+        url = reverse('profiles.user_update', args=[self.user1.pk])
 
-    def test_list_users(self):
+        # log in as an org administrator
+        self.login(self.admin)
+
+        response = self.url_get('unicef', url)
+        self.assertEqual(response.status_code, 200)
+
+        # submit with no fields entered
+        response = self.url_post('unicef', url, dict())
+        self.assertEqual(response.status_code, 200)
+        self.assertFormError(response, 'form', 'full_name', 'This field is required.')
+        self.assertFormError(response, 'form', 'chat_name', 'This field is required.')
+        self.assertFormError(response, 'form', 'email', 'This field is required.')
+
+        data = dict(full_name="Morris", chat_name="momo2", email="mo2@chat.com",
+                    rooms=[], manage_rooms=[self.room3.pk], is_active=True)
+        response = self.url_post('unicef', url, data)
+        self.assertEqual(response.status_code, 302)
+
+        # check updated user and profile
+        user = User.objects.get(pk=self.user1.pk)
+        self.assertEqual(user.profile.full_name, "Morris")
+        self.assertEqual(user.profile.chat_name, "momo2")
+        self.assertEqual(user.email, "mo2@chat.com")
+        self.assertEqual(list(user.rooms.all()), [self.room3])
+        self.assertEqual(list(user.manage_rooms.all()), [self.room3])
+
+    def test_list(self):
         list_url = reverse('profiles.user_list')
 
         response = self.url_get('unicef', list_url)
@@ -156,23 +195,8 @@ class UserCRUDLTest(ChatProTest):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['object_list']), 2)
 
-
-class ProfileCRUDLTest(ChatProTest):
-    def test_read(self):
-        # log in as an org administrator
-        self.login(self.admin)
-
-        response = self.url_get('unicef', reverse('profiles.profile_read', args=[self.admin.profile.pk]))
-        self.assertEqual(response.status_code, 200)
-
-        # log in as a user
-        self.login(self.user1)
-
-        response = self.url_get('unicef', reverse('profiles.profile_read', args=[self.admin.profile.pk]))
-        self.assertEqual(response.status_code, 200)
-
     def test_self(self):
-        url = reverse('profiles.profile_self')
+        url = reverse('profiles.user_self')
 
         # try as unauthenticated
         response = self.url_get('unicef', url)
@@ -193,4 +217,19 @@ class ProfileCRUDLTest(ChatProTest):
         self.login(self.user1)
 
         response = self.url_get('unicef', url)
+        self.assertEqual(response.status_code, 200)
+
+
+class ProfileCRUDLTest(ChatProTest):
+    def test_read(self):
+        # log in as an org administrator
+        self.login(self.admin)
+
+        response = self.url_get('unicef', reverse('profiles.profile_read', args=[self.admin.profile.pk]))
+        self.assertEqual(response.status_code, 200)
+
+        # log in as a user
+        self.login(self.user1)
+
+        response = self.url_get('unicef', reverse('profiles.profile_read', args=[self.admin.profile.pk]))
         self.assertEqual(response.status_code, 200)

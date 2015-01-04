@@ -96,6 +96,20 @@ class ProfileFormMixin(object):
         kwargs['user'] = self.request.user
         return kwargs
 
+    def derive_initial(self):
+        initial = super(ProfileFormMixin, self).derive_initial()
+        if self.object:
+            initial['full_name'] = self.object.profile.full_name
+            initial['chat_name'] = self.object.profile.chat_name
+        return initial
+
+    def post_save(self, obj):
+        obj = super(ProfileFormMixin, self).post_save(obj)
+        obj.profile.full_name = self.form.cleaned_data['full_name']
+        obj.profile.chat_name = self.form.cleaned_data['chat_name']
+        obj.profile.save()
+        return obj
+
 
 class ContactCRUDL(SmartCRUDL):
     model = Contact
@@ -118,20 +132,13 @@ class ContactCRUDL(SmartCRUDL):
 
         def derive_initial(self):
             initial = super(ContactCRUDL.Update, self).derive_initial()
-            initial['full_name'] = self.object.profile.full_name
-            initial['chat_name'] = self.object.profile.chat_name
             initial['phone'] = self.object.get_urn()[1]
             return initial
 
         def pre_save(self, obj):
             obj = super(ContactCRUDL.Update, self).pre_save(obj)
             obj.urn = 'tel:%s' % self.form.cleaned_data['phone']
-
-        def post_save(self, obj):
-            obj = super(ContactCRUDL.Update, self).post_save(obj)
-            obj.profile.full_name = self.form.cleaned_data['full_name']
-            obj.profile.chat_name = self.form.cleaned_data['chat_name']
-            obj.profile.save()
+            return obj
 
     class List(OrgPermsMixin, SmartListView):
         fields = ('full_name', 'chat_name', 'phone', 'room')
@@ -153,7 +160,7 @@ class ContactCRUDL(SmartCRUDL):
 
 class UserCRUDL(SmartCRUDL):
     model = User
-    actions = ('create', 'update', 'list')
+    actions = ('create', 'update', 'self', 'list')
 
     class Create(OrgPermsMixin, ProfileFormMixin, SmartCreateView):
         fields = ('full_name', 'chat_name', 'email', 'password', 'rooms', 'manage_rooms')
@@ -174,14 +181,9 @@ class UserCRUDL(SmartCRUDL):
         form_class = UserForm
         permission = 'profiles.profile_user_update'
 
-        def derive_initial(self):
-            initial = super(UserCRUDL.Update, self).derive_initial()
-            initial['full_name'] = self.object.profile.full_name
-            initial['chat_name'] = self.object.profile.chat_name
-            return initial
-
         def pre_save(self, obj):
-            obj.rooms.add(self.form.cleaned_data['manage_rooms'])
+            obj.rooms.add(*self.form.cleaned_data['manage_rooms'])
+            return obj
 
         def post_save(self, obj):
             obj = super(UserCRUDL.Update, self).post_save(obj)
@@ -191,6 +193,40 @@ class UserCRUDL(SmartCRUDL):
                 obj.set_password(new_password)
                 obj.save()
 
+            return obj
+
+    class Self(OrgPermsMixin, ProfileFormMixin, SmartUpdateView):
+        """
+        Limited update form for users to edit their own profiles
+        """
+        fields = ('full_name', 'chat_name', 'email', 'new_password')
+        form_class = UserForm
+        success_url = '@home.chat'
+        success_message = _("Profile updated")
+        title = _("Edit My Profile")
+
+        @classmethod
+        def derive_url_pattern(cls, path, action):
+            return r'^profile/self/$'
+
+        def has_permission(self, request, *args, **kwargs):
+            return self.request.user.is_authenticated()
+
+        def get_object(self, queryset=None):
+            try:
+                self.request.user.profile
+            except Profile.DoesNotExist:
+                raise Http404(_("User doesn't have a chat profile"))
+
+            return self.request.user
+
+        def post_save(self, obj):
+            obj = super(UserCRUDL.Self, self).post_save(obj)
+
+            new_password = self.form.cleaned_data.get('new_password', "")
+            if new_password:
+                obj.set_password(new_password)
+                obj.save()
             return obj
 
     class List(OrgPermsMixin, SmartListView):
@@ -223,7 +259,7 @@ class UserCRUDL(SmartCRUDL):
 
 class ProfileCRUDL(SmartCRUDL):
     model = Profile
-    actions = ('read', 'self')
+    actions = ('read',)
 
     class Read(OrgPermsMixin, SmartReadView):
         """
@@ -262,38 +298,3 @@ class ProfileCRUDL(SmartCRUDL):
 
         def get_rooms(self, obj):
             return ", ".join([unicode(r) for r in obj.user.rooms.all()])
-
-    class Self(OrgPermsMixin, ProfileFormMixin, SmartUpdateView):
-        fields = ('full_name', 'chat_name', 'email', 'new_password')
-        form_class = UserForm
-        success_url = '@home.chat'
-        success_message = _("Profile updated")
-        title = _("Edit My Profile")
-
-        @classmethod
-        def derive_url_pattern(cls, path, action):
-            return r'^%s/self/$' % path
-
-        def has_permission(self, request, *args, **kwargs):
-            return self.request.user.is_authenticated()
-
-        def get_object(self, queryset=None):
-            queryset = Profile.objects.filter(user=self.request.user)
-            try:
-                return queryset.get()
-            except queryset.model.DoesNotExist:
-                raise Http404(_("User doesn't have a chat profile"))
-
-        def post_save(self, obj):
-            obj = super(ProfileCRUDL.Self, self).post_save(obj)
-
-            # update associated user
-            obj.user.username = self.form.cleaned_data['email']
-            obj.user.email = self.form.cleaned_data['email']
-
-            new_password = self.form.cleaned_data.get('new_password', "")
-            if new_password:
-                obj.user.set_password(new_password)
-
-            obj.user.save()
-            return obj

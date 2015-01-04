@@ -43,6 +43,8 @@
       .col-md-3
         - for room in rooms
           .{ ng-controller:"RoomProfilesController", ng-init:"init({{ room.id }})", ng-show:"active_room_id == room_id" }
+            %a.btn.btn-default{ href:"{% url 'rooms.room_read' room.pk %}", style:"width: 100%; margin-bottom: 1em" }
+              - trans "Room Details"
             .loading{ ng-if:"loading" }
             .participant{ ng-repeat:"profile in profiles" }
               .contact{ ng-if:'profile.type == "C"' }

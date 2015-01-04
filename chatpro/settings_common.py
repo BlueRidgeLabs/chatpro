@@ -298,7 +298,7 @@ PERMISSIONS = {
 
     'msgs.message': ('send', 'list'),
 
-    'rooms.room': ('list', 'select', 'profiles'),
+    'rooms.room': ('read', 'list', 'select', 'profiles'),
 
     'profiles.contact': ('create', 'update', 'list'),
 
@@ -319,6 +319,8 @@ GROUP_PERMISSIONS = {
     "Editors": (
         'msgs.message_list',
         'msgs.message_send',
+        'rooms.room_read',
+        'rooms.room_profiles',
         'profiles.contact.*',
         'profiles.profile_read',
     ),
