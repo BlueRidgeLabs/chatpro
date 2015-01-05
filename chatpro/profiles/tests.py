@@ -116,6 +116,33 @@ class ContactCRUDLTest(ChatProTest):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['object_list']), 5)
 
+    def test_delete(self):
+        # log in as an org administrator
+        self.login(self.admin)
+
+        # delete contact
+        response = self.url_post('unicef', reverse('profiles.contact_delete', args=[self.contact1.pk]))
+        self.assertRedirects(response, 'http://unicef.localhost/contact/')
+        self.assertFalse(Contact.objects.get(pk=self.contact1.pk).is_active)
+
+        # try to delete contact from other org
+        response = self.url_post('unicef', reverse('profiles.contact_delete', args=[self.contact6.pk]))
+        self.assertLoginRedirect(response, 'unicef', '/contact/delete/%d/' % self.contact6.pk)
+        self.assertTrue(Contact.objects.get(pk=self.contact6.pk).is_active)
+
+        # log in as user
+        self.login(self.user1)
+
+        # delete contact from room we manage
+        response = self.url_post('unicef', reverse('profiles.contact_delete', args=[self.contact3.pk]))
+        self.assertRedirects(response, 'http://unicef.localhost/contact/')
+        self.assertFalse(Contact.objects.get(pk=self.contact3.pk).is_active)
+
+        # try to delete contact from room we don't manage
+        response = self.url_post('unicef', reverse('profiles.contact_delete', args=[self.contact5.pk]))
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(Contact.objects.get(pk=self.contact5.pk).is_active)
+
 
 class UserCRUDLTest(ChatProTest):
     def test_create(self):
@@ -190,21 +217,21 @@ class UserCRUDLTest(ChatProTest):
         self.assertFalse(user.is_active)
 
     def test_list(self):
-        list_url = reverse('profiles.user_list')
+        url = reverse('profiles.user_list')
 
-        response = self.url_get('unicef', list_url)
-        self.assertRedirects(response, 'http://unicef.localhost/users/login/?next=/user/')
+        response = self.url_get('unicef', url)
+        self.assertLoginRedirect(response, 'unicef', url)
 
         # log in as a non-administrator
         self.login(self.user1)
 
-        response = self.url_get('unicef', list_url)
-        self.assertRedirects(response, 'http://unicef.localhost/users/login/?next=/user/')
+        response = self.url_get('unicef', url)
+        self.assertLoginRedirect(response, 'unicef', url)
 
         # log in as an org administrator
         self.login(self.admin)
 
-        response = self.url_get('unicef', list_url)
+        response = self.url_get('unicef', url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['object_list']), 2)
 
@@ -213,7 +240,7 @@ class UserCRUDLTest(ChatProTest):
 
         # try as unauthenticated
         response = self.url_get('unicef', url)
-        self.assertRedirects(response, 'http://unicef.localhost/users/login/?next=/profile/self/')
+        self.assertLoginRedirect(response, 'unicef', url)
 
         # try as superuser (doesn't have a chat profile)
         self.login(self.superuser)

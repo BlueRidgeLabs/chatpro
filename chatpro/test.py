@@ -80,3 +80,6 @@ class ChatProTest(TestCase):
         if subdomain:
             extra['HTTP_HOST'] = '%s.localhost' % subdomain
         return self.client.post(url, data, **extra)
+
+    def assertLoginRedirect(self, response, subdomain, next):
+        self.assertRedirects(response, 'http://%s.localhost/users/login/?next=%s' % (subdomain, next))

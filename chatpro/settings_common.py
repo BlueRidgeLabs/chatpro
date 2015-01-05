@@ -300,7 +300,7 @@ PERMISSIONS = {
 
     'rooms.room': ('read', 'list', 'select', 'profiles'),
 
-    'profiles.contact': ('create', 'update', 'list', 'filter'),
+    'profiles.contact': ('create', 'update', 'list', 'filter', 'delete'),
 
     'profiles.profile': ('user_create', 'user_update', 'user_list',  # can't create profiles.user.* permissions because we don't own User
                          'read', 'profile')

@@ -4,12 +4,13 @@ from chatpro.rooms.models import Room
 from dash.orgs.views import OrgPermsMixin, OrgObjPermsMixin
 from django import forms
 from django.contrib.auth.models import User
+from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
 from django.core.validators import MinLengthValidator
 from django.db.models import Q
-from django.http import Http404
+from django.http import Http404, HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
-from smartmin.users.views import SmartCRUDL, SmartCreateView, SmartReadView, SmartUpdateView, SmartListView
+from smartmin.users.views import SmartCRUDL, SmartCreateView, SmartReadView, SmartUpdateView, SmartListView, SmartDeleteView
 from uuid import uuid4
 from .models import Contact, Profile
 
@@ -128,7 +129,7 @@ class ProfileListMixin(object):
 
 class ContactCRUDL(SmartCRUDL):
     model = Contact
-    actions = ('create', 'update', 'list', 'filter')
+    actions = ('create', 'update', 'list', 'filter', 'delete')
 
     class Create(OrgPermsMixin, ProfileFormMixin, SmartCreateView):
         fields = ('full_name', 'chat_name', 'phone', 'room')
@@ -201,6 +202,19 @@ class ContactCRUDL(SmartCRUDL):
 
         def get_phone(self, obj):
             return obj.get_urn()[1]
+
+    class Delete(OrgObjPermsMixin, SmartDeleteView):
+        cancel_url = '@profiles.contact_list'
+
+        def post(self, request, *args, **kwargs):
+            contact = self.get_object()
+
+            if self.request.user.has_room_access(contact.room, manage=True):
+                contact.is_active = False
+                contact.save()
+                return HttpResponseRedirect(reverse('profiles.contact_list'))
+            else:
+                raise PermissionDenied()
 
 
 class UserCRUDL(SmartCRUDL):
@@ -334,17 +348,22 @@ class ProfileCRUDL(SmartCRUDL):
         def get_context_data(self, **kwargs):
             context = super(ProfileCRUDL.Read, self).get_context_data(**kwargs)
             edit_button_url = None
+            delete_button_url = None
 
-            if self.object.is_contact() and self.has_org_perm('profiles.contact_update'):
+            if self.object.is_contact():
                 room = self.object.contact.room
                 if self.request.user.has_room_access(room, manage=True):
-                    edit_button_url = reverse('profiles.contact_update', args=[self.object.contact.pk])
+                    if self.has_org_perm('profiles.contact_update'):
+                        edit_button_url = reverse('profiles.contact_update', args=[self.object.contact.pk])
+                    if self.has_org_perm('profiles.contact_delete'):
+                        delete_button_url = reverse('profiles.contact_delete', args=[self.object.contact.pk])
             elif self.object.user == self.request.user:
                 edit_button_url = reverse('profiles.user_self')
             elif self.has_org_perm('profiles.profile_user_update'):
                 edit_button_url = reverse('profiles.user_update', args=[self.object.user.pk])
 
             context['edit_button_url'] = edit_button_url
+            context['delete_button_url'] = delete_button_url
             return context
 
         def get_type(self, obj):
