@@ -71,7 +71,7 @@
                         %a{ href:"{% url 'profiles.user_list' %}"}
                           - trans "Users"
 
-                -if org_perms.orgs.org_edit or org_perms.rooms.room_list or org_perms.profiles.profile_user_list or org_perms.profiles.contact_list
+                -if org_perms.orgs.org_edit or org_perms.rooms.room_list or org_perms.profiles.profile_user_list
                   %li.dropdown
                     %a.dropdown-toggle{href:"#", data-toggle:"dropdown"}
                       - trans "Administration"
@@ -92,14 +92,14 @@
                           %a{ href:"{% url 'profiles.user_list' %}" }
                             - trans "Users"
 
-                      - if org_perms.profiles.contact_list
-                        %li
-                          %a{ href:"{% url 'profiles.contact_list' %}" }
-                            - trans "Contacts"
-
                 %li
                   %a{ href:"/" }
                     - trans "Home"
+
+                - if org_perms.profiles.contact_list
+                  %li
+                    %a{ href:"{% url 'profiles.contact_list' %}" }
+                      - trans "Contacts"
 
               %ul.nav.navbar-nav.navbar-right
                 - block login

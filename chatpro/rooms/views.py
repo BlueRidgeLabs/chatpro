@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-from dash.orgs.views import OrgPermsMixin
+from dash.orgs.views import OrgPermsMixin, OrgObjPermsMixin
 from django import forms
 from django.db.models import Count
 from django.http import HttpResponseRedirect, JsonResponse
@@ -14,14 +14,11 @@ class RoomCRUDL(SmartCRUDL):
     model = Room
     actions = ('read', 'list', 'select', 'profiles')
 
-    class Read(OrgPermsMixin, SmartReadView):
-        fields = ('contacts', 'messages', 'last_active')
+    class Read(OrgObjPermsMixin, SmartReadView):
+        fields = ('contacts', 'messages', 'last_active', 'managers')
 
         def get_queryset(self):
-            queryset = self.request.user.get_rooms(self.request.org)
-            queryset = queryset.annotate(num_contacts=Count('contacts'))
-            queryset = queryset.annotate(num_messages=Count('messages'))
-            return queryset
+            return self.request.user.get_rooms(self.request.org)
 
         def get_context_data(self, **kwargs):
             context = super(RoomCRUDL.Read, self).get_context_data(**kwargs)
@@ -29,14 +26,17 @@ class RoomCRUDL(SmartCRUDL):
             return context
 
         def get_contacts(self, obj):
-            return obj.num_contacts
+            return obj.get_contacts().count()
 
         def get_messages(self, obj):
-            return obj.num_messages
+            return obj.messages.count()
 
         def get_last_active(self, obj):
             last_msg = obj.messages.order_by('-time').first()
             return last_msg.time if last_msg else _("Never")
+
+        def get_managers(self, obj):
+            return ",".join([unicode(m.profile) for m in obj.get_managers()])
 
     class List(OrgPermsMixin, SmartListView):
         fields = ('name', 'contacts')

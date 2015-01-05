@@ -64,5 +64,8 @@ class Room(models.Model):
     def get_users(self):
         return self.users.filter(is_active=True).select_related('profile')
 
+    def get_managers(self):
+        return self.managers.filter(is_active=True).select_related('profile')
+
     def __unicode__(self):
         return self.name

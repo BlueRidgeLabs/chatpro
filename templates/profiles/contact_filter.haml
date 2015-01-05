@@ -1,0 +1,7 @@
+- extends "smartmin/list.html"
+- load smartmin i18n
+
+- block table-buttons
+  - if org_perms.profiles.contact_create
+    %a.btn.btn-primary.pull-right{ href:"{% url 'profiles.contact_create_in' room.pk %}" }
+      - trans "Add"

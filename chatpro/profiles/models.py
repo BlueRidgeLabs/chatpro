@@ -93,9 +93,7 @@ class Profile(models.Model):
 
         # setup as org editor with limited room permissions
         user.org_editors.add(org)
-        user.rooms.add(*rooms)
-        user.rooms.add(*manage_rooms)
-        user.manage_rooms.add(*manage_rooms)
+        user.update_rooms(rooms, manage_rooms)
         return user
 
     @classmethod

@@ -3,5 +3,5 @@
 
 - block read-buttons
   - if user_can_manage
-    %a.btn.btn-primary.pull-right{ href:"{% url 'profiles.contact_list' %}" }
+    %a.btn.btn-primary.pull-right{ href:"{% url 'profiles.contact_filter' object.pk %}" }
       - trans "Manage Contacts"
