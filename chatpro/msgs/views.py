@@ -2,11 +2,10 @@ from __future__ import unicode_literals
 
 from chatpro.rooms.models import Room
 from dash.orgs.views import OrgPermsMixin
-from django import forms
 from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse
 from smartmin.users.views import SmartCRUDL, SmartListView
-from smartmin.users.views import SmartFormView
+from smartmin.users.views import SmartCreateView
 from .models import Message
 from .utils import parse_iso8601
 
@@ -15,39 +14,17 @@ class MessageCRUDL(SmartCRUDL):
     model = Message
     actions = ('list', 'send')
 
-    class Send(OrgPermsMixin, SmartFormView):
-        class SendForm(forms.ModelForm):
-            room = forms.ModelChoiceField(queryset=Room.objects.filter(pk=-1))
-
-            def __init__(self, *args, **kwargs):
-                user = kwargs['user']
-                del kwargs['user']
-                super(MessageCRUDL.Send.SendForm, self).__init__(*args, **kwargs)
-
-                self.fields['room'].queryset = user.get_rooms(user.get_org()).order_by('name')
-
-            class Meta:
-                model = Message
-                fields = ('text', 'room')
-
-        form_class = SendForm
-
-        def get_form_kwargs(self):
-            kwargs = super(MessageCRUDL.Send, self).get_form_kwargs()
-            kwargs['user'] = self.request.user
-            return kwargs
-
-        def form_valid(self, form):
+    class Send(OrgPermsMixin, SmartCreateView):
+        def post(self, request, *args, **kwargs):
             org = self.derive_org()
-            room = form.cleaned_data['room']
-            text = form.cleaned_data['text']
+            room = Room.objects.get(pk=request.REQUEST.get('room'))
+            text = request.REQUEST.get('text')
 
-            # TODO this isn't used. This view should be a simpler AJAX endpoint rather than a SmartFormView
             if not self.request.user.has_room_access(room):
                 raise PermissionDenied()
 
             msg = Message.create(org, self.request.user, text, room)
-            return JsonResponse({'message_id': msg.pk})
+            return JsonResponse(msg.as_json())
 
     class List(OrgPermsMixin, SmartListView):
         paginate_by = None  # switch off Django pagination
