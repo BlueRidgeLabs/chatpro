@@ -7,7 +7,7 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('orgs', '0009_auto_20141210_1555'),
+        ('orgs', '0008_org_timezone'),
         ('rooms', '0001_initial'),
         ('profiles', '0001_initial'),
     ]
