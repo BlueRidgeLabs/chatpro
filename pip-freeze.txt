@@ -1,4 +1,4 @@
--e git+https://github.com/django/django.git@4aed731154b12e2948ee2b6a8baa5083840a343b#egg=Django-origin/stable/1.7.x
+Django==1.7.2
 Markdown==2.5.2
 Pillow==2.7.0
 Pygments==2.0.1
