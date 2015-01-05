@@ -1,6 +1,6 @@
--e git+https://github.com/nyaruka/smartmin.git@user_full_name#egg=smartmin-dev
+-e git+https://github.com/nyaruka/smartmin.git#egg=smartmin-dev
 -e git+https://github.com/django/django.git@stable/1.7.x#egg=django
--e git+https://github.com/rapidpro/dash.git#egg=dash
+-e git+https://github.com/rapidpro/dash.git@org_timezone#egg=dash
 -e git+https://github.com/rapidpro/rapidpro-python#egg=rapidpro-python
 celery
 celery-with-redis

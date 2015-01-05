@@ -31,11 +31,11 @@
                     [[ message.sender.full_name ]]
                 %td.message-text
                   .message-time.pull-away
-                    [[ message.time | date:'short' ]]
+                    [[ message.time | date:'MMM dd, yyyy HH:mm' ]]
                   [[ message.text ]]
                 %td.message-time
 
-            .messages-none{ ng-hide:"messages.length > 0" }
+            .none{ ng-hide:"messages.length > 0" }
               -trans "No messages"
 
             .loading{ ng-if:"loading_old" }
@@ -46,7 +46,7 @@
             %a.btn.btn-default{ href:"{% url 'rooms.room_read' room.pk %}", style:"width: 100%; margin-bottom: 1em" }
               - trans "Room Details"
             .loading{ ng-if:"loading" }
-            .participant{ ng-repeat:"profile in profiles" }
+            .profile{ ng-repeat:"profile in profiles" }
               .contact{ ng-if:'profile.type == "C"' }
                 %span.glyphicon.glyphicon-phone
                 %a{ href:"/profile/read/[[ profile.id ]]" }
@@ -55,9 +55,11 @@
                 %span.glyphicon.glyphicon-user
                 %a{ href:"/profile/read/[[ profile.id ]]" }
                   [[ profile.full_name ]]
+            .none{ ng-hide:"profiles.length > 0" }
+              -trans "Nobody"
 
   - else
-    .rooms-none
+    .none
       - trans "You don't have access to any chat rooms. Contact your administrator."
 
 - block extra-script
@@ -70,7 +72,7 @@
       text-align: center;
       padding-bottom: 1em;
     }
-    .rooms-none, .messages-none {
+    .none {
       text-align: center;
       font-style: italic;
       padding: 1em;
@@ -95,7 +97,7 @@
       font-size: 0.7em;
       color: #888;
     }
-    .participant {
+    .profile {
       padding: 0.2em;
     }
 
