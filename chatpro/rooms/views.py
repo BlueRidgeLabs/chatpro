@@ -43,10 +43,10 @@ class RoomCRUDL(SmartCRUDL):
 
         def get_queryset(self, **kwargs):
             org = self.request.user.get_org()
-            return Room.get_all(org).order_by('name').annotate(num_contacts=Count('contacts'))
+            return Room.get_all(org).order_by('name')
 
         def get_contacts(self, obj):
-            return obj.num_contacts
+            return obj.contacts.filter(is_active=True).count()
 
     class Select(OrgPermsMixin, SmartFormView):
         class GroupsForm(forms.Form):

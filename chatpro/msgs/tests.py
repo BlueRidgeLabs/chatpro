@@ -2,11 +2,11 @@ from __future__ import unicode_literals
 
 import pytz
 
-from chatpro.test import ChatProTest
 from chatpro.msgs.models import Message
+from chatpro.test import ChatProTest
+from chatpro.utils import format_iso8601
 from datetime import datetime
 from django.core.urlresolvers import reverse
-from .utils import format_iso8601
 
 
 class MessageTest(ChatProTest):

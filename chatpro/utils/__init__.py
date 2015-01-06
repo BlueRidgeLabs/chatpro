@@ -12,3 +12,8 @@ def format_iso8601(_datetime):
 
 def parse_iso8601(text):
     return datetime.datetime.strptime(text, ISO8601_FORMAT)
+
+
+def intersection(a, b):
+    """ return the intersection of two lists """
+    return list(set(a) & set(b))

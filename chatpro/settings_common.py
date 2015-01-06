@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+import datetime
 import sys
 
 from django.utils.translation import ugettext_lazy as _
@@ -371,3 +372,13 @@ djcelery.setup_loader()
 
 BROKER_URL = 'redis://localhost:6379/%d' % (10 if TESTING else 13)
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/13'
+
+CELERYBEAT_SCHEDULE = {
+    'sync-all-contacts': {
+        'task': 'chatpro.profiles.tasks.sync_all_contacts',
+        'schedule': datetime.timedelta(hours=1),
+        'args': ()
+    },
+}
+
+CELERY_TIMEZONE = 'UTC'

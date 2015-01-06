@@ -7,7 +7,7 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from temba.types import Contact as TembaContact
 from uuid import uuid4
-from .tasks import ChangeType, push_contact_change_task
+from .tasks import ChangeType, push_contact_change
 
 
 class Contact(models.Model):
@@ -65,7 +65,7 @@ class Contact(models.Model):
         return temba_contact
 
     def push(self, change_type):
-        push_contact_change_task.delay(self.id, change_type)
+        push_contact_change.delay(self.id, change_type)
 
     def get_urn(self):
         return tuple(self.urn.split(':', 1))

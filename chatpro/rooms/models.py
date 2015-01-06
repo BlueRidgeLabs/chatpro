@@ -1,11 +1,10 @@
 from __future__ import unicode_literals
 
+from chatpro.profiles.tasks import sync_org_contacts
 from dash.orgs.models import Org
 from django.contrib.auth.models import User
 from django.db import models
-from django.db.models import Q
 from django.utils.translation import ugettext_lazy as _
-from .tasks import sync_room_groups_task
 
 
 class Room(models.Model):
@@ -56,7 +55,7 @@ class Room(models.Model):
             else:
                 cls.create(org, group_names[group_uuid], group_uuid)
 
-        sync_room_groups_task.delay(org.id, group_uuids)
+        sync_org_contacts.delay(org.id)
 
     def get_contacts(self):
         return self.contacts.filter(is_active=True).select_related('profile')
