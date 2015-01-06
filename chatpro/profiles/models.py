@@ -6,6 +6,8 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from temba.types import Contact as TembaContact
+from uuid import uuid4
+from .tasks import ChangeType, push_contact_change_task
 
 
 class Contact(models.Model):
@@ -24,9 +26,16 @@ class Contact(models.Model):
     is_active = models.BooleanField(default=True, help_text="Whether this contact is active")
 
     @classmethod
-    def create(cls, org, full_name, chat_name, urn, room, uuid, do_push=False):
+    def create(cls, org, full_name, chat_name, urn, room, uuid=None):
         if org.id != room.org_id:
             raise ValueError("Room does not belong to org")
+
+        # if we don't have a UUID, then we created this contact
+        if not uuid:
+            do_push = True
+            uuid = unicode(uuid4())
+        else:
+            do_push = False
 
         # create contact
         contact = cls.objects.create(org=org, urn=urn, room=room, uuid=uuid)
@@ -35,8 +44,7 @@ class Contact(models.Model):
         Profile.objects.create(contact=contact, full_name=full_name, chat_name=chat_name)
 
         if do_push:
-            # TODO
-            pass
+            contact.push(ChangeType.created)
 
         return contact
 
@@ -53,10 +61,19 @@ class Contact(models.Model):
         temba_contact.urns = [self.urn]
         temba_contact.fields = {self.org.get_chat_name_field(): self.profile.chat_name}
         temba_contact.group_uuids = [self.room.group_uuid]
+        temba_contact.uuid = self.uuid
         return temba_contact
+
+    def push(self, change_type):
+        push_contact_change_task.delay(self.id, change_type)
 
     def get_urn(self):
         return tuple(self.urn.split(':', 1))
+
+    def release(self):
+        self.is_active = False
+        self.save()
+        self.push(ChangeType.deleted)
 
 
 class Profile(models.Model):

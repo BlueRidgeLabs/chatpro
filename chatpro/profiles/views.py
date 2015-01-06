@@ -11,8 +11,8 @@ from django.db.models import Q
 from django.http import Http404, HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
 from smartmin.users.views import SmartCRUDL, SmartCreateView, SmartReadView, SmartUpdateView, SmartListView, SmartDeleteView
-from uuid import uuid4
 from .models import Contact, Profile
+from .tasks import ChangeType
 
 
 class BaseProfileForm(forms.ModelForm):
@@ -147,7 +147,7 @@ class ContactCRUDL(SmartCRUDL):
             full_name = self.form.cleaned_data['full_name']
             chat_name = self.form.cleaned_data['chat_name']
             urn = 'tel:%s' % self.form.cleaned_data['phone']
-            self.object = Contact.create(org, full_name, chat_name, urn, obj.room, unicode(uuid4()))
+            self.object = Contact.create(org, full_name, chat_name, urn, obj.room)
 
     class Update(OrgObjPermsMixin, ProfileFormMixin, SmartUpdateView):
         fields = ('full_name', 'chat_name', 'phone', 'room')
@@ -161,6 +161,11 @@ class ContactCRUDL(SmartCRUDL):
         def pre_save(self, obj):
             obj = super(ContactCRUDL.Update, self).pre_save(obj)
             obj.urn = 'tel:%s' % self.form.cleaned_data['phone']
+            return obj
+
+        def post_save(self, obj):
+            obj = super(ContactCRUDL.Update, self).post_save(obj)
+            obj.push(ChangeType.updated)
             return obj
 
     class List(OrgPermsMixin, ProfileListMixin, SmartListView):
@@ -210,8 +215,7 @@ class ContactCRUDL(SmartCRUDL):
             contact = self.get_object()
 
             if self.request.user.has_room_access(contact.room, manage=True):
-                contact.is_active = False
-                contact.save()
+                contact.release()
                 return HttpResponseRedirect(reverse('profiles.contact_list'))
             else:
                 raise PermissionDenied()

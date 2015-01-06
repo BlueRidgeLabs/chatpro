@@ -4,6 +4,11 @@ import sys
 
 from django.utils.translation import ugettext_lazy as _
 
+#-----------------------------------------------------------------------------------
+# Sets TESTING to True if this configuration is read during a unit test
+#-----------------------------------------------------------------------------------
+TESTING = sys.argv[1:2] == ['test']
+
 # Django settings for tns_glass project.
 THUMBNAIL_DEBUG = False
 
@@ -364,5 +369,5 @@ INTERNAL_IPS = ('127.0.0.1',)
 import djcelery
 djcelery.setup_loader()
 
-BROKER_URL = 'redis://localhost:6379/13'
+BROKER_URL = 'redis://localhost:6379/%d' % (10 if TESTING else 13)
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/13'

@@ -4,18 +4,32 @@ from chatpro.test import ChatProTest
 from chatpro.profiles.models import Contact, Profile
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
+from django.test.utils import override_settings
+from mock import patch
 from temba.types import Contact as TembaContact
 
 
 class ContactTest(ChatProTest):
-    def test_create(self):
-        contact = Contact.create(self.unicef, "Mo Chats", "momo", 'tel:078123', self.room1, '000-007')
+    @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True, BROKER_BACKEND='memory')
+    @patch('chatpro.dash_ext.TembaClient.create_contact')
+    def test_create(self, mock_create_contact):
+        mock_create_contact.return_value = TembaContact.deserialize(
+            dict(uuid='RRR-007', name="Mo Chats", urns=['tel:078123'], group_uuids=['000-007'],
+                 fields=dict(chat_name="momo"), language='eng', modified_on='2014-10-01T06:54:09.817Z')
+        )
+
+        contact = Contact.create(self.unicef, "Mo Chats", "momo", 'tel:078123', self.room1)
         self.assertEqual(contact.profile.full_name, "Mo Chats")
         self.assertEqual(contact.profile.chat_name, "momo")
 
         self.assertEqual(contact.urn, 'tel:078123')
         self.assertEqual(contact.room, self.room1)
-        self.assertEqual(contact.uuid, '000-007')
+
+        # reload and check UUID was updated by push task
+        contact = Contact.objects.get(pk=contact.pk)
+        self.assertEqual(contact.uuid, 'RRR-007')
+
+        self.assertEqual(mock_create_contact.call_count, 1)
 
     def test_from_temba(self):
         temba_contact = TembaContact.deserialize(dict(uuid='000-007', name="Jan", urns=['tel:123'],
@@ -34,6 +48,15 @@ class ContactTest(ChatProTest):
         self.assertEqual(temba_contact.urns, ['tel:1234'])
         self.assertEqual(temba_contact.fields, {'chat_name': "ann"})
         self.assertEqual(temba_contact.group_uuids, ['000-001'])
+        self.assertEqual(temba_contact.uuid, '000-001')
+
+    @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True, BROKER_BACKEND='memory')
+    @patch('chatpro.dash_ext.TembaClient.delete_contact')
+    def test_release(self, mock_delete_contact):
+        self.contact1.release()
+        self.assertFalse(self.contact1.is_active)
+
+        self.assertEqual(mock_delete_contact.call_count, 1)
 
 
 class ProfileTest(ChatProTest):
