@@ -60,7 +60,7 @@ class Contact(models.Model):
         temba_contact.name = self.profile.full_name
         temba_contact.urns = [self.urn]
         temba_contact.fields = {self.org.get_chat_name_field(): self.profile.chat_name}
-        temba_contact.group_uuids = [self.room.group_uuid]
+        temba_contact.groups = [self.room.group_uuid]
         temba_contact.uuid = self.uuid
         return temba_contact
 

@@ -47,7 +47,7 @@ class ContactTest(ChatProTest):
         self.assertEqual(temba_contact.name, "Ann")
         self.assertEqual(temba_contact.urns, ['tel:1234'])
         self.assertEqual(temba_contact.fields, {'chat_name': "ann"})
-        self.assertEqual(temba_contact.group_uuids, ['000-001'])
+        self.assertEqual(temba_contact.groups, ['000-001'])
         self.assertEqual(temba_contact.uuid, '000-001')
 
     @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True, BROKER_BACKEND='memory')

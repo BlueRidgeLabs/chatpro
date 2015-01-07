@@ -35,7 +35,7 @@ def push_contact_change(contact_id, change_type):
         temba_contact = client.create_contact(temba_contact.name,
                                               temba_contact.urns,
                                               temba_contact.fields,
-                                              temba_contact.group_uuids)
+                                              temba_contact.groups)
         # update our contact with the new UUID from RapidPro
         contact.uuid = temba_contact.uuid
         contact.save()
@@ -46,7 +46,7 @@ def push_contact_change(contact_id, change_type):
                               temba_contact.name,
                               temba_contact.urns,
                               temba_contact.fields,
-                              temba_contact.group_uuids)
+                              temba_contact.groups)
 
     elif change_type == ChangeType.deleted:
         client.delete_contact(temba_contact.uuid)
@@ -68,7 +68,7 @@ def sync_org_contacts(org_id):
 
     group_uuids = [r.group_uuid for r in rooms]
 
-    incoming_contacts = client.get_contacts(group_uuids=group_uuids)
+    incoming_contacts = client.get_contacts(groups=group_uuids)
 
     # organize incoming contacts by the UUID of their first group
     incoming_by_group = defaultdict(list)
@@ -79,7 +79,7 @@ def sync_org_contacts(org_id):
             continue
 
         # which chat rooms is this contact in?
-        chat_group_uuids = intersection(incoming_contact.group_uuids, group_uuids)
+        chat_group_uuids = intersection(incoming_contact.groups, group_uuids)
 
         if len(chat_group_uuids) != 1:
             logger.warning("Ignoring contact %s who is in multiple chat room groups" % incoming_contact.uuid)
