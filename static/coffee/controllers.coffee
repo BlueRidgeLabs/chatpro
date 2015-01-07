@@ -85,6 +85,14 @@ controllers.controller 'RoomMessagesController', [ '$scope', 'MessageService', (
         # prepend new messages
         $scope.messages = messages.concat non_temp_messages
 
+    MessageService.onMessagesSent (room_id, messages) ->
+      if room_id == $scope.room_id
+        for updated_msg in messages
+          for msg in $scope.messages
+            if msg.id == updated_msg.id
+              msg.status = updated_msg.status
+              break
+
   #============================================================================
   # Loads old messages - called by infinite scroller
   #============================================================================

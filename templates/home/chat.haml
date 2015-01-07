@@ -31,7 +31,9 @@
                     [[ message.sender.full_name ]]
                 %td.message-text
                   .message-time.pull-away
-                    [[ message.time | date:'MMM dd, yyyy HH:mm' ]]
+                    [[ message.time | date:'MMM dd HH:mm' ]]
+                    %span.glyphicon.glyphicon-time{ ng-if:'message.status == "P"', title:"Not yet sent" }
+                    %span.glyphicon.glyphicon-ok{ ng-if:'message.status == "S"', title:"Sent" }
                   [[ message.text ]]
                 %td.message-time
 

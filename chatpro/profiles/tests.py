@@ -5,6 +5,7 @@ from chatpro.profiles.models import Contact, Profile
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.test.utils import override_settings
+from django.utils import timezone
 from mock import patch
 from temba.types import Contact as TembaContact
 
@@ -13,10 +14,9 @@ class ContactTest(ChatProTest):
     @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True, BROKER_BACKEND='memory')
     @patch('chatpro.dash_ext.TembaClient.create_contact')
     def test_create(self, mock_create_contact):
-        mock_create_contact.return_value = TembaContact.deserialize(
-            dict(uuid='RRR-007', name="Mo Chats", urns=['tel:078123'], group_uuids=['000-007'],
-                 fields=dict(chat_name="momo"), language='eng', modified_on='2014-10-01T06:54:09.817Z')
-        )
+        mock_create_contact.return_value = TembaContact.create(uuid='RRR-007', name="Mo Chats", urns=['tel:078123'],
+                                                               groups=['000-007'], fields=dict(chat_name="momo"),
+                                                               language='eng', modified_on=timezone.now())
 
         contact = Contact.create(self.unicef, "Mo Chats", "momo", 'tel:078123', self.room1)
         self.assertEqual(contact.profile.full_name, "Mo Chats")
@@ -32,9 +32,10 @@ class ContactTest(ChatProTest):
         self.assertEqual(mock_create_contact.call_count, 1)
 
     def test_from_temba(self):
-        temba_contact = TembaContact.deserialize(dict(uuid='000-007', name="Jan", urns=['tel:123'],
-                                                      group_uuids=['000-007'], fields=dict(chat_name="jxn"),
-                                                      language='eng', modified_on='2014-10-01T06:54:09.817Z'))
+        temba_contact = TembaContact.create(uuid='000-007', name="Jan", urns=['tel:123'],
+                                            groups=['000-007'], fields=dict(chat_name="jxn"),
+                                            language='eng', modified_on=timezone.now())
+
         contact = Contact.from_temba(self.unicef, self.room1, temba_contact)
         self.assertEqual(contact.profile.full_name, "Jan")
         self.assertEqual(contact.profile.chat_name, "jxn")

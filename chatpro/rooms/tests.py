@@ -1,10 +1,11 @@
 from __future__ import unicode_literals
 
-from django.core.urlresolvers import reverse
-from django.test.utils import override_settings
 from chatpro.rooms.models import Room
 from chatpro.profiles.models import Contact
 from chatpro.test import ChatProTest
+from django.core.urlresolvers import reverse
+from django.test.utils import override_settings
+from django.utils import timezone
 from mock import patch
 from temba.types import Contact as TembaContact, Group as TembaGroup
 
@@ -18,13 +19,13 @@ class RoomTest(ChatProTest):
     @patch('chatpro.dash_ext.TembaClient.get_groups')
     @patch('chatpro.dash_ext.TembaClient.get_contacts')
     def test_update_room_groups(self, mock_get_contacts, mock_get_groups):
-        mock_get_groups.return_value = TembaGroup.deserialize_list([
-            dict(uuid='000-007', name="New group", size=2)
-        ])
-        mock_get_contacts.return_value = TembaContact.deserialize_list([
-            dict(uuid='000-007', name="Jan", urns=['tel:123'], group_uuids=['000-007'], fields=dict(chat_name="jan"), language='eng', modified_on='2014-10-01T06:54:09.817Z'),
-            dict(uuid='000-008', name="Ken", urns=['tel:234'], group_uuids=['000-007'], fields=dict(chat_name="ken"), language='eng', modified_on='2014-10-01T06:54:09.817Z')
-        ])
+        mock_get_groups.return_value = [TembaGroup.create(uuid='000-007', name="New group", size=2)]
+        mock_get_contacts.return_value = [
+            TembaContact.create(uuid='000-007', name="Jan", urns=['tel:123'], groups=['000-007'],
+                                fields=dict(chat_name="jan"), language='eng', modified_on=timezone.now()),
+            TembaContact.create(uuid='000-008', name="Ken", urns=['tel:234'], groups=['000-007'],
+                                fields=dict(chat_name="ken"), language='eng', modified_on=timezone.now())
+        ]
 
         # select one new group
         Room.update_room_groups(self.unicef, ['000-007'])

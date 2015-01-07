@@ -23,7 +23,7 @@ class MessageCRUDL(SmartCRUDL):
             if not self.request.user.has_room_access(room):
                 raise PermissionDenied()
 
-            msg = Message.create(org, self.request.user, text, room)
+            msg = Message.create_for_user(org, self.request.user, text, room)
             return JsonResponse(msg.as_json())
 
     class List(OrgPermsMixin, SmartListView):
@@ -36,26 +36,30 @@ class MessageCRUDL(SmartCRUDL):
             qs = Message.objects.filter(org=org)
 
             room_id = self.request.REQUEST.get('room', None)
+            ids = self.request.REQUEST.getlist('ids')
+            before_id = self.request.REQUEST.get('before_id', None)
+            after_id = self.request.REQUEST.get('after_id', None)
+            before_time = self.request.REQUEST.get('before_time', None)
+            after_time = self.request.REQUEST.get('after_time', None)
+
             if room_id:
                 room = Room.objects.get(pk=room_id)
                 if not self.request.user.has_room_access(room):
                     raise PermissionDenied()
-
                 qs = qs.filter(room_id=room.id)
             else:
                 qs = qs.filter(room__in=self.request.user.get_rooms(org))
 
-            if 'before_id' in self.request.REQUEST:
-                qs = qs.filter(pk__lt=int(self.request.REQUEST['before_id']))
-
-            if 'before_time' in self.request.REQUEST:
-                qs = qs.filter(time__lt=parse_iso8601(self.request.REQUEST['before_time']))
-
-            if 'after_id' in self.request.REQUEST:
-                qs = qs.filter(pk__gt=int(self.request.REQUEST['after_id']))
-
-            if 'after_time' in self.request.REQUEST:
-                qs = qs.filter(time__gt=parse_iso8601(self.request.REQUEST['after_time']))
+            if ids:
+                qs = qs.filter(pk__in=ids)
+            if before_id:
+                qs = qs.filter(pk__lt=int(before_id))
+            if after_id:
+                qs = qs.filter(pk__gt=int(after_id))
+            if before_time:
+                qs = qs.filter(time__lt=parse_iso8601(before_time))
+            if after_time:
+                qs = qs.filter(time__gt=parse_iso8601(after_time))
 
             return self.order_queryset(qs)
 

@@ -22,9 +22,9 @@ def push_contact_change(contact_id, change_type):
     """
     Task to push a local contact change to RapidPro
     """
-    from chatpro.profiles.models import Contact
+    from .models import Contact
 
-    contact = Contact.objects.get(pk=contact_id)
+    contact = Contact.objects.select_related('org').get(pk=contact_id)
     temba_contact = contact.to_temba()
     org = contact.org
     client = org.get_temba_client()

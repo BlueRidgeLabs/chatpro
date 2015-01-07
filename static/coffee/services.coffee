@@ -47,8 +47,10 @@ services.factory 'MessageService', ['$rootScope', '$http', '$timeout', ($rootSco
       @start_time = new Date()
       @max_id = null
       @room_min_ids = {}
+      @pending_ids = []
 
-      $timeout(=> @fetchNewMessages())
+      $timeout((=> @fetchNewMessages()), 1000)
+      $timeout((=> @refreshPendingMessages()), 1000)
 
     #=====================================================================
     # Fetches new messages for all rooms
@@ -61,15 +63,7 @@ services.factory 'MessageService', ['$rootScope', '$http', '$timeout', ($rootSco
       .success (data) =>
         if data.results.length > 0
           @max_id = data.max_id
-
-          messages = @processMessages data.results
-
-          # organize messages by room
-          room_messages = {}
-          for msg in messages
-            if !room_messages[msg.room_id]?
-              room_messages[msg.room_id] = []
-            room_messages[msg.room_id].push msg
+          room_messages = @processMessages data.results
 
           # broadcast event for each room
           for room_id of room_messages
@@ -98,11 +92,43 @@ services.factory 'MessageService', ['$rootScope', '$http', '$timeout', ($rootSco
 
       $http.get '/message/?' + $.param(params)
       .success (data) =>
-        messages = @processMessages data.results
-
         @room_min_ids[room_id] = data.min_id
 
+        room_messages = @processMessages data.results
+
+        messages = if room_messages[room_id]? then room_messages[room_id] else []
         callback(messages, data.has_older)
+
+    #=====================================================================
+    # Refreshes pending messages for all rooms
+    #=====================================================================
+    refreshPendingMessages: ->
+      if @pending_ids.length > 0
+        $http.get '/message/?ids=' + @pending_ids.join(',')
+        .success (data) =>
+          # extract no-longer-pending messages
+          sent_messages = []
+          for msg in data.results
+            if msg.status == 'S'
+              sent_messages.push msg
+              @pending_ids.splice(@pending_ids.indexOf(msg.id), 1)
+
+          room_messages = @processMessages sent_messages
+
+          # broadcast event for each room
+          for room_id of room_messages
+            $rootScope.$broadcast 'messages_sent', room_id, room_messages[room_id]
+
+        .then =>
+          $timeout((=> @refreshPendingMessages()), 5000)
+      else
+        $timeout((=> @refreshPendingMessages()), 5000)
+
+    #=====================================================================
+    # Registers a callback for message send status changes
+    #=====================================================================
+    onMessagesSent: (callback) ->
+      $rootScope.$on('messages_sent', (event, room_id, messages) -> callback(parseInt(room_id), messages))
 
     #=====================================================================
     # Sends a message to the given room
@@ -131,10 +157,23 @@ services.factory 'MessageService', ['$rootScope', '$http', '$timeout', ($rootSco
         callback(data)
 
     #=====================================================================
-    # Processes incoming messages (parses the date strings)
+    # Processes incoming messages, organizing by room
     #=====================================================================
     processMessages: (messages) ->
+      room_messages = {}
+
       for msg in messages
+        # parse datetime string
         msg.time = parse_iso8601 msg.time
-      messages
+
+        # track pending messages
+        if msg.status == 'P'
+          @pending_ids.push msg.id
+
+        # organize messages by room
+        if !room_messages[msg.room_id]?
+          room_messages[msg.room_id] = []
+        room_messages[msg.room_id].push msg
+
+      room_messages
 ]
