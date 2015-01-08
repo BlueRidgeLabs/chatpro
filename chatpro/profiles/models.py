@@ -90,31 +90,10 @@ class Profile(models.Model):
                                  help_text=_("Shorter name used for chat messages"))
 
     @classmethod
-    def create_admin(cls, org, full_name, chat_name, email, password):
-        """
-        Creates an admin user with access to all rooms
-        """
-        user = cls._create_base_user(full_name, chat_name, email, password)
-
-        # setup as org admin
-        if org:
-            user.org_admins.add(org)
-        return user
-
-    @classmethod
     def create_user(cls, org, full_name, chat_name, email, password, rooms=(), manage_rooms=()):
         """
         Creates a regular user with specific room-level permissions
         """
-        user = cls._create_base_user(full_name, chat_name, email, password)
-
-        # setup as org editor with limited room permissions
-        user.org_editors.add(org)
-        user.update_rooms(rooms, manage_rooms)
-        return user
-
-    @classmethod
-    def _create_base_user(cls, full_name, chat_name, email, password):
         # create auth user
         user = User.objects.create(is_active=True, username=email, email=email)
         user.set_password(password)
@@ -122,6 +101,12 @@ class Profile(models.Model):
 
         # add profile
         cls.objects.create(user=user, full_name=full_name, chat_name=chat_name)
+
+        # setup as org editor with limited room permissions
+        if org:
+            user.org_editors.add(org)
+        if rooms or manage_rooms:
+            user.update_rooms(rooms, manage_rooms)
         return user
 
     def is_contact(self):

@@ -68,7 +68,7 @@
                         %a{href:"{% url 'orgs.org_list' %}"}
                           - trans "Orgs"
                       %li
-                        %a{ href:"{% url 'profiles.user_list' %}"}
+                        %a{ href:"{% url 'profiles.admin_list' %}"}
                           - trans "Users"
 
                 -if org_perms.orgs.org_edit or org_perms.rooms.room_list or org_perms.profiles.profile_user_list
@@ -92,14 +92,15 @@
                           %a{ href:"{% url 'profiles.user_list' %}" }
                             - trans "Users"
 
-                %li
-                  %a{ href:"/" }
-                    - trans "Chat"
-
-                - if org_perms.profiles.contact_list
+                - if org
                   %li
-                    %a{ href:"{% url 'profiles.contact_list' %}" }
-                      - trans "Contacts"
+                    %a{ href:"/" }
+                      - trans "Chat"
+
+                  - if org_perms.profiles.contact_list
+                    %li
+                      %a{ href:"{% url 'profiles.contact_list' %}" }
+                        - trans "Contacts"
 
               %ul.nav.navbar-nav.navbar-right
                 - block login

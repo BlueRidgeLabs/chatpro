@@ -298,7 +298,7 @@ class UserCRUDL(SmartCRUDL):
             return obj
 
     class List(OrgPermsMixin, ProfileListMixin, SmartListView):
-        fields = ('full_name', 'chat_name', 'email', 'rooms', 'manage_rooms')
+        fields = ('full_name', 'chat_name', 'email', 'rooms', 'manages')
         permission = 'profiles.profile_user_list'
 
         def get_queryset(self, **kwargs):
@@ -309,14 +309,56 @@ class UserCRUDL(SmartCRUDL):
         def get_rooms(self, obj):
             return ", ".join([unicode(r) for r in obj.rooms.all()])
 
-        def get_manage_rooms(self, obj):
+        def get_manages(self, obj):
             return ", ".join([unicode(r) for r in obj.manage_rooms.all()])
 
-        def lookup_field_label(self, context, field, default=None):
-            if field == 'manage_rooms':
-                return _("Manages")
-            else:
-                return super(UserCRUDL.List, self).lookup_field_label(context, field, default)
+
+class ManageUserCRUDL(SmartCRUDL):
+    """
+    CRUDL used only by superusers to manage users outside the context of an organization
+    """
+    model = User
+    model_name = 'Admin'
+    path = 'admin'
+    actions = ('create', 'update', 'list')
+
+    class Create(OrgPermsMixin, ProfileFormMixin, SmartCreateView):
+        fields = ('full_name', 'chat_name', 'email', 'password')
+        form_class = UserForm
+
+        def save(self, obj):
+            full_name = self.form.cleaned_data['full_name']
+            chat_name = self.form.cleaned_data['chat_name']
+            password = self.form.cleaned_data['password']
+            self.object = Profile.create_user(None, full_name, chat_name, obj.email, password)
+
+    class Update(OrgPermsMixin, ProfileFormMixin, SmartUpdateView):
+        fields = ('full_name', 'chat_name', 'email', 'new_password', 'is_active')
+        form_class = UserForm
+
+        def post_save(self, obj):
+            obj = super(ManageUserCRUDL.Update, self).post_save(obj)
+            new_password = self.form.cleaned_data.get('new_password', "")
+            if new_password:
+                obj.set_password(new_password)
+                obj.save()
+            return obj
+
+    class List(ProfileListMixin, SmartListView):
+        fields = ('full_name', 'chat_name', 'email', 'orgs')
+        default_order = ('profile__full_name',)
+
+        def get_queryset(self, **kwargs):
+            qs = super(ManageUserCRUDL.List, self).get_queryset(**kwargs)
+            qs = qs.filter(is_active=True).exclude(profile=None).select_related('profile', 'org_admins', 'org_editors')
+            return qs
+
+        def get_orgs(self, obj):
+            orgs = set(obj.org_admins.all()) | set(obj.org_editors.all())
+            return ", ".join([unicode(o) for o in orgs])
+
+        def lookup_field_link(self, context, field, obj):
+            return reverse('profiles.admin_update', args=[obj.pk])
 
 
 class ProfileCRUDL(SmartCRUDL):

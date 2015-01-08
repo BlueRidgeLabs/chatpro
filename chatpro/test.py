@@ -53,7 +53,9 @@ class ChatProTest(TestCase):
         return Room.create(org, name, group_uuid)
 
     def create_admin(self, org, full_name, chat_name, email):
-        return Profile.create_admin(org, full_name, chat_name, email, password=email)
+        user = Profile.create_admin(org, full_name, chat_name, email, password=email)
+        user.org_admins.add(org)
+        return user
 
     def create_user(self, org, full_name, chat_name, email, rooms, manage_rooms):
         return Profile.create_user(org, full_name, chat_name, email, password=email, rooms=rooms, manage_rooms=manage_rooms)
