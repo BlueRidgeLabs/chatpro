@@ -66,20 +66,14 @@ STATICFILES_FINDERS = (
 API_ENDPOINT = 'https://api.rapidpro.io'
 SITE_HOST_PATTERN = 'http://%s.chatpro.staging.nyaruka.com'
 
-# Set your production database settings here
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'chatpro',
-        'USER': 'chatpro',
-        'PASSWORD': 'nyarukaglue',
-        'HOST': 'localhost',
-        'PORT': '5432', 
-        'CONN_MAX_AGE': 60,
-        'OPTIONS': {
-        }  
-    }
-}
+import dj_database_url
+DATABASES = {}
+DATABASES['default'] =  dj_database_url.config()
+
+# reuse our connections for up to 60 seconds
+DATABASES['default']['CONN_MAX_AGE'] = 60
+DATABASES['default']['ATOMIC_REQUESTS'] = True
+DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql_psycopg2'
 
 # no debug toolbar in prod
 MIDDLEWARE_CLASSES = (
