@@ -6,9 +6,11 @@
     .btn-group.pull-right
       - if edit_button_url
         %a.btn.btn-default{ href:"{{ edit_button_url }}" }
+          %span.glyphicon.glyphicon-pencil
           - trans "Edit"
       - if delete_button_url
         %button.btn.btn-default{ type:"button", data-toggle:"modal", data-target:"#confirm-delete-dialog" }
+          %span.glyphicon.glyphicon-trash
           - trans "Delete"
 
   %form#delete-form{ method:"post", action:"{{ delete_button_url }}" }

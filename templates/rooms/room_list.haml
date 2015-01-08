@@ -11,5 +11,6 @@
 
 - block table-buttons
   - if org_perms.rooms.room_select
-    %a.btn.btn-primary.pull-right{ href:"{% url 'rooms.room_select' %}" }
+    %a.btn.btn-default.pull-right{ href:"{% url 'rooms.room_select' %}" }
+      %span.glyphicon.glyphicon-download
       - trans "Select Groups"

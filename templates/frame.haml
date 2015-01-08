@@ -112,10 +112,12 @@
                         %p.navbar-text{ style:"float: left;"}
                           {{ request.user.username }}
                       %a{ href:"{% url 'users.user_logout' %}?go=/", style:"float: right;"}
+                        %span.glyphicon.glyphicon-log-out
                         - trans "Logout"
                   - else
                     %li
                       %a{ href:"{% url 'users.user_login' %}"}
+                        %span.glyphicon.glyphicon-log-in
                         - trans "Login"
 
     .container

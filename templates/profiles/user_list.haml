@@ -3,5 +3,6 @@
 
 - block table-buttons
   - if org_perms.profiles.profile_create_user
-    %a.btn.btn-primary.pull-right{ href:"{% url 'profiles.profile_create_user' %}" }
+    %a.btn.btn-default.pull-right{ href:"{% url 'profiles.user_create' %}" }
+      %span.glyphicon.glyphicon-plus
       - trans "Add"

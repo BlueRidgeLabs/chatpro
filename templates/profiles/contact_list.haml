@@ -3,6 +3,6 @@
 
 - block table-buttons
   - if org_perms.profiles.contact_create
-    %a.btn.btn-default.pull-right{ href:"{% url 'profiles.contact_create_in' room.pk %}" }
+    %a.btn.btn-default.pull-right{ href:"{% url 'profiles.contact_create' %}" }
       %span.glyphicon.glyphicon-plus
       - trans "Add"
