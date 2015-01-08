@@ -18,12 +18,17 @@ class ContactTest(ChatProTest):
                                                                groups=['000-007'], fields=dict(chat_name="momo"),
                                                                language='eng', modified_on=timezone.now())
 
-        contact = Contact.create(self.unicef, "Mo Chats", "momo", 'tel:078123', self.room1)
+        contact = Contact.create(self.unicef, self.user1, "Mo Chats", "momo", 'tel:078123', self.room1)
+
         self.assertEqual(contact.profile.full_name, "Mo Chats")
         self.assertEqual(contact.profile.chat_name, "momo")
 
         self.assertEqual(contact.urn, 'tel:078123')
         self.assertEqual(contact.room, self.room1)
+        self.assertEqual(contact.created_by, self.user1)
+        self.assertIsNotNone(contact.created_on)
+        self.assertEqual(contact.modified_by, self.user1)
+        self.assertIsNotNone(contact.modified_on)
 
         # reload and check UUID was updated by push task
         contact = Contact.objects.get(pk=contact.pk)
@@ -37,11 +42,17 @@ class ContactTest(ChatProTest):
                                             language='eng', modified_on=timezone.now())
 
         contact = Contact.from_temba(self.unicef, self.room1, temba_contact)
+
         self.assertEqual(contact.profile.full_name, "Jan")
         self.assertEqual(contact.profile.chat_name, "jxn")
+
         self.assertEqual(contact.room, self.room1)
         self.assertEqual(contact.urn, 'tel:123')
         self.assertEqual(contact.uuid, '000-007')
+        self.assertIsNone(contact.created_by)
+        self.assertIsNotNone(contact.created_on)
+        self.assertIsNone(contact.modified_by)
+        self.assertIsNotNone(contact.modified_on)
 
     def test_to_temba(self):
         temba_contact = self.contact1.to_temba()
@@ -160,7 +171,9 @@ class ContactCRUDLTest(ChatProTest):
         # delete contact from room we manage
         response = self.url_post('unicef', reverse('profiles.contact_delete', args=[self.contact3.pk]))
         self.assertRedirects(response, 'http://unicef.localhost/contact/')
-        self.assertFalse(Contact.objects.get(pk=self.contact3.pk).is_active)
+        contact = Contact.objects.get(pk=self.contact3.pk)
+        self.assertFalse(contact.is_active)
+        # self.assertEqual(contact.modified_by, self.user1)  # TODO re-enable with https://github.com/nyaruka/smartmin/pull/47
 
         # try to delete contact from room we don't manage
         response = self.url_post('unicef', reverse('profiles.contact_delete', args=[self.contact5.pk]))

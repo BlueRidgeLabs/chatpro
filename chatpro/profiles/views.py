@@ -147,7 +147,7 @@ class ContactCRUDL(SmartCRUDL):
             full_name = self.form.cleaned_data['full_name']
             chat_name = self.form.cleaned_data['chat_name']
             urn = 'tel:%s' % self.form.cleaned_data['phone']
-            self.object = Contact.create(org, full_name, chat_name, urn, obj.room)
+            self.object = Contact.create(org, self.request.user, full_name, chat_name, urn, obj.room)
 
     class Update(OrgObjPermsMixin, ProfileFormMixin, SmartUpdateView):
         fields = ('full_name', 'chat_name', 'phone', 'room')
@@ -212,10 +212,11 @@ class ContactCRUDL(SmartCRUDL):
         cancel_url = '@profiles.contact_list'
 
         def post(self, request, *args, **kwargs):
-            contact = self.get_object()
+            self.object = self.get_object()
 
-            if self.request.user.has_room_access(contact.room, manage=True):
-                contact.release()
+            if self.request.user.has_room_access(self.object.room, manage=True):
+                self.pre_delete(self.object)
+                self.object.release()
                 return HttpResponseRedirect(reverse('profiles.contact_list'))
             else:
                 raise PermissionDenied()
@@ -376,12 +377,16 @@ class ProfileCRUDL(SmartCRUDL):
                 return super(ProfileCRUDL.Read, self).derive_title()
 
         def derive_fields(self):
+            fields = ['full_name', 'chat_name', 'type']
             if self.object.is_contact():
-                return 'full_name', 'chat_name', 'type', 'phone', 'room'
-            elif self.object.user.is_admin_for(self.request.org):
-                return 'full_name', 'chat_name', 'type', 'email'
+                fields += ['phone', 'room']
+                if self.object.contact.created_by_id:
+                    fields += ['added_by']
             else:
-                return 'full_name', 'chat_name', 'type', 'email', 'rooms'
+                fields += ['email']
+                if not self.object.user.is_admin_for(self.request.org):
+                    fields += ['rooms']
+            return fields
 
         def get_queryset(self):
             queryset = super(ProfileCRUDL.Read, self).get_queryset()
@@ -422,6 +427,9 @@ class ProfileCRUDL(SmartCRUDL):
 
         def get_phone(self, obj):
             return obj.contact.get_urn()[1]
+
+        def get_added_by(self, obj):
+            return obj.contact.created_by.get_full_name()
 
         def get_email(self, obj):
             return obj.user.email

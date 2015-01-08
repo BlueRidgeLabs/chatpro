@@ -23,10 +23,20 @@ class Contact(models.Model):
 
     urn = models.CharField(verbose_name=_("URN"), max_length=255)
 
-    is_active = models.BooleanField(default=True, help_text="Whether this contact is active")
+    is_active = models.BooleanField(default=True, help_text=_("Whether this contact is active"))
+
+    created_by = models.ForeignKey(User, null=True, related_name="contact_creations",
+                                   help_text="The user which originally created this item")
+    created_on = models.DateTimeField(auto_now_add=True,
+                                      help_text="When this item was originally created")
+
+    modified_by = models.ForeignKey(User, null=True, related_name="contact_modifications",
+                                    help_text="The user which last modified this item")
+    modified_on = models.DateTimeField(auto_now=True,
+                                       help_text="When this item was last modified")
 
     @classmethod
-    def create(cls, org, full_name, chat_name, urn, room, uuid=None):
+    def create(cls, org, user, full_name, chat_name, urn, room, uuid=None):
         if org.id != room.org_id:
             raise ValueError("Room does not belong to org")
 
@@ -38,7 +48,8 @@ class Contact(models.Model):
             do_push = False
 
         # create contact
-        contact = cls.objects.create(org=org, urn=urn, room=room, uuid=uuid)
+        contact = cls.objects.create(org=org, urn=urn, room=room, uuid=uuid,
+                                     created_by=user, modified_by=user)
 
         # add profile
         Profile.objects.create(contact=contact, full_name=full_name, chat_name=chat_name)
@@ -53,7 +64,7 @@ class Contact(models.Model):
         full_name = temba_contact.name
         chat_name = temba_contact.fields.get(org.get_chat_name_field(), None)
         urn = temba_contact.urns[0]
-        return cls.create(org, full_name, chat_name, urn, room, temba_contact.uuid)
+        return cls.create(org, None, full_name, chat_name, urn, room, temba_contact.uuid)
 
     def to_temba(self):
         temba_contact = TembaContact()

@@ -53,7 +53,7 @@ class ChatProTest(TestCase):
         return Room.create(org, name, group_uuid)
 
     def create_admin(self, org, full_name, chat_name, email):
-        user = Profile.create_admin(org, full_name, chat_name, email, password=email)
+        user = Profile.create_user(None, full_name, chat_name, email, password=email)
         user.org_admins.add(org)
         return user
 
@@ -61,7 +61,8 @@ class ChatProTest(TestCase):
         return Profile.create_user(org, full_name, chat_name, email, password=email, rooms=rooms, manage_rooms=manage_rooms)
 
     def create_contact(self, org, full_name, chat_name, urn, room, uuid):
-        return Contact.create(org, full_name, chat_name, urn, room, uuid)
+        user = org.administrators.first()
+        return Contact.create(org, user, full_name, chat_name, urn, room, uuid)
 
     def login(self, user):
         result = self.client.login(username=user.username, password=user.username)
