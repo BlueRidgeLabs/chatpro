@@ -20,7 +20,7 @@ class MessageCRUDL(SmartCRUDL):
             room = Room.objects.get(pk=request.REQUEST.get('room'))
             text = request.REQUEST.get('text')
 
-            if not self.request.user.has_room_access(room):
+            if not (self.request.user.has_profile() and self.request.user.has_room_access(room)):
                 raise PermissionDenied()
 
             msg = Message.create_for_user(org, self.request.user, text, room)

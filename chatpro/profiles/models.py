@@ -37,7 +37,7 @@ class Contact(models.Model):
 
     @classmethod
     def create(cls, org, user, full_name, chat_name, urn, room, uuid=None):
-        if org.id != room.org_id:
+        if org.id != room.org_id:  # pragma: no cover
             raise ValueError("Room does not belong to org")
 
         # if we don't have a UUID, then we created this contact

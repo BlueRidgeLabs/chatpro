@@ -10,6 +10,18 @@ from mock import patch
 from temba.types import Contact as TembaContact
 
 
+class UserPatchTest(ChatProTest):
+    def test_has_profile(self):
+        self.assertFalse(self.superuser.has_profile())
+        self.assertTrue(self.admin.has_profile())
+        self.assertTrue(self.user1.has_profile())
+
+    def test_get_full_name(self):
+        self.assertEqual(self.superuser.get_full_name(), "")
+        self.assertEqual(self.admin.get_full_name(), "Richard")
+        self.assertEqual(self.user1.get_full_name(), "Sam Sims")
+
+
 class ContactTest(ChatProTest):
     @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True, BROKER_BACKEND='memory')
     @patch('chatpro.dash_ext.TembaClient.create_contact')
@@ -95,6 +107,23 @@ class ProfileTest(ChatProTest):
         self.assertFalse(user.has_room_access(self.room3, manage=True))
         self.assertFalse(user.has_room_access(self.room4))
         self.assertFalse(user.has_room_access(self.room4, manage=True))
+
+    def test_unicode(self):
+        self.assertEqual(unicode(self.user1.profile), "Sam Sims")
+        self.user1.profile.full_name = None
+        self.user1.profile.save()
+        self.assertEqual(unicode(self.user1.profile), "sammy")
+        self.user1.profile.chat_name = None
+        self.user1.profile.save()
+        self.assertEqual(unicode(self.user1.profile), "sam@unicef.org")
+
+        self.assertEqual(unicode(self.contact1.profile), "Ann")
+        self.contact1.profile.full_name = None
+        self.contact1.profile.save()
+        self.assertEqual(unicode(self.contact1.profile), "ann")
+        self.contact1.profile.chat_name = None
+        self.contact1.profile.save()
+        self.assertEqual(unicode(self.contact1.profile), "1234")
 
 
 class ContactCRUDLTest(ChatProTest):

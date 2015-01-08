@@ -2,6 +2,10 @@
 - load smartmin i18n
 
 - block read-buttons
-  - if user_can_manage
-    %a.btn.btn-default.pull-right{ href:"{% url 'profiles.contact_filter' object.pk %}" }
-      - trans "Manage Contacts"
+  .btn-group.pull-right
+    %a.btn.btn-default{ href:"{% url 'home.chat_in' object.pk %}" }
+      %span.glyphicon.glyphicon-comment
+      - trans "Chat"
+    - if user_can_manage
+      %a.btn.btn-default{ href:"{% url 'profiles.contact_filter' object.pk %}" }
+        - trans "Manage Contacts"

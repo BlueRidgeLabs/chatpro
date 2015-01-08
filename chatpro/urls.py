@@ -14,7 +14,7 @@ urlpatterns = patterns('',
     url(r'^i18n/', include('django.conf.urls.i18n')),
 )
 
-if settings.DEBUG:
+if settings.DEBUG:  # pragma: no cover
     import debug_toolbar
     urlpatterns = patterns('',
     url(r'^__debug__/', include(debug_toolbar.urls)),

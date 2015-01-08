@@ -13,7 +13,7 @@ def send_message(message_id):
 
     message = Message.objects.select_related('org', 'room', 'sender').get(pk=message_id)
 
-    if message.sender.is_contact():
+    if message.sender.is_contact():  # pragma: no cover
         raise ValueError("Can't send a message from a contact")
 
     client = message.org.get_temba_client()

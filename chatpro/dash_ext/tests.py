@@ -4,14 +4,14 @@ from chatpro.test import ChatProTest
 from django.test.utils import override_settings
 
 
-class UserTest(ChatProTest):
+class UserPatchTest(ChatProTest):
     def test_is_admin_for(self):
         self.assertTrue(self.admin.is_admin_for(self.unicef))
         self.assertFalse(self.admin.is_admin_for(self.nyaruka))
         self.assertFalse(self.user1.is_admin_for(self.unicef))
 
 
-class OrgTest(ChatProTest):
+class OrgPatchTest(ChatProTest):
     @override_settings(SITE_API_HOST='example.com')
     def test_get_temba_client(self):
         client = self.unicef.get_temba_client()

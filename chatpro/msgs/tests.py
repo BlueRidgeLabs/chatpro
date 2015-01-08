@@ -54,6 +54,11 @@ class MessageCRUDLTest(ChatProTest):
 
         send_url = reverse('msgs.message_send')
 
+        # try to send as superuser who doesn't have a chat profile
+        self.login(self.superuser)
+        response = self.url_post('unicef', send_url, dict(room=self.room1.id, text="Hello"))
+        self.assertEqual(response.status_code, 403)
+
         # send as admin user
         self.login(self.admin)
         response = self.url_post('unicef', send_url, dict(room=self.room1.id, text="Hello 1"))
@@ -86,6 +91,12 @@ class MessageCRUDLTest(ChatProTest):
 
         # log in as admin who can see messages from all rooms
         self.login(self.admin)
+
+        # by room id
+        response = self.url_get('unicef', reverse('msgs.message_list'), {'room': self.room1.pk})
+        self.assertContains(response, "Msg 1", status_code=200)
+        self.assertContains(response, "Msg 2")
+        self.assertNotContains(response, "Msg 3")
 
         # by ids
         response = self.url_get('unicef', reverse('msgs.message_list'), {'ids': [msg1.id, msg3.id]})
@@ -120,7 +131,18 @@ class MessageCRUDLTest(ChatProTest):
         # log in as user who does have access to room #3
         self.login(self.user1)
 
+        # by ids ignores ids not in accessible rooms
         response = self.url_get('unicef', reverse('msgs.message_list'), {'ids': [msg1.id, msg2.id, msg3.id]})
         self.assertContains(response, "Msg 1", status_code=200)
         self.assertContains(response, "Msg 2")
         self.assertNotContains(response, "Msg 3")
+
+        # by room gives permission denied
+        response = self.url_get('unicef', reverse('msgs.message_list'), {'room': self.room3.pk})
+        self.assertEqual(response.status_code, 403)
+
+        # check empty response
+        response = self.url_get('unicef', reverse('msgs.message_list'), {'ids': [123]})
+        self.assertNotContains(response, "Msg 1", status_code=200)
+        self.assertNotContains(response, "Msg 3")
+        self.assertNotContains(response, "Msg 2")

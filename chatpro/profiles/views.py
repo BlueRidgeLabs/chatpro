@@ -282,9 +282,7 @@ class UserCRUDL(SmartCRUDL):
             return self.request.user.is_authenticated()
 
         def get_object(self, queryset=None):
-            try:
-                self.request.user.profile
-            except Profile.DoesNotExist:
+            if not self.request.user.has_profile():
                 raise Http404(_("User doesn't have a chat profile"))
 
             return self.request.user

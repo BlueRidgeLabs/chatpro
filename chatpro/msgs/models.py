@@ -42,8 +42,8 @@ class Message(models.Model):
 
     @classmethod
     def create_for_user(cls, org, user, text, room):
-        if not user.profile:
-            ValueError("User does not have a chat profile")
+        if not user.profile:  # pragma: no cover
+            raise ValueError("User does not have a chat profile")
 
         msg = cls.objects.create(org=org, sender=user.profile, text=text, room=room,
                                  time=timezone.now(), status=STATUS_PENDING)

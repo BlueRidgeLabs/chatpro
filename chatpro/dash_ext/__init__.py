@@ -8,14 +8,6 @@ from temba import TembaClient
 
 ######################### Monkey patching for the User class #########################
 
-
-def _user_get_full_name(user):
-    """
-    Override regular get_full_name which returns first_name + last_name
-    """
-    return user.profile.full_name
-
-
 def _user_is_admin_for(user, org):
     """
     Whether this user is an administrator for the given org
@@ -23,7 +15,6 @@ def _user_is_admin_for(user, org):
     return org.administrators.filter(pk=user.pk).exists()
 
 
-User.get_full_name = _user_get_full_name
 User.is_admin_for = _user_is_admin_for
 
 
