@@ -18,7 +18,7 @@ class ChatProTest(TestCase):
         self.unicef = self.create_org("UNICEF", timezone="Asia/Kabul", subdomain="unicef")
         self.nyaruka = self.create_org("Nyaruka", timezone="Africa/Kigali", subdomain="nyaruka")
 
-        self.admin = self.create_admin(self.unicef, "Richard", "admin", "admin@unicef.org")
+        self.admin = self.create_admin(self.unicef, "Richard", "richard", "admin@unicef.org")
         self.nic = self.create_admin(self.nyaruka, "Nicholas", "nic", "nic@nyaruka.com")
 
         # create some chat rooms

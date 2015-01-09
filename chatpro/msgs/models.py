@@ -47,6 +47,7 @@ class Message(models.Model):
 
         msg = cls.objects.create(org=org, sender=user.profile, text=text, room=room,
                                  time=timezone.now(), status=STATUS_PENDING)
+
         send_message.delay(msg.pk)
         return msg
 

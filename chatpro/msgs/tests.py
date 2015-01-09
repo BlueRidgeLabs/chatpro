@@ -63,6 +63,7 @@ class MessageCRUDLTest(ChatProTest):
         self.login(self.admin)
         response = self.url_post('unicef', send_url, dict(room=self.room1.id, text="Hello 1"))
         self.assertEqual(response.status_code, 200)
+        mock_send_message.assert_called_with("richard: Hello 1", groups=[self.room1.group_uuid])
 
         msg = Message.objects.get(text="Hello 1")
         self.assertEqual(msg.room, self.room1)
@@ -72,6 +73,7 @@ class MessageCRUDLTest(ChatProTest):
         self.login(self.user1)
         response = self.url_post('unicef', send_url, dict(room=self.room1.id, text="Hello 2"))
         self.assertEqual(response.status_code, 200)
+        mock_send_message.assert_called_with("sammy: Hello 2", groups=[self.room1.group_uuid])
 
         msg = Message.objects.get(text="Hello 2")
         self.assertEqual(msg.room, self.room1)
