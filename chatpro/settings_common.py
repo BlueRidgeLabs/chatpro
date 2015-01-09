@@ -44,7 +44,7 @@ SITE_API_HOST = 'rapidpro.io'  #'http://localhost:8001/api/v1'
 SITE_HOST_PATTERN = 'http://%s.localhost:8000'
 SITE_CHOOSER_TEMPLATE = 'home/org_chooser.haml'
 SITE_USER_HOME = '/'
-SITE_ALLOW_NO_ORG = ('/manage/org', '/users/', '/sitestatic/', '/admin/')
+SITE_ALLOW_NO_ORG = ('profiles.admin_list', 'profiles.admin_create', 'profiles.admin_update')
 
 # On Unix systems, a value of None will cause Django to use the same
 # timezone as the operating system.
@@ -62,7 +62,7 @@ LANGUAGE_CODE = 'en'
 
 # Available languages for translation
 LANGUAGES = (('en', _("English")), ('fr', _("French")), ('ps', _("Pashto")), ('fa', _("Persian")))
-RTL_LANGUAGES = set(['ps', 'fa'])
+RTL_LANGUAGES = {'ps', 'fa'}
 DEFAULT_LANGUAGE = "en"
 
 SITE_ID = 1
