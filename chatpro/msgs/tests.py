@@ -14,7 +14,7 @@ from temba.types import Broadcast as TembaBroadcast
 
 class MessageTest(ChatProTest):
     @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True, BROKER_BACKEND='memory')
-    @patch('chatpro.dash_ext.TembaClient.send_message')
+    @patch('chatpro.utils.temba.TembaClient.send_message')
     def test_create(self, mock_send_message):
         mock_send_message.return_value = TembaBroadcast.create(messages=[1, 2, 3])
 
@@ -48,7 +48,7 @@ class MessageTest(ChatProTest):
 
 class MessageCRUDLTest(ChatProTest):
     @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True, BROKER_BACKEND='memory')
-    @patch('chatpro.dash_ext.TembaClient.send_message')
+    @patch('chatpro.utils.temba.TembaClient.send_message')
     def test_send(self, mock_send_message):
         mock_send_message.return_value = TembaBroadcast.create(messages=[1, 2, 3])
 

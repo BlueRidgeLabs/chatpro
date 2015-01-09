@@ -1,4 +1,4 @@
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
 import datetime
 import pytz
@@ -14,6 +14,29 @@ def parse_iso8601(text):
     return datetime.datetime.strptime(text, ISO8601_FORMAT)
 
 
-def intersection(a, b):
-    """ return the intersection of two lists """
-    return list(set(a) & set(b))
+def intersection(*args):
+    """
+    Return the intersection of lists
+    """
+    if not args:
+        return []
+
+    result = set(args[0])
+    for l in args[1:]:
+        result &= set(l)
+
+    return list(result)
+
+
+def union(*args):
+    """
+    Return the union of lists
+    """
+    if not args:
+        return []
+
+    result = set(args[0])
+    for l in args[1:]:
+        result |= set(l)
+
+    return list(result)

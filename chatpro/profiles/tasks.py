@@ -1,20 +1,14 @@
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
 import logging
 
 from celery import shared_task
 from chatpro.utils import intersection
+from chatpro.utils.temba import temba_sync_contact
 from collections import defaultdict
 from dash.orgs.models import Org
-from enum import Enum
 
 logger = logging.getLogger(__name__)
-
-
-class ChangeType(Enum):
-    created = 1
-    updated = 2
-    deleted = 3
 
 
 @shared_task
@@ -24,32 +18,12 @@ def push_contact_change(contact_id, change_type):
     """
     from .models import Contact
 
-    contact = Contact.objects.select_related('org').get(pk=contact_id)
-    temba_contact = contact.to_temba()
+    contact = Contact.objects.select_related('org', 'room').get(pk=contact_id)
     org = contact.org
-    client = org.get_temba_client()
 
     logger.info("Pushing %s change to contact %s" % (change_type.name.upper(), contact.uuid))
 
-    if change_type == ChangeType.created:
-        temba_contact = client.create_contact(temba_contact.name,
-                                              temba_contact.urns,
-                                              temba_contact.fields,
-                                              temba_contact.groups)
-        # update our contact with the new UUID from RapidPro
-        contact.uuid = temba_contact.uuid
-        contact.save()
-
-    elif change_type == ChangeType.updated:
-        temba_contact = contact.to_temba()
-        client.update_contact(temba_contact.uuid,
-                              temba_contact.name,
-                              temba_contact.urns,
-                              temba_contact.fields,
-                              temba_contact.groups)
-
-    elif change_type == ChangeType.deleted:
-        client.delete_contact(temba_contact.uuid)
+    temba_sync_contact(org, contact, change_type)
 
 
 @shared_task

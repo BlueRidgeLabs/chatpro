@@ -1,8 +1,9 @@
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
 from chatpro.rooms.models import Room
 from chatpro.profiles.models import Contact
 from chatpro.test import ChatProTest
+from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.test.utils import override_settings
 from django.utils import timezone
@@ -11,13 +12,26 @@ from temba.types import Contact as TembaContact, Group as TembaGroup
 
 
 class RoomTest(ChatProTest):
+    def test_create(self):
+        testers = Room.create(self.unicef, "Testers", '000-007')
+        jan = Contact.create(self.unicef, self.admin, "Jan", "janet", 'tel:1234', testers, '000-007')
+        bob = User.create(self.unicef, "Bob", "bobby", "bob@unicef.org", "pass", [testers], [])
+        ken = User.create(self.unicef, "Ken", "kenny", "ken@unicef.org", "pass", [], [testers])
+
+        self.assertEqual(testers.org, self.unicef)
+        self.assertEqual(testers.name, "Testers")
+        self.assertEqual(testers.group_uuid, '000-007')
+        self.assertEqual(list(testers.get_contacts()), [jan])
+        self.assertEqual(list(testers.get_users().order_by('profile__full_name')), [bob, ken])
+        self.assertEqual(list(testers.get_managers()), [ken])
+
     def test_get_all(self):
         self.assertEqual(len(Room.get_all(self.unicef)), 3)
         self.assertEqual(len(Room.get_all(self.nyaruka)), 1)
 
     @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True, BROKER_BACKEND='memory')
-    @patch('chatpro.dash_ext.TembaClient.get_groups')
-    @patch('chatpro.dash_ext.TembaClient.get_contacts')
+    @patch('chatpro.utils.temba.TembaClient.get_groups')
+    @patch('chatpro.utils.temba.TembaClient.get_contacts')
     def test_update_room_groups(self, mock_get_contacts, mock_get_groups):
         mock_get_groups.return_value = [TembaGroup.create(uuid='000-007', name="New group", size=2)]
         mock_get_contacts.return_value = [
@@ -78,3 +92,15 @@ class RoomCRUDLTest(ChatProTest):
         response = self.url_get('unicef', list_url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['object_list']), 3)
+
+    def test_read(self):
+        # log in as a regular user
+        self.login(self.user1)
+
+        # view room we have access to
+        response = self.url_get('unicef', reverse('rooms.room_read', args=[self.room1.pk]))
+        self.assertEqual(response.status_code, 200)
+
+        # try to view room we don't have access to
+        response = self.url_get('unicef', reverse('rooms.room_read', args=[self.room3.pk]))
+        self.assertEqual(response.status_code, 404)

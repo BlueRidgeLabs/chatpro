@@ -1,4 +1,4 @@
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
 from chatpro.profiles.tasks import sync_org_contacts
 from dash.orgs.models import Org

@@ -1,13 +1,14 @@
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
 from chatpro.rooms.models import Room
+from chatpro.utils.temba import ChangeType
 from dash.orgs.models import Org
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from temba.types import Contact as TembaContact
 from uuid import uuid4
-from .tasks import ChangeType, push_contact_change
+from .tasks import push_contact_change
 
 
 class Contact(models.Model):
@@ -66,7 +67,7 @@ class Contact(models.Model):
         urn = temba_contact.urns[0]
         return cls.create(org, None, full_name, chat_name, urn, room, temba_contact.uuid)
 
-    def to_temba(self):
+    def as_temba(self):
         temba_contact = TembaContact()
         temba_contact.name = self.profile.full_name
         temba_contact.urns = [self.urn]
@@ -99,26 +100,6 @@ class Profile(models.Model):
 
     chat_name = models.CharField(verbose_name=_("Chat name"), max_length=16, null=True,
                                  help_text=_("Shorter name used for chat messages"))
-
-    @classmethod
-    def create_user(cls, org, full_name, chat_name, email, password, rooms=(), manage_rooms=()):
-        """
-        Creates a regular user with specific room-level permissions
-        """
-        # create auth user
-        user = User.objects.create(is_active=True, username=email, email=email)
-        user.set_password(password)
-        user.save()
-
-        # add profile
-        cls.objects.create(user=user, full_name=full_name, chat_name=chat_name)
-
-        # setup as org editor with limited room permissions
-        if org:
-            user.org_editors.add(org)
-        if rooms or manage_rooms:
-            user.update_rooms(rooms, manage_rooms)
-        return user
 
     def is_contact(self):
         return bool(self.contact_id)

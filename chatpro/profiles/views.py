@@ -1,6 +1,7 @@
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
 from chatpro.rooms.models import Room
+from chatpro.utils.temba import ChangeType
 from dash.orgs.views import OrgPermsMixin, OrgObjPermsMixin
 from django import forms
 from django.contrib.auth.models import User
@@ -12,7 +13,6 @@ from django.http import Http404, HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
 from smartmin.users.views import SmartCRUDL, SmartCreateView, SmartReadView, SmartUpdateView, SmartListView, SmartDeleteView
 from .models import Contact, Profile
-from .tasks import ChangeType
 
 
 class BaseProfileForm(forms.ModelForm):
@@ -239,7 +239,7 @@ class UserCRUDL(SmartCRUDL):
             password = self.form.cleaned_data['password']
             rooms = self.form.cleaned_data['rooms']
             manage_rooms = self.form.cleaned_data['manage_rooms']
-            self.object = Profile.create_user(org, full_name, chat_name, obj.email, password, rooms, manage_rooms)
+            self.object = User.create(org, full_name, chat_name, obj.email, password, rooms, manage_rooms)
 
     class Update(OrgPermsMixin, ProfileFormMixin, SmartUpdateView):
         fields = ('full_name', 'chat_name', 'email', 'new_password', 'rooms', 'manage_rooms', 'is_active')
@@ -329,7 +329,7 @@ class ManageUserCRUDL(SmartCRUDL):
             full_name = self.form.cleaned_data['full_name']
             chat_name = self.form.cleaned_data['chat_name']
             password = self.form.cleaned_data['password']
-            self.object = Profile.create_user(None, full_name, chat_name, obj.email, password)
+            self.object = User.create(None, full_name, chat_name, obj.email, password)
 
     class Update(OrgPermsMixin, ProfileFormMixin, SmartUpdateView):
         fields = ('full_name', 'chat_name', 'email', 'new_password', 'is_active')

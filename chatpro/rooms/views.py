@@ -1,8 +1,7 @@
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
 from dash.orgs.views import OrgPermsMixin, OrgObjPermsMixin
 from django import forms
-from django.db.models import Count
 from django.http import HttpResponseRedirect, JsonResponse
 from django.utils.translation import ugettext_lazy as _
 from smartmin.users.views import SmartCRUDL, SmartReadView, SmartListView

@@ -1,13 +1,13 @@
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
 from chatpro.test import ChatProTest
-from chatpro.profiles.models import Contact, Profile
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.test.utils import override_settings
 from django.utils import timezone
 from mock import patch
 from temba.types import Contact as TembaContact
+from .models import Contact, Profile
 
 
 class UserPatchTest(ChatProTest):
@@ -24,7 +24,7 @@ class UserPatchTest(ChatProTest):
 
 class ContactTest(ChatProTest):
     @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True, BROKER_BACKEND='memory')
-    @patch('chatpro.dash_ext.TembaClient.create_contact')
+    @patch('chatpro.utils.temba.TembaClient.create_contact')
     def test_create(self, mock_create_contact):
         mock_create_contact.return_value = TembaContact.create(uuid='RRR-007', name="Mo Chats", urns=['tel:078123'],
                                                                groups=['000-007'], fields=dict(chat_name="momo"),
@@ -66,8 +66,8 @@ class ContactTest(ChatProTest):
         self.assertIsNone(contact.modified_by)
         self.assertIsNotNone(contact.modified_on)
 
-    def test_to_temba(self):
-        temba_contact = self.contact1.to_temba()
+    def test_as_temba(self):
+        temba_contact = self.contact1.as_temba()
         self.assertEqual(temba_contact.name, "Ann")
         self.assertEqual(temba_contact.urns, ['tel:1234'])
         self.assertEqual(temba_contact.fields, {'chat_name': "ann"})
@@ -75,7 +75,7 @@ class ContactTest(ChatProTest):
         self.assertEqual(temba_contact.uuid, '000-001')
 
     @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True, BROKER_BACKEND='memory')
-    @patch('chatpro.dash_ext.TembaClient.delete_contact')
+    @patch('chatpro.utils.temba.TembaClient.delete_contact')
     def test_release(self, mock_delete_contact):
         self.contact1.release()
         self.assertFalse(self.contact1.is_active)
@@ -85,8 +85,8 @@ class ContactTest(ChatProTest):
 
 class ProfileTest(ChatProTest):
     def test_create_user(self):
-        user = Profile.create_user(self.unicef, "Mo Chats", "momo", "mo@chat.com", "Qwerty123",
-                                   rooms=[self.room1], manage_rooms=[self.room2])
+        user = User.create(self.unicef, "Mo Chats", "momo", "mo@chat.com", "Qwerty123",
+                           rooms=[self.room1], manage_rooms=[self.room2])
         self.assertEqual(user.profile.full_name, "Mo Chats")
         self.assertEqual(user.profile.chat_name, "momo")
 
@@ -202,7 +202,7 @@ class ContactCRUDLTest(ChatProTest):
         self.assertRedirects(response, 'http://unicef.localhost/contact/')
         contact = Contact.objects.get(pk=self.contact3.pk)
         self.assertFalse(contact.is_active)
-        # self.assertEqual(contact.modified_by, self.user1)  # TODO re-enable with https://github.com/nyaruka/smartmin/pull/47
+        self.assertEqual(contact.modified_by, self.user1)
 
         # try to delete contact from room we don't manage
         response = self.url_post('unicef', reverse('profiles.contact_delete', args=[self.contact5.pk]))
