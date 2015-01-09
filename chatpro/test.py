@@ -39,7 +39,7 @@ class ChatProTest(TestCase):
         self.contact2 = self.create_contact(self.unicef, "Bob", "bob", "tel:2345", self.room1, '000-002')
         self.contact3 = self.create_contact(self.unicef, "Cat", "cat", "tel:3456", self.room2, '000-003')
         self.contact4 = self.create_contact(self.unicef, "Dan", "dan", "twitter:danny", self.room2, '000-004')
-        self.contact5 = self.create_contact(self.unicef, "Eve", "eve", "tel:5567", self.room3, '000-005')
+        self.contact5 = self.create_contact(self.unicef, "Eve", "eve", "twitter:evee", self.room3, '000-005')
         self.contact6 = self.create_contact(self.nyaruka, "Bosco", "bosco", 'tel:07899', self.room4, '000-006')
 
     def create_org(self, name, timezone, subdomain):

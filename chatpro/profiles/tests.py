@@ -138,11 +138,11 @@ class ContactCRUDLTest(ChatProTest):
         self.assertEqual(response.status_code, 200)
         self.assertFormError(response, 'form', 'full_name', 'This field is required.')
         self.assertFormError(response, 'form', 'chat_name', 'This field is required.')
-        self.assertFormError(response, 'form', 'phone', 'This field is required.')
+        self.assertFormError(response, 'form', 'urn', 'This field is required.')
         self.assertFormError(response, 'form', 'room', 'This field is required.')
 
         # submit again with all fields
-        data = dict(full_name="Mo Chats", chat_name="momo", phone="5678", room=self.room1.pk)
+        data = dict(full_name="Mo Chats", chat_name="momo", urn_0="tel", urn_1="5678", room=self.room1.pk)
         response = self.url_post('unicef', url, data)
         self.assertEqual(response.status_code, 302)
 
@@ -159,7 +159,7 @@ class ContactCRUDLTest(ChatProTest):
         response = self.url_get('unicef', reverse('profiles.contact_update', args=[self.contact1.pk]))
         self.assertEqual(response.status_code, 200)
 
-        data = dict(full_name="Morris", chat_name="momo2", phone="6789", room=self.room2.pk)
+        data = dict(full_name="Morris", chat_name="momo2", urn_0="tel", urn_1="6789", room=self.room2.pk)
         response = self.url_post('unicef', reverse('profiles.contact_update', args=[self.contact1.pk]), data)
         self.assertEqual(response.status_code, 302)
 
@@ -357,11 +357,13 @@ class ProfileCRUDLTest(ChatProTest):
         response = self.url_get('unicef', reverse('profiles.profile_read', args=[self.contact3.profile.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['edit_button_url'], reverse('profiles.contact_update', args=[self.contact3.pk]))
+        self.assertContains(response, "Phone")
 
         # view contact in a room we don't manage
         response = self.url_get('unicef', reverse('profiles.profile_read', args=[self.contact5.profile.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertIsNone(response.context['edit_button_url'])
+        self.assertContains(response, "Twitter")
 
         # try to view contact from other org
         response = self.url_get('unicef', reverse('profiles.profile_read', args=[self.contact6.profile.pk]))

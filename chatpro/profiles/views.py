@@ -10,19 +10,58 @@ from django.core.urlresolvers import reverse
 from django.core.validators import MinLengthValidator
 from django.db.models import Q
 from django.http import Http404, HttpResponseRedirect
+from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from smartmin.users.views import SmartCRUDL, SmartCreateView, SmartReadView, SmartUpdateView, SmartListView, SmartDeleteView
 from .models import Contact, Profile
+
+
+URN_SCHEME_TEL = 'tel'
+URN_SCHEME_TWITTER = 'twitter'
+URN_SCHEME_CHOICES = ((URN_SCHEME_TEL, _("Phone")), (URN_SCHEME_TWITTER, _("Twitter")))
+
+
+class URNField(forms.fields.MultiValueField):
+    def __init__(self, *args, **kwargs):
+        fields = (forms.ChoiceField(choices=URN_SCHEME_CHOICES),
+                  forms.CharField(max_length=32))
+        super(URNField, self).__init__(fields, *args, **kwargs)
+
+        self.widget = URNWidget(scheme_choices=URN_SCHEME_CHOICES)
+
+    def compress(self, values):
+        return '%s:%s' % (values[0], values[1])
+
+
+class URNWidget(forms.widgets.MultiWidget):
+    def __init__(self, *args, **kwargs):
+        scheme_choices = kwargs.pop('scheme_choices')
+
+        widgets = (forms.Select(choices=scheme_choices),
+                   forms.TextInput(attrs={'maxlength': 32}))
+        super(URNWidget, self).__init__(widgets, *args, **kwargs)
+
+    def decompress(self, value):
+        if value:
+            return value.split(':', 1)
+        else:
+            return URN_SCHEME_TEL, ''
+
+    def render(self, name, value, attrs=None):
+        output = ['<div class="urn-widget">',
+                  super(URNWidget, self).render(name, value, attrs),
+                  '</div>']
+        return mark_safe(''.join(output))
 
 
 class BaseProfileForm(forms.ModelForm):
     """
     Base form for profiles
     """
-    full_name = forms.CharField(max_length=255,
+    full_name = forms.CharField(max_length=128,
                                 label=_("Full name"))
 
-    chat_name = forms.CharField(max_length=255,
+    chat_name = forms.CharField(max_length=16,
                                 label=_("Chat name"), help_text=_("Name used for sending chat messages."))
 
     def __init__(self, *args, **kwargs):
@@ -66,13 +105,14 @@ class UserForm(BaseProfileForm):
 
     class Meta:
         model = User
+        exclude = ()
 
 
 class ContactForm(BaseProfileForm):
     """
     Form for contact profiles
     """
-    phone = forms.CharField(max_length=255, label=_("Phone"), help_text=_("Phone number of this contact."))
+    urn = URNField(label=_("Phone/Twitter"), help_text=_("Phone number or Twitter handle of this contact."))
 
     room = forms.ModelChoiceField(label=_("Room"), queryset=Room.objects.filter(pk=-1),
                                   help_text=_("Chat rooms which this contact can chat in."))
@@ -87,6 +127,7 @@ class ContactForm(BaseProfileForm):
 
     class Meta:
         model = Contact
+        exclude = ()
 
 
 class ProfileFormMixin(object):
@@ -127,12 +168,24 @@ class ProfileListMixin(object):
             return super(ProfileListMixin, self).lookup_field_link(context, field, obj)
 
 
+class ContactFieldsMixin(object):
+    def get_urn(self, obj):
+        # TODO indicate different urn types with icon?
+        return obj.get_urn()[1]
+
+    def lookup_field_label(self, context, field, default=None):
+        if field == 'urn':
+            return _("Phone/Twitter")
+
+        return super(ContactFieldsMixin, self).lookup_field_label(context, field, default)
+
+
 class ContactCRUDL(SmartCRUDL):
     model = Contact
     actions = ('create', 'update', 'list', 'filter', 'delete')
 
     class Create(OrgPermsMixin, ProfileFormMixin, SmartCreateView):
-        fields = ('full_name', 'chat_name', 'phone', 'room')
+        fields = ('full_name', 'chat_name', 'urn', 'room')
         form_class = ContactForm
 
         def derive_initial(self):
@@ -146,30 +199,19 @@ class ContactCRUDL(SmartCRUDL):
             org = self.request.user.get_org()
             full_name = self.form.cleaned_data['full_name']
             chat_name = self.form.cleaned_data['chat_name']
-            urn = 'tel:%s' % self.form.cleaned_data['phone']
-            self.object = Contact.create(org, self.request.user, full_name, chat_name, urn, obj.room)
+            self.object = Contact.create(org, self.request.user, full_name, chat_name, obj.urn, obj.room)
 
     class Update(OrgObjPermsMixin, ProfileFormMixin, SmartUpdateView):
-        fields = ('full_name', 'chat_name', 'phone', 'room')
+        fields = ('full_name', 'chat_name', 'urn', 'room')
         form_class = ContactForm
-
-        def derive_initial(self):
-            initial = super(ContactCRUDL.Update, self).derive_initial()
-            initial['phone'] = self.object.get_urn()[1]
-            return initial
-
-        def pre_save(self, obj):
-            obj = super(ContactCRUDL.Update, self).pre_save(obj)
-            obj.urn = 'tel:%s' % self.form.cleaned_data['phone']
-            return obj
 
         def post_save(self, obj):
             obj = super(ContactCRUDL.Update, self).post_save(obj)
             obj.push(ChangeType.updated)
             return obj
 
-    class List(OrgPermsMixin, ProfileListMixin, SmartListView):
-        fields = ('full_name', 'chat_name', 'phone', 'room')
+    class List(OrgPermsMixin, ProfileListMixin, ContactFieldsMixin, SmartListView):
+        fields = ('full_name', 'chat_name', 'urn', 'room')
 
         def get_queryset(self, **kwargs):
             qs = super(ContactCRUDL.List, self).get_queryset(**kwargs)
@@ -178,11 +220,8 @@ class ContactCRUDL(SmartCRUDL):
             qs = qs.filter(org=self.request.org, is_active=True, room__in=rooms)
             return qs.select_related('profile').order_by('profile__full_name')
 
-        def get_phone(self, obj):
-            return obj.get_urn()[1]
-
-    class Filter(OrgPermsMixin, ProfileListMixin, SmartListView):
-        fields = ('full_name', 'chat_name', 'phone')
+    class Filter(OrgPermsMixin, ProfileListMixin, ContactFieldsMixin, SmartListView):
+        fields = ('full_name', 'chat_name', 'urn')
 
         @classmethod
         def derive_url_pattern(cls, path, action):
@@ -204,9 +243,6 @@ class ContactCRUDL(SmartCRUDL):
             context = super(ContactCRUDL.Filter, self).get_context_data(**kwargs)
             context['room'] = self.derive_room()
             return context
-
-        def get_phone(self, obj):
-            return obj.get_urn()[1]
 
     class Delete(OrgObjPermsMixin, SmartDeleteView):
         cancel_url = '@profiles.contact_list'
@@ -377,7 +413,7 @@ class ProfileCRUDL(SmartCRUDL):
         def derive_fields(self):
             fields = ['full_name', 'chat_name', 'type']
             if self.object.is_contact():
-                fields += ['phone', 'room']
+                fields += ['urn', 'room']
                 if self.object.contact.created_by_id:
                     fields += ['added_by']
             else:
@@ -423,7 +459,7 @@ class ProfileCRUDL(SmartCRUDL):
             else:
                 return _("User")
 
-        def get_phone(self, obj):
+        def get_urn(self, obj):
             return obj.contact.get_urn()[1]
 
         def get_added_by(self, obj):
@@ -437,3 +473,12 @@ class ProfileCRUDL(SmartCRUDL):
 
         def get_rooms(self, obj):
             return ", ".join([unicode(r) for r in obj.user.rooms.all()])
+
+        def lookup_field_label(self, context, field, default=None):
+            if field == 'urn':
+                scheme = self.object.contact.get_urn()[0]
+                for s, label in URN_SCHEME_CHOICES:
+                    if scheme == s:
+                        return label
+
+            return super(ProfileCRUDL.Read, self).lookup_field_label(context, field, default)
