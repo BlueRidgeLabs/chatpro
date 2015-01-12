@@ -14,6 +14,7 @@ config = dict(
     custom_domains='*.chatpro.io chatpro.io chatpro.staging.nyaruka.com *.chatpro.staging.nyaruka.com',
     prod_host='chat1',
     sqldump=False,
-    celery=(),
+    celery=True,
+    processes=('celery',),
     compress=True,
 )
