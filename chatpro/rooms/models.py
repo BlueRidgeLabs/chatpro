@@ -11,7 +11,7 @@ class Room(models.Model):
     """
     Corresponds to a RapidPro contact group
     """
-    group_uuid = models.CharField(max_length=36, unique=True)
+    uuid = models.CharField(max_length=36, unique=True)
 
     org = models.ForeignKey(Org, verbose_name=_("Organization"), related_name='rooms')
 
@@ -27,8 +27,8 @@ class Room(models.Model):
     is_active = models.BooleanField(default=True, help_text="Whether this room is active")
 
     @classmethod
-    def create(cls, org, name, group_uuid):
-        return Room.objects.create(org=org, name=name, group_uuid=group_uuid)
+    def create(cls, org, name, uuid):
+        return Room.objects.create(org=org, name=name, uuid=uuid)
 
     @classmethod
     def get_all(cls, org):
@@ -40,14 +40,14 @@ class Room(models.Model):
         Updates an org's chat rooms based on the selected groups UUIDs
         """
         # de-activate rooms not included
-        org.rooms.exclude(group_uuid__in=group_uuids).update(is_active=False)
+        org.rooms.exclude(uuid__in=group_uuids).update(is_active=False)
 
         # fetch group details
         groups = org.get_temba_client().get_groups()
         group_names = {group.uuid: group.name for group in groups}
 
         for group_uuid in group_uuids:
-            existing = org.rooms.filter(group_uuid=group_uuid).first()
+            existing = org.rooms.filter(uuid=group_uuid).first()
             if existing:
                 existing.name = group_names[group_uuid]
                 existing.is_active = True

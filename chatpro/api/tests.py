@@ -42,7 +42,7 @@ class TembaHandlerTest(ChatProTest):
         self.assertEqual(contact.profile.full_name, "Jan")
         self.assertEqual(contact.profile.chat_name, "jan")
         self.assertEqual(contact.urn, 'tel:123')
-        self.assertEqual(contact.room, Room.objects.get(group_uuid='000-001'))
+        self.assertEqual(contact.room, Room.objects.get(uuid='000-001'))
 
         # try with new room/group that must be fetched
         mock_get_contact.return_value = TembaContact.create(uuid='001-008', name="Ken", urns=['tel:234'],
@@ -52,7 +52,7 @@ class TembaHandlerTest(ChatProTest):
 
         response = self.url_post('unicef', '%s?%s' % (url, 'contact=001-008&group=001-007&token=1234567890'))
         self.assertEqual(response.status_code, 200)
-        new_room = Room.objects.get(group_uuid='001-007', name="New group")
+        new_room = Room.objects.get(uuid='001-007', name="New group")
 
         # check new contact and room created
         contact = Contact.objects.get(uuid='001-008')
@@ -67,7 +67,7 @@ class TembaHandlerTest(ChatProTest):
 
         response = self.url_post('unicef', '%s?%s' % (url, 'contact=001-008&group=001-007&token=1234567890'))
         self.assertEqual(response.status_code, 200)
-        Room.objects.get(group_uuid='001-007', name="New group", is_active=True)
+        Room.objects.get(uuid='001-007', name="New group", is_active=True)
 
         # repeating a request shouldn't create duplicates
         response = self.url_post('unicef', '%s?%s' % (url, 'contact=001-008&group=001-007&token=1234567890'))
@@ -100,7 +100,7 @@ class TembaHandlerTest(ChatProTest):
 
         response = self.url_post('unicef', '%s?%s' % (url, 'contact=000-001&text=Hello%20Again&group=001-007&token=1234567890'))
         self.assertEqual(response.status_code, 200)
-        new_room = Room.objects.get(group_uuid='001-007', name="New group")
+        new_room = Room.objects.get(uuid='001-007', name="New group")
 
         # check new message created
         msg = Message.objects.get(text="Hello Again")
@@ -116,7 +116,7 @@ class TembaHandlerTest(ChatProTest):
         response = self.url_post('unicef', '%s?%s' % (url, 'contact=001-007&text=Goodbye&group=001-008&token=1234567890'))
         self.assertEqual(response.status_code, 200)
         new_contact = Contact.objects.get(uuid='001-007')
-        new_room = Room.objects.get(group_uuid='001-008', name="Newest group")
+        new_room = Room.objects.get(uuid='001-008', name="Newest group")
 
         # check new message created
         msg = Message.objects.get(text="Goodbye")

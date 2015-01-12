@@ -62,7 +62,7 @@ class RoomCRUDL(SmartCRUDL):
                     choices.append((group.uuid, "%s (%d)" % (group.name, group.size)))
 
                 self.fields['groups'].choices = choices
-                self.fields['groups'].initial = [room.group_uuid for room in org.rooms.filter(is_active=True)]
+                self.fields['groups'].initial = [room.uuid for room in org.rooms.filter(is_active=True)]
 
         title = _("Room Groups")
         form_class = GroupsForm

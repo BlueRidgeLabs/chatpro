@@ -57,7 +57,7 @@ class TembaHandler(View):
         """
         Gets a room by group UUID, or creates it by fetching from Temba instance
         """
-        room = Room.objects.filter(org=org, group_uuid=group_uuid).first()
+        room = Room.objects.filter(org=org, uuid=group_uuid).first()
         if room:
             if not room.is_active:
                 room.is_active = True

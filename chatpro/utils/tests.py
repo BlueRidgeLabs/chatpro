@@ -30,7 +30,7 @@ class TembaTest(ChatProTest):
                                        fields=dict(chat_name="bobz", state='IN'),
                                        groups=['000-002', '000-003', '000-009'])
 
-        merged = temba_merge_contacts(self.unicef, contact1, contact2)
+        merged = temba_merge_contacts(contact1, contact2, primary_groups=['000-001', '000-002', '000-003'])
         self.assertEqual(merged.uuid, '000-001')
         self.assertEqual(merged.name, "Bob")
         self.assertEqual(sorted(merged.urns), ['email:bob@bob.com', 'tel:123', 'twitter:bob'])

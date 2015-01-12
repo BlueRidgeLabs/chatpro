@@ -49,8 +49,8 @@ class ChatProTest(TestCase):
         org.set_config('chat_name_field', 'chat_name')
         return org
 
-    def create_room(self, org, name, group_uuid):
-        return Room.create(org, name, group_uuid)
+    def create_room(self, org, name, uuid):
+        return Room.create(org, name, uuid)
 
     def create_admin(self, org, full_name, chat_name, email):
         user = User.create(None, full_name, chat_name, email, password=email)

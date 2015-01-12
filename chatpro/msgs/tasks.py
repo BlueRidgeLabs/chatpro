@@ -19,7 +19,7 @@ def send_message(message_id):
     text = "%s: %s" % (message.sender.chat_name, message.text)
 
     client = message.org.get_temba_client()
-    client.send_message(text, groups=[message.room.group_uuid])
+    client.send_message(text, groups=[message.room.uuid])
 
     message.status = STATUS_SENT
     message.save(update_fields=('status',))

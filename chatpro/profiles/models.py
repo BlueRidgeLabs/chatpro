@@ -67,12 +67,22 @@ class Contact(models.Model):
         urn = temba_contact.urns[0]
         return cls.create(org, None, full_name, chat_name, urn, room, temba_contact.uuid)
 
+    def update_from_temba(self, org, room, temba_contact):
+        self.profile.full_name = temba_contact.name
+        self.profile.chat_name = temba_contact.fields.get(org.get_chat_name_field(), None)
+        self.profile.save()
+
+        self.is_active = True
+        self.urn = temba_contact.urns[0]
+        self.room = room
+        self.save()
+
     def as_temba(self):
         temba_contact = TembaContact()
         temba_contact.name = self.profile.full_name
         temba_contact.urns = [self.urn]
         temba_contact.fields = {self.org.get_chat_name_field(): self.profile.chat_name}
-        temba_contact.groups = [self.room.group_uuid]
+        temba_contact.groups = [self.room.uuid]
         temba_contact.uuid = self.uuid
         return temba_contact
 

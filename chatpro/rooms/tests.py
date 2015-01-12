@@ -20,7 +20,7 @@ class RoomTest(ChatProTest):
 
         self.assertEqual(testers.org, self.unicef)
         self.assertEqual(testers.name, "Testers")
-        self.assertEqual(testers.group_uuid, '000-007')
+        self.assertEqual(testers.uuid, '000-007')
         self.assertEqual(list(testers.get_contacts()), [jan])
         self.assertEqual(list(testers.get_users().order_by('profile__full_name')), [bob, ken])
         self.assertEqual(list(testers.get_managers()), [ken])
@@ -46,7 +46,7 @@ class RoomTest(ChatProTest):
         self.assertEqual(self.unicef.rooms.filter(is_active=True).count(), 1)
         self.assertEqual(self.unicef.rooms.filter(is_active=False).count(), 3)  # existing de-activated
 
-        new_room = Room.objects.get(group_uuid='000-007')
+        new_room = Room.objects.get(uuid='000-007')
         self.assertEqual(new_room.name, "New group")
         self.assertTrue(new_room.is_active)
 
