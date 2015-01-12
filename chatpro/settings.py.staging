@@ -66,7 +66,7 @@ STATICFILES_FINDERS = (
 
 import dj_database_url
 DATABASES = {}
-DATABASES['default'] =  dj_database_url.config()
+DATABASES['default'] = dj_database_url.config()
 
 # reuse our connections for up to 60 seconds
 DATABASES['default']['CONN_MAX_AGE'] = 60
@@ -141,10 +141,13 @@ COMPRESS_CSS_HASHING_METHOD = 'content'
 COMPRESS_OFFLINE = True
 COMPRESS_OFFLINE_CONTEXT = dict(STATIC_URL=STATIC_URL, base_template='frame.html', debug=False, testing=False)
 
+REDIS_HOST = os.environ.get('REDIS_HOST', None)
+REDIS_DATABASE = os.environ.get('REDIS_DATABASE', None)
+
 CACHES = {
     'default': {
         'BACKEND': 'redis_cache.cache.RedisCache',
-        'LOCATION': '%s:6379:%d' % (os.environ['REDIS_HOST'], os.environ['REDIS_DATABASE']),
+        'LOCATION': '%s:6379:%d' % (REDIS_HOST, REDIS_DATABASE),
         'OPTIONS': {
             'CLIENT_CLASS': 'redis_cache.client.DefaultClient',
         }
