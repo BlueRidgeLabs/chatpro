@@ -144,7 +144,7 @@ COMPRESS_OFFLINE_CONTEXT = dict(STATIC_URL=STATIC_URL, base_template='frame.html
 CACHES = {
     'default': {
         'BACKEND': 'redis_cache.cache.RedisCache',
-        'LOCATION': '%s:6379:%d' % (REDIS_HOST, REDIS_DATABASE)
+        'LOCATION': '%s:6379:%d' % (REDIS_HOST, REDIS_DATABASE),
         'OPTIONS': {
             'CLIENT_CLASS': 'redis_cache.client.DefaultClient',
         }
