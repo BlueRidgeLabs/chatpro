@@ -221,6 +221,7 @@ INSTALLED_APPS = (
 
     # dash apps
     'dash.orgs',
+    'dash.utils',
 
     # custom
     'chatpro.dash_ext',
