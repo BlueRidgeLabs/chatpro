@@ -8,6 +8,7 @@ from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from .tasks import send_message
 
+MESSAGE_MAX_LEN = 140
 
 STATUS_PENDING = 'P'
 STATUS_SENT = 'S'
@@ -50,6 +51,10 @@ class Message(models.Model):
 
         send_message.delay(msg.pk)
         return msg
+
+    @classmethod
+    def get_prefix(cls, profile):
+        return '%s: ' % profile.chat_name
 
     def as_json(self):
         return dict(id=self.pk, sender=self.sender.as_json(), text=self.text, room_id=self.room_id,

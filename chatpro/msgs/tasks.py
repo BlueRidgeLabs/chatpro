@@ -16,7 +16,7 @@ def send_message(message_id):
     if message.sender.is_contact():  # pragma: no cover
         raise ValueError("Can't send a message from a contact")
 
-    text = "%s: %s" % (message.sender.chat_name, message.text)
+    text = "".join([Message.get_prefix(message.sender), message.text])
 
     client = message.org.get_temba_client()
     client.send_message(text, groups=[message.room.uuid])

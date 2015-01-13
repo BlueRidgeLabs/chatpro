@@ -9,10 +9,11 @@ controllers.controller 'ChatController', [ '$scope', 'RoomService', 'MessageServ
   $scope.new_message = ''
   $scope.sending = false
 
-  $scope.init = (user_id, user_name, initial_room_id) ->
+  $scope.init = (user_id, user_name, initial_room_id, max_msg_chars) ->
     $scope.user_id = user_id
     $scope.user_name = user_name
     $scope.active_room_id = initial_room_id
+    $scope.msg_chars_remaining = $scope.max_msg_chars = max_msg_chars
 
     RoomService.onActivateRoom (room_id) ->
       $scope.active_room_id = room_id
@@ -27,6 +28,8 @@ controllers.controller 'ChatController', [ '$scope', 'RoomService', 'MessageServ
       $scope.new_message = ''
       $scope.sending = false
 
+  $scope.onNewMessageChanged = ->
+    $scope.msg_chars_remaining = $scope.max_msg_chars - $scope.new_message.length
 ]
 
 #============================================================================

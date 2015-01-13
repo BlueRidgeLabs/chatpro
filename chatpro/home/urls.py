@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 from django.conf.urls import patterns, url
-from .views import HomeView
+from .views import ChatView
 
-urlpatterns = patterns('', url(r'^$', HomeView.as_view(), name='home.chat'))
-urlpatterns += patterns('', url(r'^chat/(?P<room>\d+)/$', HomeView.as_view(), name='home.chat_in'))
+urlpatterns = patterns('', url(r'^$', ChatView.as_view(), name='home.chat'))
+urlpatterns += patterns('', url(r'^chat/(?P<room>\d+)/$', ChatView.as_view(), name='home.chat_in'))

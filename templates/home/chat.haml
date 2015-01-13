@@ -4,7 +4,7 @@
 - block content
 
   - if rooms
-    .row{ ng-controller:"ChatController", ng-init:'init({{ request.user.id }}, "{{ request.user.profile.full_name }}", {{ initial_room.id }})' }
+    .row{ ng-controller:"ChatController", ng-init:'init({{ request.user.id }}, "{{ request.user.profile.full_name }}", {{ initial_room.id }}, {{ msg_text_chars }})' }
       .col-md-3
         %ul.nav.nav-pills.nav-stacked
           - for room in rooms
@@ -15,12 +15,13 @@
                   [[ unread_count | unread ]]
 
       .col-md-6
-        .messages-sendform
-          .input-group
-            %input.form-control{ type:"text", autocomplete:"off", placeholder:"Enter message", ng-model:"new_message", ng-disabled:"sending" }
-            %span.input-group-btn
-              %button.btn.btn-default{type:"button", ng-click:"sendMessage()", ng-disabled:"sending"}
-                -trans "Send"
+        .messages-sendform.clearfix
+          %textarea.form-control{ type:"text", autocomplete:"off", placeholder:"Enter message", maxlength:"{{ msg_text_chars }}", style:"width: 100%", ng-model:"new_message", ng-disabled:"sending", ng-change:"onNewMessageChanged()" }
+          %button.btn.btn-default.pull-right{type:"button", ng-click:"sendMessage()", ng-disabled:"sending"}
+            -trans "Send"
+          %span.pull-right
+            %span#msg-chars-left
+              [[ msg_chars_remaining ]]
 
         - for room in rooms
           .{ ng-controller:"RoomMessagesController", ng-init:"init({{ room.id }})", ng-show:"active_room_id == room_id" }
@@ -73,6 +74,18 @@
     .messages-sendform {
       text-align: center;
       padding-bottom: 1em;
+    }
+    .messages-sendform textarea {
+      border-bottom-right-radius: 0;
+    }
+    .messages-sendform #msg-chars-left {
+      padding: 6px 12px;
+      display: inline-block;
+      color: #888;
+    }
+    .messages-sendform button {
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
     }
     .none {
       text-align: center;
