@@ -141,13 +141,10 @@ COMPRESS_CSS_HASHING_METHOD = 'content'
 COMPRESS_OFFLINE = True
 COMPRESS_OFFLINE_CONTEXT = dict(STATIC_URL=STATIC_URL, base_template='frame.html', debug=False, testing=False)
 
-REDIS_HOST = os.environ.get('REDIS_HOST', None)
-REDIS_DATABASE = os.environ.get('REDIS_DATABASE', None)
-
 CACHES = {
     'default': {
         'BACKEND': 'redis_cache.cache.RedisCache',
-        'LOCATION': '%s:6379:%d' % (REDIS_HOST, REDIS_DATABASE),
+        'LOCATION': 'localhost:6379:4',
         'OPTIONS': {
             'CLIENT_CLASS': 'redis_cache.client.DefaultClient',
         }
