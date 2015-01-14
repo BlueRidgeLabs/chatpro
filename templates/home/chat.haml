@@ -15,12 +15,14 @@
                   [[ unread_count | unread ]]
 
       .col-md-6
-        .messages-sendform.clearfix
+        .messages-sendform
           %textarea.form-control{ type:"text", autocomplete:"off", placeholder:"Enter message", maxlength:"{{ msg_text_chars }}", style:"width: 100%", ng-model:"new_message", ng-disabled:"sending", ng-change:"onNewMessageChanged()", ng-trim:"false" }
-          %button.btn.btn-default.pull-right{type:"button", ng-click:"sendMessage()", ng-disabled:"sending"}
-            -trans "Send"
-          %span.pull-right
-            %span#msg-chars-left
+          .messages-sendform-controls.clearfix
+            %span.pull-left.sender-name
+              {{ request.user.profile.chat_name }}
+            %button.btn.btn-default.pull-right{type:"button", ng-click:"sendMessage()", ng-disabled:"sending"}
+              -trans "Send"
+            %span.pull-right.chars-left
               [[ msg_chars_remaining ]]
 
         - for room in rooms
@@ -76,16 +78,27 @@
       padding-bottom: 1em;
     }
     .messages-sendform textarea {
+      border-bottom-left-radius: 0;
       border-bottom-right-radius: 0;
     }
-    .messages-sendform #msg-chars-left {
+    .messages-sendform-controls {
+      background-color: #F3F3F3;
+      border-width: 0 0 1px 1px;
+      border-style: solid;
+      border-color: #CCC;
+      border-radius: 0 0 4px 4px;
+    }
+    .messages-sendform-controls .chars-left, .messages-sendform-controls .sender-name {
       padding: 6px 12px;
       display: inline-block;
       color: #888;
     }
-    .messages-sendform button {
+    .messages-sendform-controls button {
+      border-bottom: none;
+      border-top: none;
       border-top-left-radius: 0;
       border-top-right-radius: 0;
+      border-bottom-left-radius: 0;
     }
     .none {
       text-align: center;
@@ -93,16 +106,16 @@
       padding: 1em;
     }
     .message {
-      border-bottom: 1px solid #DDDDDD;
+      border-bottom: 1px solid #CCC;
     }
     .message:last-child {
       border: none;
     }
     .message-sender {
-      background-color: #EEEEF4;
+      background-color: #F3F3F3;
       padding: 0.5em;
       vertical-align: top;
-      width: 200px;
+      width: 175px;
     }
     .message-text {
       padding: 0.5em;
