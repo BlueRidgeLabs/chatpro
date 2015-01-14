@@ -14,9 +14,9 @@ from temba.types import Broadcast as TembaBroadcast
 
 class MessageTest(ChatProTest):
     @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True, BROKER_BACKEND='memory')
-    @patch('chatpro.utils.temba.TembaClient.send_message')
-    def test_create(self, mock_send_message):
-        mock_send_message.return_value = TembaBroadcast.create(messages=[1, 2, 3])
+    @patch('chatpro.utils.temba.TembaClient.create_broadcast')
+    def test_create(self, mock_create_broadcast):
+        mock_create_broadcast.return_value = TembaBroadcast.create(messages=[1, 2, 3])
 
         # test from contact
         msg = Message.create_for_contact(self.unicef, self.contact1, "Hello", self.room1)
@@ -48,9 +48,9 @@ class MessageTest(ChatProTest):
 
 class MessageCRUDLTest(ChatProTest):
     @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True, BROKER_BACKEND='memory')
-    @patch('chatpro.utils.temba.TembaClient.send_message')
-    def test_send(self, mock_send_message):
-        mock_send_message.return_value = TembaBroadcast.create(messages=[1, 2, 3])
+    @patch('chatpro.utils.temba.TembaClient.create_broadcast')
+    def test_send(self, mock_create_broadcast):
+        mock_create_broadcast.return_value = TembaBroadcast.create(messages=[1, 2, 3])
 
         send_url = reverse('msgs.message_send')
 
@@ -63,7 +63,7 @@ class MessageCRUDLTest(ChatProTest):
         self.login(self.admin)
         response = self.url_post('unicef', send_url, dict(room=self.room1.id, text="Hello 1"))
         self.assertEqual(response.status_code, 200)
-        mock_send_message.assert_called_with("richard: Hello 1", groups=[self.room1.uuid])
+        mock_create_broadcast.assert_called_with("richard: Hello 1", groups=[self.room1.uuid])
 
         msg = Message.objects.get(text="Hello 1")
         self.assertEqual(msg.room, self.room1)
@@ -73,7 +73,7 @@ class MessageCRUDLTest(ChatProTest):
         self.login(self.user1)
         response = self.url_post('unicef', send_url, dict(room=self.room1.id, text="Hello 2"))
         self.assertEqual(response.status_code, 200)
-        mock_send_message.assert_called_with("sammy: Hello 2", groups=[self.room1.uuid])
+        mock_create_broadcast.assert_called_with("sammy: Hello 2", groups=[self.room1.uuid])
 
         msg = Message.objects.get(text="Hello 2")
         self.assertEqual(msg.room, self.room1)

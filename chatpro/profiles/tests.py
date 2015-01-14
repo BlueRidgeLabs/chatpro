@@ -258,7 +258,7 @@ class UserCRUDLTest(ChatProTest):
         self.assertFormError(response, 'form', 'chat_name', 'This field is required.')
         self.assertFormError(response, 'form', 'email', 'This field is required.')
 
-        # submith with all fields entered
+        # submit with all fields entered
         data = dict(full_name="Morris", chat_name="momo2", email="mo2@chat.com",
                     rooms=[], manage_rooms=[self.room3.pk], is_active=True)
         response = self.url_post('unicef', url, data)
@@ -269,6 +269,7 @@ class UserCRUDLTest(ChatProTest):
         self.assertEqual(user.profile.full_name, "Morris")
         self.assertEqual(user.profile.chat_name, "momo2")
         self.assertEqual(user.email, "mo2@chat.com")
+        self.assertEqual(user.username, "mo2@chat.com")
         self.assertEqual(list(user.rooms.all()), [self.room3])
         self.assertEqual(list(user.manage_rooms.all()), [self.room3])
 
@@ -324,6 +325,27 @@ class UserCRUDLTest(ChatProTest):
 
         response = self.url_get('unicef', url)
         self.assertEqual(response.status_code, 200)
+
+        # submit with no fields entered
+        response = self.url_post('unicef', url, dict())
+        self.assertEqual(response.status_code, 200)
+        self.assertFormError(response, 'form', 'full_name', 'This field is required.')
+        self.assertFormError(response, 'form', 'chat_name', 'This field is required.')
+        self.assertFormError(response, 'form', 'email', 'This field is required.')
+
+        # submit with all fields entered
+        data = dict(full_name="Morris", chat_name="momo2", email="mo2@chat.com")
+        response = self.url_post('unicef', url, data)
+        self.assertEqual(response.status_code, 302)
+
+        # check updated user and profile
+        user = User.objects.get(pk=self.user1.pk)
+        self.assertEqual(user.profile.full_name, "Morris")
+        self.assertEqual(user.profile.chat_name, "momo2")
+        self.assertEqual(user.email, "mo2@chat.com")
+        self.assertEqual(user.username, "mo2@chat.com")
+        self.assertEqual(list(user.rooms.all()), [self.room1, self.room2])
+        self.assertEqual(list(user.manage_rooms.all()), [self.room2])
 
 
 class ProfileCRUDLTest(ChatProTest):

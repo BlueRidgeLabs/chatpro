@@ -289,6 +289,11 @@ class UserCRUDL(SmartCRUDL):
             initial['manage_rooms'] = self.object.manage_rooms.all()
             return initial
 
+        def pre_save(self, obj):
+            obj = super(UserCRUDL.Update, self).pre_save(obj)
+            obj.username = obj.email
+            return obj
+
         def post_save(self, obj):
             obj = super(UserCRUDL.Update, self).post_save(obj)
             obj.update_rooms(self.form.cleaned_data['rooms'], self.form.cleaned_data['manage_rooms'])
@@ -322,6 +327,11 @@ class UserCRUDL(SmartCRUDL):
                 raise Http404(_("User doesn't have a chat profile"))
 
             return self.request.user
+
+        def pre_save(self, obj):
+            obj = super(UserCRUDL.Self, self).pre_save(obj)
+            obj.username = obj.email
+            return obj
 
         def post_save(self, obj):
             obj = super(UserCRUDL.Self, self).post_save(obj)
@@ -370,6 +380,11 @@ class ManageUserCRUDL(SmartCRUDL):
     class Update(OrgPermsMixin, ProfileFormMixin, SmartUpdateView):
         fields = ('full_name', 'chat_name', 'email', 'new_password', 'is_active')
         form_class = UserForm
+
+        def pre_save(self, obj):
+            obj = super(ManageUserCRUDL.Update, self).pre_save(obj)
+            obj.username = obj.email
+            return obj
 
         def post_save(self, obj):
             obj = super(ManageUserCRUDL.Update, self).post_save(obj)
