@@ -1,5 +1,5 @@
 config = dict(    
-    port='8027',
+    port='8029',
     app_dir='chatpro',
     friendly_name='ChatPro',
     repository='ssh://git@github.com/rapidpro/chatpro.git',
