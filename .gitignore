@@ -4,10 +4,12 @@ __pycache__/
 *~
 
 sitestatic/
-config/
+config/gen
+config/settings.py
 db/
 dash
 deploy
+celerybeat-schedule.db
 
 .idea/
 .DS_Store
