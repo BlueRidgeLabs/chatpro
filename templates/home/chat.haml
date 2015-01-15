@@ -39,6 +39,7 @@
                     [[ message.time | date:'MMM dd HH:mm' ]]
                     %span.glyphicon.glyphicon-time{ ng-if:'message.status == "P"', title:"Not yet sent" }
                     %span.glyphicon.glyphicon-ok{ ng-if:'message.status == "S"', title:"Sent" }
+                    %span.glyphicon.glyphicon-warning-sign{ ng-if:'message.status == "F"', title:"Sending failed" }
                   [[ message.text ]]
                 %td.message-time
 

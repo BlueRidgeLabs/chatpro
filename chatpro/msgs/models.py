@@ -13,9 +13,11 @@ MESSAGE_MAX_LEN = 140
 
 STATUS_PENDING = 'P'
 STATUS_SENT = 'S'
+STATUS_FAILED = 'F'
 
 STATUS_CHOICES = ((STATUS_PENDING, _("Pending")),
-                  (STATUS_SENT, _("Sent")))
+                  (STATUS_SENT, _("Sent")),
+                  (STATUS_FAILED, _("Failed")))
 
 
 class Message(models.Model):
