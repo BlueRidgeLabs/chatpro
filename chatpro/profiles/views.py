@@ -333,7 +333,7 @@ class UserFieldsMixin(object):
         return obj.profile.chat_name
 
     def get_rooms(self, obj):
-            return ", ".join([unicode(r) for r in obj.rooms.all()])
+        return ", ".join([unicode(r) for r in obj.rooms.all()])
 
 
 class UserCRUDL(SmartCRUDL):

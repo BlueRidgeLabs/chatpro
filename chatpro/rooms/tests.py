@@ -1,5 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
+import json
+
 from chatpro.rooms.models import Room
 from chatpro.profiles.models import Contact
 from chatpro.test import ChatProTest
@@ -103,4 +105,22 @@ class RoomCRUDLTest(ChatProTest):
 
         # try to view room we don't have access to
         response = self.url_get('unicef', reverse('rooms.room_read', args=[self.room3.pk]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_participants(self):
+        # log in as a regular user
+        self.login(self.user1)
+
+        # view room we have access to
+        response = self.url_get('unicef', reverse('rooms.room_participants', args=[self.room1.pk]))
+        content = json.loads(response.content)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(content, dict(count=3, results=[
+            dict(id=self.contact1.pk, chat_name="ann", full_name="Ann", type="C"),
+            dict(id=self.contact2.pk, chat_name="bob", full_name="Bob", type="C"),
+            dict(id=self.user1.pk, chat_name="sammy", full_name="Sam Sims", type="U")
+        ]))
+
+        # try to view room we don't have access to
+        response = self.url_get('unicef', reverse('rooms.room_participants', args=[self.room3.pk]))
         self.assertEqual(response.status_code, 404)

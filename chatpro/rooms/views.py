@@ -35,7 +35,7 @@ class RoomCRUDL(SmartCRUDL):
             return last_msg.time if last_msg else _("Never")
 
         def get_managers(self, obj):
-            return ",".join([unicode(m.profile) for m in obj.get_managers()])
+            return ",".join([unicode(m) for m in obj.get_managers()])
 
     class List(OrgPermsMixin, SmartListView):
         fields = ('name', 'contacts')
@@ -80,11 +80,14 @@ class RoomCRUDL(SmartCRUDL):
             return HttpResponseRedirect(self.get_success_url())
 
     class Participants(OrgPermsMixin, SmartReadView):
+        def get_queryset(self):
+            return self.request.user.get_rooms(self.request.org)
+
         def get_context_data(self, **kwargs):
             context = super(RoomCRUDL.Participants, self).get_context_data(**kwargs)
 
-            context['contacts'] = self.object.get_contacts()
-            context['users'] = self.object.get_users()
+            context['contacts'] = self.object.get_contacts().order_by('full_name')
+            context['users'] = self.object.get_users().order_by('profile__full_name')
             return context
 
         def render_to_response(self, context, **response_kwargs):
