@@ -26,7 +26,7 @@ class ChatView(OrgPermsMixin, SmartTemplateView):
         else:
             initial_room = rooms.first()
 
-        msg_text_chars = MESSAGE_MAX_LEN - len(Message.get_prefix(self.request.user.profile))
+        msg_text_chars = MESSAGE_MAX_LEN - len(Message.get_user_prefix(self.request.user))
 
         context['rooms'] = rooms
         context['initial_room'] = initial_room

@@ -11,6 +11,16 @@ from uuid import uuid4
 from .tasks import push_contact_change
 
 
+class AbstractParticipant(models.Model):
+    full_name = models.CharField(verbose_name=_("Full name"), max_length=128, null=True)
+
+    chat_name = models.CharField(verbose_name=_("Chat name"), max_length=16, null=True,
+                                 help_text=_("Shorter name used for chat messages"))
+
+    class Meta:
+        abstract = True
+
+
 class Contact(models.Model):
     """
     Corresponds to a RapidPro contact who is tied to a single room
@@ -98,18 +108,13 @@ class Contact(models.Model):
         self.push(ChangeType.deleted)
 
 
-class Profile(models.Model):
+class Profile(AbstractParticipant):
     """
     A user or contact who can participate in chat rooms
     """
     user = models.OneToOneField(User, null=True)
 
     contact = models.OneToOneField(Contact, null=True)
-
-    full_name = models.CharField(verbose_name=_("Full name"), max_length=128, null=True)
-
-    chat_name = models.CharField(verbose_name=_("Chat name"), max_length=16, null=True,
-                                 help_text=_("Shorter name used for chat messages"))
 
     def is_contact(self):
         return bool(self.contact_id)

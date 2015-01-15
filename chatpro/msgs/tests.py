@@ -21,11 +21,13 @@ class MessageTest(ChatProTest):
         # test from contact
         msg = Message.create_for_contact(self.unicef, self.contact1, "Hello", self.room1)
         self.assertEqual(msg.org, self.unicef)
-        self.assertEqual(msg.sender, self.contact1.profile)
+        self.assertEqual(msg.contact, self.contact1)
+        self.assertEqual(msg.user, None)
         self.assertEqual(msg.text, "Hello")
         self.assertEqual(msg.room, self.room1)
         self.assertEqual(msg.status, STATUS_SENT)
         self.assertIsNotNone(msg.time)
+        self.assertFalse(msg.is_user_message())
 
         self.assertEqual(msg.as_json(), dict(id=msg.id, sender=self.contact1.profile.as_json(), text="Hello",
                                              room_id=self.room1.id, time=msg.time, status='S'))
@@ -33,11 +35,13 @@ class MessageTest(ChatProTest):
         # test from user
         msg = Message.create_for_user(self.unicef, self.user1, "Goodbye", self.room1)
         self.assertEqual(msg.org, self.unicef)
-        self.assertEqual(msg.sender, self.user1.profile)
+        self.assertEqual(msg.contact, None)
+        self.assertEqual(msg.user, self.user1)
         self.assertEqual(msg.text, "Goodbye")
         self.assertEqual(msg.room, self.room1)
         self.assertEqual(msg.status, STATUS_PENDING)
         self.assertIsNotNone(msg.time)
+        self.assertTrue(msg.is_user_message())
 
         self.assertEqual(msg.as_json(), dict(id=msg.id, sender=self.user1.profile.as_json(), text="Goodbye",
                                              room_id=self.room1.id, time=msg.time, status='P'))
@@ -67,7 +71,7 @@ class MessageCRUDLTest(ChatProTest):
 
         msg = Message.objects.get(text="Hello 1")
         self.assertEqual(msg.room, self.room1)
-        self.assertEqual(msg.sender, self.admin.profile)
+        self.assertEqual(msg.user, self.admin)
 
         # send as regular user
         self.login(self.user1)
@@ -77,7 +81,7 @@ class MessageCRUDLTest(ChatProTest):
 
         msg = Message.objects.get(text="Hello 2")
         self.assertEqual(msg.room, self.room1)
-        self.assertEqual(msg.sender, self.user1.profile)
+        self.assertEqual(msg.user, self.user1)
 
         # try to send to room that user doesn't have access to
         self.url_post('unicef', send_url, dict(room=self.room3.id, text="Hello 3"))
@@ -85,7 +89,7 @@ class MessageCRUDLTest(ChatProTest):
 
     def test_list(self):
         def create_message(user, room, num, time):
-            return Message.objects.create(org=self.unicef, sender=user.profile, text="Msg %d" % num, room=room, time=time)
+            return Message.objects.create(org=self.unicef, user=user, text="Msg %d" % num, room=room, time=time)
 
         msg1 = create_message(self.user1, self.room1, 1, datetime(2014, 1, 1, 1, 0, 0, 0, pytz.UTC))
         msg2 = create_message(self.user1, self.room1, 2, datetime(2014, 1, 1, 2, 0, 0, 0, pytz.UTC))

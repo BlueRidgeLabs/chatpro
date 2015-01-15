@@ -92,7 +92,7 @@ class TembaHandlerTest(ChatProTest):
 
         # check new message created
         msg = Message.objects.get(text="Hello World")
-        self.assertEqual(msg.sender, self.contact1.profile)
+        self.assertEqual(msg.contact, self.contact1)
         self.assertEqual(msg.room, self.room1)
 
         # try with new room/group that must be fetched
@@ -104,7 +104,7 @@ class TembaHandlerTest(ChatProTest):
 
         # check new message created
         msg = Message.objects.get(text="Hello Again")
-        self.assertEqual(msg.sender, self.contact1.profile)
+        self.assertEqual(msg.contact, self.contact1)
         self.assertEqual(msg.room, new_room)
 
         # try with new contact and new room/group that must be fetched
@@ -120,5 +120,5 @@ class TembaHandlerTest(ChatProTest):
 
         # check new message created
         msg = Message.objects.get(text="Goodbye")
-        self.assertEqual(msg.sender, new_contact.profile)
+        self.assertEqual(msg.contact, new_contact)
         self.assertEqual(msg.room, new_room)

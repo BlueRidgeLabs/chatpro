@@ -1,8 +1,9 @@
 from __future__ import unicode_literals
 
 from chatpro.rooms.models import Room
-from chatpro.profiles.models import Profile
+from chatpro.profiles.models import Contact
 from dash.orgs.models import Org
+from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
@@ -23,8 +24,11 @@ class Message(models.Model):
     """
     org = models.ForeignKey(Org, verbose_name=_("Organization"), related_name='messages')
 
-    sender = models.ForeignKey(Profile, null=True, verbose_name=_("Profile"), related_name='messages',
-                               help_text=_("The profile that sent this message"))
+    user = models.ForeignKey(User, null=True, verbose_name=_("User"), related_name='messages',
+                             help_text=_("The user that sent this message"))
+
+    contact = models.ForeignKey(Contact, null=True, verbose_name=_("Contact"), related_name='messages',
+                                help_text=_("The contact that sent this message"))
 
     text = models.CharField(max_length=640)
 
@@ -38,7 +42,7 @@ class Message(models.Model):
 
     @classmethod
     def create_for_contact(cls, org, contact, text, room):
-        return cls.objects.create(org=org, sender=contact.profile, text=text, room=room,
+        return cls.objects.create(org=org, contact=contact, text=text, room=room,
                                   time=timezone.now(), status=STATUS_SENT)
 
     @classmethod
@@ -46,16 +50,21 @@ class Message(models.Model):
         if not user.profile:  # pragma: no cover
             raise ValueError("User does not have a chat profile")
 
-        msg = cls.objects.create(org=org, sender=user.profile, text=text, room=room,
+        msg = cls.objects.create(org=org, user=user, text=text, room=room,
                                  time=timezone.now(), status=STATUS_PENDING)
 
         send_message.delay(msg.pk)
         return msg
 
+    def is_user_message(self):
+        return bool(self.user_id)
+
     @classmethod
-    def get_prefix(cls, profile):
-        return '%s: ' % profile.chat_name
+    def get_user_prefix(cls, user):
+        return '%s: ' % user.profile.chat_name
 
     def as_json(self):
-        return dict(id=self.pk, sender=self.sender.as_json(), text=self.text, room_id=self.room_id,
+        sender = self.user if self.is_user_message() else self.contact
+
+        return dict(id=self.pk, sender=sender.profile.as_json(), text=self.text, room_id=self.room_id,
                     time=self.time, status=self.status)
