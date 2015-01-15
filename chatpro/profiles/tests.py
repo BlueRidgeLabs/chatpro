@@ -11,79 +11,6 @@ from .models import Contact, Profile
 
 
 class UserPatchTest(ChatProTest):
-    def test_has_profile(self):
-        self.assertFalse(self.superuser.has_profile())
-        self.assertTrue(self.admin.has_profile())
-        self.assertTrue(self.user1.has_profile())
-
-    def test_get_full_name(self):
-        self.assertEqual(self.superuser.get_full_name(), "")
-        self.assertEqual(self.admin.get_full_name(), "Richard")
-        self.assertEqual(self.user1.get_full_name(), "Sam Sims")
-
-
-class ContactTest(ChatProTest):
-    @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True, BROKER_BACKEND='memory')
-    @patch('chatpro.utils.temba.TembaClient.create_contact')
-    def test_create(self, mock_create_contact):
-        mock_create_contact.return_value = TembaContact.create(uuid='RRR-007', name="Mo Chats", urns=['tel:078123'],
-                                                               groups=['000-007'], fields=dict(chat_name="momo"),
-                                                               language='eng', modified_on=timezone.now())
-
-        contact = Contact.create(self.unicef, self.user1, "Mo Chats", "momo", 'tel:078123', self.room1)
-
-        self.assertEqual(contact.profile.full_name, "Mo Chats")
-        self.assertEqual(contact.profile.chat_name, "momo")
-
-        self.assertEqual(contact.urn, 'tel:078123')
-        self.assertEqual(contact.room, self.room1)
-        self.assertEqual(contact.created_by, self.user1)
-        self.assertIsNotNone(contact.created_on)
-        self.assertEqual(contact.modified_by, self.user1)
-        self.assertIsNotNone(contact.modified_on)
-
-        # reload and check UUID was updated by push task
-        contact = Contact.objects.get(pk=contact.pk)
-        self.assertEqual(contact.uuid, 'RRR-007')
-
-        self.assertEqual(mock_create_contact.call_count, 1)
-
-    def test_from_temba(self):
-        temba_contact = TembaContact.create(uuid='000-007', name="Jan", urns=['tel:123'],
-                                            groups=['000-007'], fields=dict(chat_name="jxn"),
-                                            language='eng', modified_on=timezone.now())
-
-        contact = Contact.from_temba(self.unicef, self.room1, temba_contact)
-
-        self.assertEqual(contact.profile.full_name, "Jan")
-        self.assertEqual(contact.profile.chat_name, "jxn")
-
-        self.assertEqual(contact.room, self.room1)
-        self.assertEqual(contact.urn, 'tel:123')
-        self.assertEqual(contact.uuid, '000-007')
-        self.assertIsNone(contact.created_by)
-        self.assertIsNotNone(contact.created_on)
-        self.assertIsNone(contact.modified_by)
-        self.assertIsNotNone(contact.modified_on)
-
-    def test_as_temba(self):
-        temba_contact = self.contact1.as_temba()
-        self.assertEqual(temba_contact.name, "Ann")
-        self.assertEqual(temba_contact.urns, ['tel:1234'])
-        self.assertEqual(temba_contact.fields, {'chat_name': "ann"})
-        self.assertEqual(temba_contact.groups, ['000-001'])
-        self.assertEqual(temba_contact.uuid, '000-001')
-
-    @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True, BROKER_BACKEND='memory')
-    @patch('chatpro.utils.temba.TembaClient.delete_contact')
-    def test_release(self, mock_delete_contact):
-        self.contact1.release()
-        self.assertFalse(self.contact1.is_active)
-
-        self.assertEqual(mock_delete_contact.call_count, 1)
-
-
-class ProfileTest(ChatProTest):
     def test_create_user(self):
         user = User.create(self.unicef, "Mo Chats", "momo", "mo@chat.com", "Qwerty123",
                            rooms=[self.room1], manage_rooms=[self.room2])
@@ -108,22 +35,92 @@ class ProfileTest(ChatProTest):
         self.assertFalse(user.has_room_access(self.room4))
         self.assertFalse(user.has_room_access(self.room4, manage=True))
 
+    def test_has_profile(self):
+        self.assertFalse(self.superuser.has_profile())
+        self.assertTrue(self.admin.has_profile())
+        self.assertTrue(self.user1.has_profile())
+
+    def test_get_full_name(self):
+        self.assertEqual(self.superuser.get_full_name(), "")
+        self.assertEqual(self.admin.get_full_name(), "Richard")
+        self.assertEqual(self.user1.get_full_name(), "Sam Sims")
+
     def test_unicode(self):
-        self.assertEqual(unicode(self.user1.profile), "Sam Sims")
+        self.assertEqual(unicode(self.user1), "Sam Sims")
         self.user1.profile.full_name = None
         self.user1.profile.save()
-        self.assertEqual(unicode(self.user1.profile), "sammy")
+        self.assertEqual(unicode(self.user1), "sammy")
         self.user1.profile.chat_name = None
         self.user1.profile.save()
-        self.assertEqual(unicode(self.user1.profile), "sam@unicef.org")
+        self.assertEqual(unicode(self.user1), "sam@unicef.org")
 
-        self.assertEqual(unicode(self.contact1.profile), "Ann")
-        self.contact1.profile.full_name = None
-        self.contact1.profile.save()
-        self.assertEqual(unicode(self.contact1.profile), "ann")
-        self.contact1.profile.chat_name = None
-        self.contact1.profile.save()
-        self.assertEqual(unicode(self.contact1.profile), "1234")
+
+class ContactTest(ChatProTest):
+    @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True, BROKER_BACKEND='memory')
+    @patch('chatpro.utils.temba.TembaClient.create_contact')
+    def test_create(self, mock_create_contact):
+        mock_create_contact.return_value = TembaContact.create(uuid='RRR-007', name="Mo Chats", urns=['tel:078123'],
+                                                               groups=['000-007'], fields=dict(chat_name="momo"),
+                                                               language='eng', modified_on=timezone.now())
+
+        contact = Contact.create(self.unicef, self.user1, "Mo Chats", "momo", 'tel:078123', self.room1)
+
+        self.assertEqual(contact.full_name, "Mo Chats")
+        self.assertEqual(contact.chat_name, "momo")
+        self.assertEqual(contact.urn, 'tel:078123')
+        self.assertEqual(contact.room, self.room1)
+        self.assertEqual(contact.created_by, self.user1)
+        self.assertIsNotNone(contact.created_on)
+        self.assertEqual(contact.modified_by, self.user1)
+        self.assertIsNotNone(contact.modified_on)
+
+        # reload and check UUID was updated by push task
+        contact = Contact.objects.get(pk=contact.pk)
+        self.assertEqual(contact.uuid, 'RRR-007')
+
+        self.assertEqual(mock_create_contact.call_count, 1)
+
+    def test_from_temba(self):
+        temba_contact = TembaContact.create(uuid='000-007', name="Jan", urns=['tel:123'],
+                                            groups=['000-007'], fields=dict(chat_name="jxn"),
+                                            language='eng', modified_on=timezone.now())
+
+        contact = Contact.from_temba(self.unicef, self.room1, temba_contact)
+
+        self.assertEqual(contact.full_name, "Jan")
+        self.assertEqual(contact.chat_name, "jxn")
+        self.assertEqual(contact.room, self.room1)
+        self.assertEqual(contact.urn, 'tel:123')
+        self.assertEqual(contact.uuid, '000-007')
+        self.assertIsNone(contact.created_by)
+        self.assertIsNotNone(contact.created_on)
+        self.assertIsNone(contact.modified_by)
+        self.assertIsNotNone(contact.modified_on)
+
+    def test_as_temba(self):
+        temba_contact = self.contact1.as_temba()
+        self.assertEqual(temba_contact.name, "Ann")
+        self.assertEqual(temba_contact.urns, ['tel:1234'])
+        self.assertEqual(temba_contact.fields, {'chat_name': "ann"})
+        self.assertEqual(temba_contact.groups, ['000-001'])
+        self.assertEqual(temba_contact.uuid, '000-001')
+
+    @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True, BROKER_BACKEND='memory')
+    @patch('chatpro.utils.temba.TembaClient.delete_contact')
+    def test_release(self, mock_delete_contact):
+        self.contact1.release()
+        self.assertFalse(self.contact1.is_active)
+
+        self.assertEqual(mock_delete_contact.call_count, 1)
+
+    def test_unicode(self):
+        self.assertEqual(unicode(self.contact1), "Ann")
+        self.contact1.full_name = None
+        self.contact1.save()
+        self.assertEqual(unicode(self.contact1), "ann")
+        self.contact1.chat_name = None
+        self.contact1.save()
+        self.assertEqual(unicode(self.contact1), "1234")
 
 
 class ContactCRUDLTest(ChatProTest):
@@ -148,8 +145,8 @@ class ContactCRUDLTest(ChatProTest):
 
         # check new contact and profile
         contact = Contact.objects.get(urn='tel:5678')
-        self.assertEqual(contact.profile.full_name, "Mo Chats")
-        self.assertEqual(contact.profile.chat_name, "momo")
+        self.assertEqual(contact.full_name, "Mo Chats")
+        self.assertEqual(contact.chat_name, "momo")
         self.assertEqual(contact.room, self.room1)
 
     def test_update(self):
@@ -165,10 +162,30 @@ class ContactCRUDLTest(ChatProTest):
 
         # check updated contact and profile
         contact = Contact.objects.get(pk=self.contact1.pk)
-        self.assertEqual(contact.profile.full_name, "Morris")
-        self.assertEqual(contact.profile.chat_name, "momo2")
+        self.assertEqual(contact.full_name, "Morris")
+        self.assertEqual(contact.chat_name, "momo2")
         self.assertEqual(contact.urn, 'tel:6789')
         self.assertEqual(contact.room, self.room2)
+
+    def test_read(self):
+        # log in as a user
+        self.login(self.user1)
+
+        # view contact in a room we manage
+        response = self.url_get('unicef', reverse('profiles.contact_read', args=[self.contact3.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['edit_button_url'], reverse('profiles.contact_update', args=[self.contact3.pk]))
+        self.assertContains(response, "Phone")
+
+        # view contact in a room we don't manage
+        response = self.url_get('unicef', reverse('profiles.contact_read', args=[self.contact5.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.context['edit_button_url'])
+        self.assertContains(response, "Twitter")
+
+        # try to view contact from other org
+        response = self.url_get('unicef', reverse('profiles.contact_read', args=[self.contact6.pk]))
+        self.assertEqual(response.status_code, 404)
 
     def test_list(self):
         url = reverse('profiles.contact_list')
@@ -283,6 +300,32 @@ class UserCRUDLTest(ChatProTest):
         user = User.objects.get(pk=self.user1.pk)
         self.assertFalse(user.is_active)
 
+    def test_read(self):
+        # log in as an org administrator
+        self.login(self.admin)
+
+        # view our own profile
+        response = self.url_get('unicef', reverse('profiles.user_read', args=[self.admin.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['edit_button_url'], reverse('profiles.user_self'))
+
+        # view other user's profile
+        response = self.url_get('unicef', reverse('profiles.user_read', args=[self.user1.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['edit_button_url'], reverse('profiles.user_update', args=[self.user1.pk]))
+
+        # try to view user from other org
+        response = self.url_get('unicef', reverse('profiles.user_read', args=[self.user3.pk]))
+        self.assertEqual(response.status_code, 404)
+
+        # log in as a user
+        self.login(self.user1)
+
+        # view other user's profile
+        response = self.url_get('unicef', reverse('profiles.user_read', args=[self.admin.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.context['edit_button_url'])
+
     def test_list(self):
         url = reverse('profiles.user_list')
 
@@ -346,47 +389,3 @@ class UserCRUDLTest(ChatProTest):
         self.assertEqual(user.username, "mo2@chat.com")
         self.assertEqual(list(user.rooms.all()), [self.room1, self.room2])
         self.assertEqual(list(user.manage_rooms.all()), [self.room2])
-
-
-class ProfileCRUDLTest(ChatProTest):
-    def test_read(self):
-        # log in as an org administrator
-        self.login(self.admin)
-
-        # view our own profile
-        response = self.url_get('unicef', reverse('profiles.profile_read', args=[self.admin.profile.pk]))
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['edit_button_url'], reverse('profiles.user_self'))
-
-        # view other user's profile
-        response = self.url_get('unicef', reverse('profiles.profile_read', args=[self.user1.profile.pk]))
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['edit_button_url'], reverse('profiles.user_update', args=[self.user1.pk]))
-
-        # try to view user from other org
-        response = self.url_get('unicef', reverse('profiles.profile_read', args=[self.user3.profile.pk]))
-        self.assertEqual(response.status_code, 404)
-
-        # log in as a user
-        self.login(self.user1)
-
-        # view other user's profile
-        response = self.url_get('unicef', reverse('profiles.profile_read', args=[self.admin.profile.pk]))
-        self.assertEqual(response.status_code, 200)
-        self.assertIsNone(response.context['edit_button_url'])
-
-        # view contact in a room we manage
-        response = self.url_get('unicef', reverse('profiles.profile_read', args=[self.contact3.profile.pk]))
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['edit_button_url'], reverse('profiles.contact_update', args=[self.contact3.pk]))
-        self.assertContains(response, "Phone")
-
-        # view contact in a room we don't manage
-        response = self.url_get('unicef', reverse('profiles.profile_read', args=[self.contact5.profile.pk]))
-        self.assertEqual(response.status_code, 200)
-        self.assertIsNone(response.context['edit_button_url'])
-        self.assertContains(response, "Twitter")
-
-        # try to view contact from other org
-        response = self.url_get('unicef', reverse('profiles.profile_read', args=[self.contact6.profile.pk]))
-        self.assertEqual(response.status_code, 404)

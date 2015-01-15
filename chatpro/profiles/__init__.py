@@ -77,9 +77,19 @@ def _user_has_room_access(user, room, manage=False):
         return user.rooms.filter(pk=room.pk).exists()
 
 
+def _user_unicode(user):
+    if user.profile.full_name:
+        return user.profile.full_name
+    elif user.profile.chat_name:
+        return user.profile.chat_name
+    else:
+        return user.email
+
+
 User.create = classmethod(_user_create)
 User.has_profile = _user_has_profile
 User.get_full_name = _user_get_full_name
 User.get_rooms = _user_get_rooms
 User.update_rooms = _user_update_rooms
 User.has_room_access = _user_has_room_access
+User.__unicode__ = _user_unicode

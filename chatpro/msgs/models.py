@@ -64,7 +64,7 @@ class Message(models.Model):
         return '%s: ' % user.profile.chat_name
 
     def as_json(self):
-        sender = self.user if self.is_user_message() else self.contact
+        participant = self.user.profile if self.is_user_message() else self.contact
 
-        return dict(id=self.pk, sender=sender.profile.as_json(), text=self.text, room_id=self.room_id,
+        return dict(id=self.pk, sender=participant.as_participant_json(), text=self.text, room_id=self.room_id,
                     time=self.time, status=self.status)

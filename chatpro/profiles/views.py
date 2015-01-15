@@ -54,9 +54,9 @@ class URNWidget(forms.widgets.MultiWidget):
         return mark_safe(''.join(output))
 
 
-class BaseProfileForm(forms.ModelForm):
+class AbstractParticipantForm(forms.ModelForm):
     """
-    Base form for profiles
+    Base form for chat participants
     """
     full_name = forms.CharField(max_length=128,
                                 label=_("Full name"))
@@ -67,10 +67,32 @@ class BaseProfileForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs['user']
         del kwargs['user']
-        super(BaseProfileForm, self).__init__(*args, **kwargs)
+        super(AbstractParticipantForm, self).__init__(*args, **kwargs)
 
 
-class UserForm(BaseProfileForm):
+class ContactForm(AbstractParticipantForm):
+    """
+    Form for contact profiles
+    """
+    urn = URNField(label=_("Phone/Twitter"), help_text=_("Phone number or Twitter handle of this contact."))
+
+    room = forms.ModelChoiceField(label=_("Room"), queryset=Room.objects.filter(pk=-1),
+                                  help_text=_("Chat rooms which this contact can chat in."))
+
+    def __init__(self, *args, **kwargs):
+        super(ContactForm, self).__init__(*args, **kwargs)
+
+        if self.user.is_admin_for(self.user.get_org()):
+            self.fields['room'].queryset = Room.objects.filter(org=self.user.get_org()).order_by('name')
+        else:
+            self.fields['room'].queryset = self.user.manage_rooms.all()
+
+    class Meta:
+        model = Contact
+        exclude = ()
+
+
+class UserForm(AbstractParticipantForm):
     """
     Form for user profiles
     """
@@ -108,64 +130,14 @@ class UserForm(BaseProfileForm):
         exclude = ()
 
 
-class ContactForm(BaseProfileForm):
+class ParticipantFormMixin(object):
     """
-    Form for contact profiles
-    """
-    urn = URNField(label=_("Phone/Twitter"), help_text=_("Phone number or Twitter handle of this contact."))
-
-    room = forms.ModelChoiceField(label=_("Room"), queryset=Room.objects.filter(pk=-1),
-                                  help_text=_("Chat rooms which this contact can chat in."))
-
-    def __init__(self, *args, **kwargs):
-        super(ContactForm, self).__init__(*args, **kwargs)
-
-        if self.user.is_admin_for(self.user.get_org()):
-            self.fields['room'].queryset = Room.objects.filter(org=self.user.get_org()).order_by('name')
-        else:
-            self.fields['room'].queryset = self.user.manage_rooms.all()
-
-    class Meta:
-        model = Contact
-        exclude = ()
-
-
-class ProfileFormMixin(object):
-    """
-    Mixin for views that use a profile form
+    Mixin for views that use a participant form
     """
     def get_form_kwargs(self):
-        kwargs = super(ProfileFormMixin, self).get_form_kwargs()
+        kwargs = super(ParticipantFormMixin, self).get_form_kwargs()
         kwargs['user'] = self.request.user
         return kwargs
-
-    def derive_initial(self):
-        initial = super(ProfileFormMixin, self).derive_initial()
-        if self.object:
-            initial['full_name'] = self.object.profile.full_name
-            initial['chat_name'] = self.object.profile.chat_name
-        return initial
-
-    def post_save(self, obj):
-        obj = super(ProfileFormMixin, self).post_save(obj)
-        obj.profile.full_name = self.form.cleaned_data['full_name']
-        obj.profile.chat_name = self.form.cleaned_data['chat_name']
-        obj.profile.save()
-        return obj
-
-
-class ProfileListMixin(object):
-    def get_full_name(self, obj):
-        return obj.profile.full_name
-
-    def get_chat_name(self, obj):
-        return obj.profile.chat_name
-
-    def lookup_field_link(self, context, field, obj):
-        if field == 'full_name':
-            return reverse('profiles.profile_read', args=[obj.profile.pk])
-        else:
-            return super(ProfileListMixin, self).lookup_field_link(context, field, obj)
 
 
 class ContactFieldsMixin(object):
@@ -180,11 +152,41 @@ class ContactFieldsMixin(object):
         return super(ContactFieldsMixin, self).lookup_field_label(context, field, default)
 
 
+class UserFormMixin(ParticipantFormMixin):
+    """
+    Mixin for views that use a user form
+    """
+    def derive_initial(self):
+        initial = super(UserFormMixin, self).derive_initial()
+        if self.object:
+            initial['full_name'] = self.object.profile.full_name
+            initial['chat_name'] = self.object.profile.chat_name
+        return initial
+
+    def post_save(self, obj):
+        obj = super(UserFormMixin, self).post_save(obj)
+        obj.profile.full_name = self.form.cleaned_data['full_name']
+        obj.profile.chat_name = self.form.cleaned_data['chat_name']
+        obj.profile.save()
+        return obj
+
+
+class UserFieldsMixin(object):
+    def get_full_name(self, obj):
+        return obj.profile.full_name
+
+    def get_chat_name(self, obj):
+        return obj.profile.chat_name
+
+    def get_rooms(self, obj):
+            return ", ".join([unicode(r) for r in obj.rooms.all()])
+
+
 class ContactCRUDL(SmartCRUDL):
     model = Contact
-    actions = ('create', 'update', 'list', 'filter', 'delete')
+    actions = ('create', 'update', 'read', 'list', 'filter', 'delete')
 
-    class Create(OrgPermsMixin, ProfileFormMixin, SmartCreateView):
+    class Create(OrgPermsMixin, ParticipantFormMixin, SmartCreateView):
         fields = ('full_name', 'chat_name', 'urn', 'room')
         form_class = ContactForm
 
@@ -197,11 +199,9 @@ class ContactCRUDL(SmartCRUDL):
 
         def save(self, obj):
             org = self.request.user.get_org()
-            full_name = self.form.cleaned_data['full_name']
-            chat_name = self.form.cleaned_data['chat_name']
-            self.object = Contact.create(org, self.request.user, full_name, chat_name, obj.urn, obj.room)
+            self.object = Contact.create(org, self.request.user, obj.full_name, obj.chat_name, obj.urn, obj.room)
 
-    class Update(OrgObjPermsMixin, ProfileFormMixin, SmartUpdateView):
+    class Update(OrgObjPermsMixin, ParticipantFormMixin, SmartUpdateView):
         fields = ('full_name', 'chat_name', 'urn', 'room')
         form_class = ContactForm
 
@@ -210,7 +210,52 @@ class ContactCRUDL(SmartCRUDL):
             obj.push(ChangeType.updated)
             return obj
 
-    class List(OrgPermsMixin, ProfileListMixin, ContactFieldsMixin, SmartListView):
+    class Read(OrgPermsMixin, SmartReadView):
+        def derive_fields(self):
+            fields = ['full_name', 'chat_name', 'type', 'urn', 'room']
+            if self.object.created_by_id:
+                fields += ['added_by']
+            return fields
+
+        def get_queryset(self):
+            queryset = super(ContactCRUDL.Read, self).get_queryset()
+            return queryset.filter(org=self.request.org, is_active=True)
+
+        def get_context_data(self, **kwargs):
+            context = super(ContactCRUDL.Read, self).get_context_data(**kwargs)
+            edit_button_url = None
+            delete_button_url = None
+
+            room = self.object.room
+            if self.request.user.has_room_access(room, manage=True):
+                if self.has_org_perm('profiles.contact_update'):
+                    edit_button_url = reverse('profiles.contact_update', args=[self.object.pk])
+                if self.has_org_perm('profiles.contact_delete'):
+                    delete_button_url = reverse('profiles.contact_delete', args=[self.object.pk])
+
+            context['edit_button_url'] = edit_button_url
+            context['delete_button_url'] = delete_button_url
+            return context
+
+        def get_type(self, obj):
+            return _("Contact")
+
+        def get_urn(self, obj):
+            return obj.get_urn()[1]
+
+        def get_added_by(self, obj):
+            return obj.created_by.get_full_name()
+
+        def lookup_field_label(self, context, field, default=None):
+            if field == 'urn':
+                scheme = self.object.get_urn()[0]
+                for s, label in URN_SCHEME_CHOICES:
+                    if scheme == s:
+                        return label
+
+            return super(ContactCRUDL.Read, self).lookup_field_label(context, field, default)
+
+    class List(OrgPermsMixin, ContactFieldsMixin, SmartListView):
         fields = ('full_name', 'chat_name', 'urn', 'room')
 
         def get_queryset(self, **kwargs):
@@ -218,9 +263,9 @@ class ContactCRUDL(SmartCRUDL):
 
             rooms = self.request.user.get_rooms(self.request.org)
             qs = qs.filter(org=self.request.org, is_active=True, room__in=rooms)
-            return qs.select_related('profile').order_by('profile__full_name')
+            return qs.order_by('full_name')
 
-    class Filter(OrgPermsMixin, ProfileListMixin, ContactFieldsMixin, SmartListView):
+    class Filter(OrgPermsMixin, ContactFieldsMixin, SmartListView):
         fields = ('full_name', 'chat_name', 'urn')
 
         @classmethod
@@ -237,7 +282,7 @@ class ContactCRUDL(SmartCRUDL):
             return room
 
         def get_queryset(self, **kwargs):
-            return self.derive_room().get_contacts().order_by('profile__full_name')
+            return self.derive_room().get_contacts().order_by('full_name')
 
         def get_context_data(self, **kwargs):
             context = super(ContactCRUDL.Filter, self).get_context_data(**kwargs)
@@ -260,9 +305,9 @@ class ContactCRUDL(SmartCRUDL):
 
 class UserCRUDL(SmartCRUDL):
     model = User
-    actions = ('create', 'update', 'self', 'list')
+    actions = ('create', 'update', 'read', 'self', 'list')
 
-    class Create(OrgPermsMixin, ProfileFormMixin, SmartCreateView):
+    class Create(OrgPermsMixin, UserFormMixin, SmartCreateView):
         fields = ('full_name', 'chat_name', 'email', 'password', 'rooms', 'manage_rooms')
         form_class = UserForm
         permission = 'profiles.profile_user_create'
@@ -277,7 +322,7 @@ class UserCRUDL(SmartCRUDL):
             manage_rooms = self.form.cleaned_data['manage_rooms']
             self.object = User.create(org, full_name, chat_name, obj.email, password, rooms, manage_rooms)
 
-    class Update(OrgPermsMixin, ProfileFormMixin, SmartUpdateView):
+    class Update(OrgPermsMixin, UserFormMixin, SmartUpdateView):
         fields = ('full_name', 'chat_name', 'email', 'new_password', 'rooms', 'manage_rooms', 'is_active')
         form_class = UserForm
         permission = 'profiles.profile_user_update'
@@ -305,7 +350,47 @@ class UserCRUDL(SmartCRUDL):
 
             return obj
 
-    class Self(OrgPermsMixin, ProfileFormMixin, SmartUpdateView):
+    class Read(OrgPermsMixin, UserFieldsMixin, SmartReadView):
+        permission = 'profiles.profile_user_read'
+
+        def derive_title(self):
+            if self.object == self.request.user:
+                return _("My Profile")
+            else:
+                return super(UserCRUDL.Read, self).derive_title()
+
+        def derive_fields(self):
+            fields = ['full_name', 'chat_name', 'type', 'email']
+            if not self.object.is_admin_for(self.request.org):
+                fields += ['rooms']
+            return fields
+
+        def get_queryset(self):
+            queryset = super(UserCRUDL.Read, self).get_queryset()
+
+            # only allow access to active users attached to this org
+            org = self.request.org
+            return queryset.filter(Q(org_editors=org) | Q(org_admins=org)).filter(is_active=True)
+
+        def get_context_data(self, **kwargs):
+            context = super(UserCRUDL.Read, self).get_context_data(**kwargs)
+            edit_button_url = None
+
+            if self.object == self.request.user:
+                edit_button_url = reverse('profiles.user_self')
+            elif self.has_org_perm('profiles.profile_user_update'):
+                edit_button_url = reverse('profiles.user_update', args=[self.object.pk])
+
+            context['edit_button_url'] = edit_button_url
+            return context
+
+        def get_type(self, obj):
+            if obj.is_admin_for(self.request.org):
+                return _("Administrator")
+            else:
+                return _("User")
+
+    class Self(OrgPermsMixin, UserFormMixin, SmartUpdateView):
         """
         Limited update form for users to edit their own profiles
         """
@@ -342,7 +427,7 @@ class UserCRUDL(SmartCRUDL):
                 obj.save()
             return obj
 
-    class List(OrgPermsMixin, ProfileListMixin, SmartListView):
+    class List(OrgPermsMixin, UserFieldsMixin, SmartListView):
         fields = ('full_name', 'chat_name', 'email', 'rooms', 'manages')
         permission = 'profiles.profile_user_list'
 
@@ -350,9 +435,6 @@ class UserCRUDL(SmartCRUDL):
             qs = super(UserCRUDL.List, self).get_queryset(**kwargs)
             qs = qs.filter(pk__in=self.request.org.get_org_editors(), is_active=True).select_related('profile')
             return qs
-
-        def get_rooms(self, obj):
-            return ", ".join([unicode(r) for r in obj.rooms.all()])
 
         def get_manages(self, obj):
             return ", ".join([unicode(r) for r in obj.manage_rooms.all()])
@@ -367,7 +449,7 @@ class ManageUserCRUDL(SmartCRUDL):
     path = 'admin'
     actions = ('create', 'update', 'list')
 
-    class Create(OrgPermsMixin, ProfileFormMixin, SmartCreateView):
+    class Create(OrgPermsMixin, UserFormMixin, SmartCreateView):
         fields = ('full_name', 'chat_name', 'email', 'password')
         form_class = UserForm
 
@@ -377,7 +459,7 @@ class ManageUserCRUDL(SmartCRUDL):
             password = self.form.cleaned_data['password']
             self.object = User.create(None, full_name, chat_name, obj.email, password)
 
-    class Update(OrgPermsMixin, ProfileFormMixin, SmartUpdateView):
+    class Update(OrgPermsMixin, UserFormMixin, SmartUpdateView):
         fields = ('full_name', 'chat_name', 'email', 'new_password', 'is_active')
         form_class = UserForm
 
@@ -394,7 +476,7 @@ class ManageUserCRUDL(SmartCRUDL):
                 obj.save()
             return obj
 
-    class List(ProfileListMixin, SmartListView):
+    class List(UserFieldsMixin, SmartListView):
         fields = ('full_name', 'chat_name', 'email', 'orgs')
         default_order = ('profile__full_name',)
 
@@ -409,91 +491,3 @@ class ManageUserCRUDL(SmartCRUDL):
 
         def lookup_field_link(self, context, field, obj):
             return reverse('profiles.admin_update', args=[obj.pk])
-
-
-class ProfileCRUDL(SmartCRUDL):
-    model = Profile
-    actions = ('read',)
-
-    class Read(OrgPermsMixin, SmartReadView):
-        """
-        Unified view of a contact or user
-        """
-        def derive_title(self):
-            if self.object.is_user() and self.object.user == self.request.user:
-                return _("My Profile")
-            else:
-                return super(ProfileCRUDL.Read, self).derive_title()
-
-        def derive_fields(self):
-            fields = ['full_name', 'chat_name', 'type']
-            if self.object.is_contact():
-                fields += ['urn', 'room']
-                if self.object.contact.created_by_id:
-                    fields += ['added_by']
-            else:
-                fields += ['email']
-                if not self.object.user.is_admin_for(self.request.org):
-                    fields += ['rooms']
-            return fields
-
-        def get_queryset(self):
-            queryset = super(ProfileCRUDL.Read, self).get_queryset()
-
-            # only allow access to contacts and users attached to this org
-            org = self.request.org
-            queryset = queryset.filter(Q(contact__org=org) | Q(user__org_editors=org) | Q(user__org_admins=org))
-            return queryset
-
-        def get_context_data(self, **kwargs):
-            context = super(ProfileCRUDL.Read, self).get_context_data(**kwargs)
-            edit_button_url = None
-            delete_button_url = None
-
-            if self.object.is_contact():
-                room = self.object.contact.room
-                if self.request.user.has_room_access(room, manage=True):
-                    if self.has_org_perm('profiles.contact_update'):
-                        edit_button_url = reverse('profiles.contact_update', args=[self.object.contact.pk])
-                    if self.has_org_perm('profiles.contact_delete'):
-                        delete_button_url = reverse('profiles.contact_delete', args=[self.object.contact.pk])
-            elif self.object.user == self.request.user:
-                edit_button_url = reverse('profiles.user_self')
-            elif self.has_org_perm('profiles.profile_user_update'):
-                edit_button_url = reverse('profiles.user_update', args=[self.object.user.pk])
-
-            context['edit_button_url'] = edit_button_url
-            context['delete_button_url'] = delete_button_url
-            return context
-
-        def get_type(self, obj):
-            if obj.is_contact():
-                return _("Contact")
-            elif obj.user.is_admin_for(self.request.org):
-                return _("Administrator")
-            else:
-                return _("User")
-
-        def get_urn(self, obj):
-            return obj.contact.get_urn()[1]
-
-        def get_added_by(self, obj):
-            return obj.contact.created_by.get_full_name()
-
-        def get_email(self, obj):
-            return obj.user.email
-
-        def get_room(self, obj):
-            return unicode(obj.contact.room)
-
-        def get_rooms(self, obj):
-            return ", ".join([unicode(r) for r in obj.user.rooms.all()])
-
-        def lookup_field_label(self, context, field, default=None):
-            if field == 'urn':
-                scheme = self.object.contact.get_urn()[0]
-                for s, label in URN_SCHEME_CHOICES:
-                    if scheme == s:
-                        return label
-
-            return super(ProfileCRUDL.Read, self).lookup_field_label(context, field, default)

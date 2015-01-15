@@ -55,17 +55,17 @@ class RoomTest(ChatProTest):
         self.assertEqual(self.unicef.contacts.filter(is_active=False).count(), 5)  # existing de-activated
 
         jan = Contact.objects.get(uuid='000-007')
-        self.assertEqual(jan.profile.full_name, "Jan")
-        self.assertEqual(jan.profile.chat_name, "jan")
+        self.assertEqual(jan.full_name, "Jan")
+        self.assertEqual(jan.chat_name, "jan")
         self.assertEqual(jan.urn, 'tel:123')
         self.assertEqual(jan.room, new_room)
         self.assertTrue(jan.is_active)
 
         # change group and contacts on chatpro side
         Room.objects.filter(name="New group").update(name="Huh?", is_active=False)
-        jan.profile.full_name = "Janet"
-        jan.profile.save()
-        Contact.objects.filter(profile__full_name="Ken").update(is_active=False)
+        jan.full_name = "Janet"
+        jan.save()
+        Contact.objects.filter(full_name="Ken").update(is_active=False)
 
         # re-select new group
         Room.update_room_groups(self.unicef, ['000-007'])
@@ -73,7 +73,7 @@ class RoomTest(ChatProTest):
         # local changes should be overwritten
         self.assertEqual(self.unicef.rooms.get(is_active=True).name, 'New group')
         self.assertEqual(self.unicef.contacts.filter(is_active=True).count(), 2)
-        Contact.objects.get(profile__full_name="Jan", is_active=True)
+        Contact.objects.get(full_name="Jan", is_active=True)
 
 
 class RoomCRUDLTest(ChatProTest):

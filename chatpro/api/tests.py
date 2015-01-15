@@ -39,8 +39,8 @@ class TembaHandlerTest(ChatProTest):
 
         # check new contact created
         contact = Contact.objects.get(uuid='001-007')
-        self.assertEqual(contact.profile.full_name, "Jan")
-        self.assertEqual(contact.profile.chat_name, "jan")
+        self.assertEqual(contact.full_name, "Jan")
+        self.assertEqual(contact.chat_name, "jan")
         self.assertEqual(contact.urn, 'tel:123')
         self.assertEqual(contact.room, Room.objects.get(uuid='000-001'))
 
@@ -56,8 +56,8 @@ class TembaHandlerTest(ChatProTest):
 
         # check new contact and room created
         contact = Contact.objects.get(uuid='001-008')
-        self.assertEqual(contact.profile.full_name, "Ken")
-        self.assertEqual(contact.profile.chat_name, "ken")
+        self.assertEqual(contact.full_name, "Ken")
+        self.assertEqual(contact.chat_name, "ken")
         self.assertEqual(contact.urn, 'tel:234')
         self.assertEqual(contact.room, new_room)
 

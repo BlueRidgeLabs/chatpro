@@ -29,7 +29,7 @@ class MessageTest(ChatProTest):
         self.assertIsNotNone(msg.time)
         self.assertFalse(msg.is_user_message())
 
-        self.assertEqual(msg.as_json(), dict(id=msg.id, sender=self.contact1.profile.as_json(), text="Hello",
+        self.assertEqual(msg.as_json(), dict(id=msg.id, sender=self.contact1.as_participant_json(), text="Hello",
                                              room_id=self.room1.id, time=msg.time, status='S'))
 
         # test from user
@@ -43,7 +43,7 @@ class MessageTest(ChatProTest):
         self.assertIsNotNone(msg.time)
         self.assertTrue(msg.is_user_message())
 
-        self.assertEqual(msg.as_json(), dict(id=msg.id, sender=self.user1.profile.as_json(), text="Goodbye",
+        self.assertEqual(msg.as_json(), dict(id=msg.id, sender=self.user1.profile.as_participant_json(), text="Goodbye",
                                              room_id=self.room1.id, time=msg.time, status='P'))
 
         # async task will have sent the message

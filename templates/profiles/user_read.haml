@@ -1,0 +1,9 @@
+- extends "smartmin/read.html"
+- load smartmin i18n
+
+- block read-buttons
+  - if edit_button_url
+    .btn-group.pull-right
+      %a.btn.btn-default{ href:"{{ edit_button_url }}" }
+        %span.glyphicon.glyphicon-pencil
+        - trans "Edit"

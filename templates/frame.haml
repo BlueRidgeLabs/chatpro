@@ -107,8 +107,8 @@
                   - if request.user and request.user.is_authenticated
                     %li
                       - if request.user.profile
-                        %a{ href:"{% url 'profiles.profile_read' request.user.profile.pk %}", style:"float: left;"}
-                          {{ request.user.username }}
+                        %a{ href:"{% url 'profiles.user_read' request.user.pk %}", style:"float: left;"}
+                          {{ request.user.email }}
                       - else
                         %p.navbar-text{ style:"float: left;"}
                           {{ request.user.username }}

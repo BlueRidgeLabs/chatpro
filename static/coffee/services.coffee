@@ -31,8 +31,8 @@ services.factory 'RoomService', ['$rootScope', '$http', ($rootScope, $http) ->
     #=====================================================================
     # Fetches all contacts, users and managers for this room
     #=====================================================================
-    fetchProfiles: (room_id, callback) ->
-      $http.get('/room/profiles/' + room_id + '/')
+    fetchParticipants: (room_id, callback) ->
+      $http.get('/room/participants/' + room_id + '/')
       .success (data) =>
         callback(data.results)
 ]

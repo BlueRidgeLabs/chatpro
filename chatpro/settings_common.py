@@ -306,12 +306,12 @@ PERMISSIONS = {
 
     'msgs.message': ('send', 'list'),
 
-    'rooms.room': ('read', 'list', 'select', 'profiles'),
+    'rooms.room': ('read', 'list', 'select', 'participants'),
 
-    'profiles.contact': ('create', 'update', 'list', 'filter', 'delete'),
+    'profiles.contact': ('create', 'read', 'update', 'delete', 'list', 'filter'),
 
-    'profiles.profile': ('user_create', 'user_update', 'user_list',  # can't create profiles.user.* permissions because we don't own User
-                         'read', 'profile')
+    # can't create profiles.user.* permissions because we don't own User
+    'profiles.profile': ('user_create', 'user_read', 'user_update', 'user_list'),
 }
 
 # assigns the permissions that each group should have
@@ -328,9 +328,9 @@ GROUP_PERMISSIONS = {
         'msgs.message_list',
         'msgs.message_send',
         'rooms.room_read',
-        'rooms.room_profiles',
+        'rooms.room_participants',
         'profiles.contact.*',
-        'profiles.profile_read',
+        'profiles.profile_user_read',
     ),
 }
 

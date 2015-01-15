@@ -11,7 +11,7 @@ from .models import Room
 
 class RoomCRUDL(SmartCRUDL):
     model = Room
-    actions = ('read', 'list', 'select', 'profiles')
+    actions = ('read', 'list', 'select', 'participants')
 
     class Read(OrgObjPermsMixin, SmartReadView):
         fields = ('contacts', 'messages', 'last_active', 'managers')
@@ -79,16 +79,16 @@ class RoomCRUDL(SmartCRUDL):
             Room.update_room_groups(self.request.user.get_org(), form.cleaned_data['groups'])
             return HttpResponseRedirect(self.get_success_url())
 
-    class Profiles(OrgPermsMixin, SmartReadView):
+    class Participants(OrgPermsMixin, SmartReadView):
         def get_context_data(self, **kwargs):
-            context = super(RoomCRUDL.Profiles, self).get_context_data(**kwargs)
+            context = super(RoomCRUDL.Participants, self).get_context_data(**kwargs)
 
             context['contacts'] = self.object.get_contacts()
             context['users'] = self.object.get_users()
             return context
 
         def render_to_response(self, context, **response_kwargs):
-            results = [c.profile.as_json() for c in context['contacts']]
-            results += [u.profile.as_json() for u in context['users']]
+            results = [c.as_participant_json() for c in context['contacts']]
+            results += [u.profile.as_participant_json() for u in context['users']]
 
             return JsonResponse({'count': len(results), 'results': results})

@@ -58,7 +58,7 @@ class Room(models.Model):
         sync_org_contacts.delay(org.id)
 
     def get_contacts(self):
-        return self.contacts.filter(is_active=True).select_related('profile')
+        return self.contacts.filter(is_active=True)
 
     def get_users(self):
         return self.users.filter(is_active=True).select_related('profile')

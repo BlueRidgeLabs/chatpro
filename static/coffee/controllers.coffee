@@ -109,20 +109,20 @@ controllers.controller 'RoomMessagesController', [ '$scope', 'MessageService', (
 ]
 
 #============================================================================
-# Room profiles controller
+# Room participants controller
 #============================================================================
-controllers.controller 'RoomProfilesController', [ '$scope', 'RoomService', ($scope, RoomService) ->
+controllers.controller 'RoomParticipantsController', [ '$scope', 'RoomService', ($scope, RoomService) ->
 
-  $scope.profiles = []
+  $scope.participants = []
   $scope.loading = true
 
   $scope.init = (room_id) ->
     $scope.room_id = room_id
 
-    $scope.loadProfiles()
+    $scope.loadParticipants()
 
-  $scope.loadProfiles = ->
-    RoomService.fetchProfiles $scope.room_id, (profiles) ->
-      $scope.profiles = profiles
+  $scope.loadParticipants = ->
+    RoomService.fetchParticipants $scope.room_id, (participants) ->
+      $scope.participants = participants
       $scope.loading = false
 ]

@@ -21,7 +21,7 @@ class AbstractParticipant(models.Model):
         abstract = True
 
 
-class Contact(models.Model):
+class Contact(AbstractParticipant):
     """
     Corresponds to a RapidPro contact who is tied to a single room
     """
@@ -59,11 +59,8 @@ class Contact(models.Model):
             do_push = False
 
         # create contact
-        contact = cls.objects.create(org=org, urn=urn, room=room, uuid=uuid,
+        contact = cls.objects.create(org=org, full_name=full_name, chat_name=chat_name, urn=urn, room=room, uuid=uuid,
                                      created_by=user, modified_by=user)
-
-        # add profile
-        Profile.objects.create(contact=contact, full_name=full_name, chat_name=chat_name)
 
         if do_push:
             contact.push(ChangeType.created)
@@ -78,20 +75,18 @@ class Contact(models.Model):
         return cls.create(org, None, full_name, chat_name, urn, room, temba_contact.uuid)
 
     def update_from_temba(self, org, room, temba_contact):
-        self.profile.full_name = temba_contact.name
-        self.profile.chat_name = temba_contact.fields.get(org.get_chat_name_field(), None)
-        self.profile.save()
-
         self.is_active = True
+        self.full_name = temba_contact.name
+        self.chat_name = temba_contact.fields.get(org.get_chat_name_field(), None)
         self.urn = temba_contact.urns[0]
         self.room = room
         self.save()
 
     def as_temba(self):
         temba_contact = TembaContact()
-        temba_contact.name = self.profile.full_name
+        temba_contact.name = self.full_name
         temba_contact.urns = [self.urn]
-        temba_contact.fields = {self.org.get_chat_name_field(): self.profile.chat_name}
+        temba_contact.fields = {self.org.get_chat_name_field(): self.chat_name}
         temba_contact.groups = [self.room.uuid]
         temba_contact.uuid = self.uuid
         return temba_contact
@@ -107,32 +102,23 @@ class Contact(models.Model):
         self.save()
         self.push(ChangeType.deleted)
 
-
-class Profile(AbstractParticipant):
-    """
-    A user or contact who can participate in chat rooms
-    """
-    user = models.OneToOneField(User, null=True)
-
-    contact = models.OneToOneField(Contact, null=True)
-
-    def is_contact(self):
-        return bool(self.contact_id)
-
-    def is_user(self):
-        return bool(self.user_id)
-
-    def as_json(self):
-        _type = 'C' if self.is_contact() else 'U'
-
-        return dict(id=self.id, type=_type, full_name=self.full_name, chat_name=self.chat_name)
+    def as_participant_json(self):
+        return dict(id=self.id, type='C', full_name=self.full_name, chat_name=self.chat_name)
 
     def __unicode__(self):
         if self.full_name:
             return self.full_name
         elif self.chat_name:
             return self.chat_name
-        elif self.is_contact():
-            return self.contact.get_urn()[1]
         else:
-            return self.user.email
+            return self.get_urn()[1]
+
+
+class Profile(AbstractParticipant):
+    """
+    Extension for the user class
+    """
+    user = models.OneToOneField(User)
+
+    def as_participant_json(self):
+        return dict(id=self.user_id, type='U', full_name=self.full_name, chat_name=self.chat_name)
