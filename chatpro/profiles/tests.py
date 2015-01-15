@@ -130,6 +130,9 @@ class ContactCRUDLTest(ChatProTest):
         # log in as an org administrator
         self.login(self.admin)
 
+        response = self.url_get('unicef', url)
+        self.assertEqual(response.status_code, 200)
+
         # submit with no fields entered
         response = self.url_post('unicef', url, dict())
         self.assertEqual(response.status_code, 200)
@@ -148,6 +151,30 @@ class ContactCRUDLTest(ChatProTest):
         self.assertEqual(contact.full_name, "Mo Chats")
         self.assertEqual(contact.chat_name, "momo")
         self.assertEqual(contact.room, self.room1)
+
+        # log in as a user
+        self.login(self.user1)
+
+        # try to create contact in room we don't manage
+        data = dict(full_name="Mo Chats II", chat_name="momo2", urn_0="tel", urn_1="5678", room=self.room1.pk)
+        response = self.url_post('unicef', url, data)
+        self.assertFormError(response, 'form', 'room',
+                             "Select a valid choice. That choice is not one of the available choices.")
+
+        # try again but this time in a room we do manage
+        data = dict(full_name="Mo Chats II", chat_name="momo2", urn_0="tel", urn_1="5678", room=self.room2.pk)
+        response = self.url_post('unicef', url, data)
+        self.assertEqual(response.status_code, 302)
+
+    def test_create_in(self):
+        url = reverse('profiles.contact_create_in', args=[self.room2.pk])
+
+        # log in as a user
+        self.login(self.user1)
+
+        response = self.url_get('unicef', url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['form'].initial['room'], self.room2)
 
     def test_update(self):
         # log in as an org administrator
@@ -196,6 +223,21 @@ class ContactCRUDLTest(ChatProTest):
         response = self.url_get('unicef', url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['object_list']), 5)
+
+    def test_filter(self):
+        self.login(self.user1)
+
+        # view a room we do have access to
+        response = self.url_get('unicef', reverse('profiles.contact_filter', args=[self.room1.pk]))
+        self.assertEqual(response.status_code, 200)
+
+        # try to view a room we don't have access to
+        response = self.url_get('unicef', reverse('profiles.contact_filter', args=[self.room3.pk]))
+        self.assertEqual(response.status_code, 403)
+
+        # try to view a room in a different org
+        response = self.url_get('unicef', reverse('profiles.contact_filter', args=[self.room4.pk]))
+        self.assertEqual(response.status_code, 404)
 
     def test_delete(self):
         # log in as an org administrator
@@ -381,7 +423,7 @@ class UserCRUDLTest(ChatProTest):
         self.assertFormError(response, 'form', 'chat_name', 'This field is required.')
         self.assertFormError(response, 'form', 'email', 'This field is required.')
 
-        # submit with all fields entered
+        # submit with all required fields entered
         data = dict(full_name="Morris", chat_name="momo2", email="mo2@chat.com")
         response = self.url_post('unicef', url, data)
         self.assertEqual(response.status_code, 302)
@@ -394,6 +436,17 @@ class UserCRUDLTest(ChatProTest):
         self.assertEqual(user.username, "mo2@chat.com")
         self.assertEqual(list(user.rooms.all()), [self.room1, self.room2])
         self.assertEqual(list(user.manage_rooms.all()), [self.room2])
+
+        # submit with all required fields entered and password fields
+        old_password_hash = user.password
+        data = dict(full_name="Morris", chat_name="momo2", email="mo2@chat.com",
+                    new_password="Qwerty123", confirm_password="Qwerty123")
+        response = self.url_post('unicef', url, data)
+        self.assertEqual(response.status_code, 302)
+
+        # check password has been changed
+        user = User.objects.get(pk=self.user1.pk)
+        self.assertNotEqual(user.password, old_password_hash)
 
         # check when user is being forced to change their password
         self.user1.profile.change_password = True
@@ -416,6 +469,10 @@ class UserCRUDLTest(ChatProTest):
                     password="Qwerty123", confirm_password="Qwerty123")
         response = self.url_post('unicef', url, data)
         self.assertEqual(response.status_code, 302)
+        
+        # check password no longer has to be changed
+        user = User.objects.get(pk=self.user1.pk)
+        self.assertFalse(user.profile.change_password)
 
 
 class ForcePasswordChangeMiddlewareTest(ChatProTest):

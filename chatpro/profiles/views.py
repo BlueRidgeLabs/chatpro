@@ -208,9 +208,17 @@ class ContactCRUDL(SmartCRUDL):
             return _("Contacts in %s") % self.derive_room().name
 
         def derive_room(self):
+            if hasattr(self, '_room'):
+                return self._room
+
             room = Room.objects.filter(pk=self.kwargs['room'], org=self.request.org).first()
             if not room:
                 raise Http404("No such room in this org")
+
+            if room not in self.request.user.get_rooms(self.request.org):
+                raise PermissionDenied()
+
+            self._room = room
             return room
 
         def get_queryset(self, **kwargs):
