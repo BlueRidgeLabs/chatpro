@@ -13,7 +13,7 @@ from django.http import Http404, HttpResponseRedirect
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from smartmin.users.views import SmartCRUDL, SmartCreateView, SmartReadView, SmartUpdateView, SmartListView, SmartDeleteView
-from .models import Contact, Profile
+from .models import Contact
 
 
 URN_SCHEME_TEL = 'tel'
@@ -92,44 +92,6 @@ class ContactForm(AbstractParticipantForm):
         exclude = ()
 
 
-class UserForm(AbstractParticipantForm):
-    """
-    Form for user profiles
-    """
-    is_active = forms.BooleanField(label=_("Active"), required=False,
-                                   help_text=_("Whether this user is active, disable to remove access."))
-
-    email = forms.CharField(max_length=256,
-                            label=_("Email"), help_text=_("Email address and login."))
-
-    new_password = forms.CharField(widget=forms.PasswordInput, validators=[MinLengthValidator(8)], required=False,
-                                   label=_("New password"),
-                                   help_text=_("Password used to log in (minimum of 8 characters, optional)."))
-
-    password = forms.CharField(widget=forms.PasswordInput, validators=[MinLengthValidator(8)],
-                               label=_("Password"), help_text=_("Password used to log in (minimum of 8 characters)."))
-
-    rooms = forms.ModelMultipleChoiceField(label=_("Rooms (chatting)"), queryset=Room.objects.all(),
-                                           required=False,
-                                           help_text=_("Chat rooms which this user can chat in."))
-
-    manage_rooms = forms.ModelMultipleChoiceField(label=_("Rooms (manage)"), queryset=Room.objects.all(),
-                                                  required=False,
-                                                  help_text=_("Chat rooms which this user can manage."))
-
-    def __init__(self, *args, **kwargs):
-        super(UserForm, self).__init__(*args, **kwargs)
-
-        if self.user.get_org():
-            org_rooms = Room.objects.filter(org=self.user.get_org(), is_active=True).order_by('name')
-            self.fields['rooms'].queryset = org_rooms
-            self.fields['manage_rooms'].queryset = org_rooms
-
-    class Meta:
-        model = User
-        exclude = ()
-
-
 class ParticipantFormMixin(object):
     """
     Mixin for views that use a participant form
@@ -150,36 +112,6 @@ class ContactFieldsMixin(object):
             return _("Phone/Twitter")
 
         return super(ContactFieldsMixin, self).lookup_field_label(context, field, default)
-
-
-class UserFormMixin(ParticipantFormMixin):
-    """
-    Mixin for views that use a user form
-    """
-    def derive_initial(self):
-        initial = super(UserFormMixin, self).derive_initial()
-        if self.object:
-            initial['full_name'] = self.object.profile.full_name
-            initial['chat_name'] = self.object.profile.chat_name
-        return initial
-
-    def post_save(self, obj):
-        obj = super(UserFormMixin, self).post_save(obj)
-        obj.profile.full_name = self.form.cleaned_data['full_name']
-        obj.profile.chat_name = self.form.cleaned_data['chat_name']
-        obj.profile.save()
-        return obj
-
-
-class UserFieldsMixin(object):
-    def get_full_name(self, obj):
-        return obj.profile.full_name
-
-    def get_chat_name(self, obj):
-        return obj.profile.chat_name
-
-    def get_rooms(self, obj):
-            return ", ".join([unicode(r) for r in obj.rooms.all()])
 
 
 class ContactCRUDL(SmartCRUDL):
@@ -303,12 +235,105 @@ class ContactCRUDL(SmartCRUDL):
                 raise PermissionDenied()
 
 
+class UserForm(AbstractParticipantForm):
+    """
+    Form for user profiles
+    """
+    is_active = forms.BooleanField(label=_("Active"), required=False,
+                                   help_text=_("Whether this user is active, disable to remove access."))
+
+    email = forms.CharField(max_length=256,
+                            label=_("Email"), help_text=_("Email address and login."))
+
+    password = forms.CharField(widget=forms.PasswordInput, validators=[MinLengthValidator(8)],
+                               label=_("Password"), help_text=_("Password used to log in (minimum of 8 characters)."))
+
+    new_password = forms.CharField(widget=forms.PasswordInput, validators=[MinLengthValidator(8)], required=False,
+                                   label=_("New password"),
+                                   help_text=_("Password used to login (minimum of 8 characters, optional)."))
+
+    confirm_password = forms.CharField(widget=forms.PasswordInput, required=False, label=_("Confirm password"))
+
+    change_password = forms.BooleanField(label=_("Require change"), required=False,
+                                         help_text=_("Whether user must change password on next login."))
+
+    rooms = forms.ModelMultipleChoiceField(label=_("Rooms (chatting)"), queryset=Room.objects.all(),
+                                           required=False,
+                                           help_text=_("Chat rooms which this user can chat in."))
+
+    manage_rooms = forms.ModelMultipleChoiceField(label=_("Rooms (manage)"), queryset=Room.objects.all(),
+                                                  required=False,
+                                                  help_text=_("Chat rooms which this user can manage."))
+
+    def __init__(self, *args, **kwargs):
+        super(UserForm, self).__init__(*args, **kwargs)
+
+        if self.user.get_org():
+            org_rooms = Room.objects.filter(org=self.user.get_org(), is_active=True).order_by('name')
+            self.fields['rooms'].queryset = org_rooms
+            self.fields['manage_rooms'].queryset = org_rooms
+
+    def clean(self):
+        cleaned_data = super(UserForm, self).clean()
+
+        password = cleaned_data.get('password', None) or cleaned_data.get('new_password', None)
+        if password:
+            confirm_password = cleaned_data.get('confirm_password', '')
+            if password != confirm_password:
+                self.add_error('confirm_password', _("Passwords don't match."))
+
+    class Meta:
+        model = User
+        exclude = ()
+
+
+class UserFormMixin(ParticipantFormMixin):
+    """
+    Mixin for views that use a user form
+    """
+    def derive_initial(self):
+        initial = super(UserFormMixin, self).derive_initial()
+        if self.object:
+            initial['full_name'] = self.object.profile.full_name
+            initial['chat_name'] = self.object.profile.chat_name
+        return initial
+
+    def pre_save(self, obj):
+        obj = super(UserFormMixin, self).pre_save(obj)
+        obj.username = obj.email
+        return obj
+
+    def post_save(self, obj):
+        obj = super(UserFormMixin, self).post_save(obj)
+        obj.profile.full_name = self.form.cleaned_data['full_name']
+        obj.profile.chat_name = self.form.cleaned_data['chat_name']
+        obj.profile.save()
+
+        new_password = self.form.cleaned_data.get('new_password', "")
+        if new_password:
+            obj.set_password(new_password)
+            obj.save()
+
+        return obj
+
+
+class UserFieldsMixin(object):
+    def get_full_name(self, obj):
+        return obj.profile.full_name
+
+    def get_chat_name(self, obj):
+        return obj.profile.chat_name
+
+    def get_rooms(self, obj):
+            return ", ".join([unicode(r) for r in obj.rooms.all()])
+
+
 class UserCRUDL(SmartCRUDL):
     model = User
     actions = ('create', 'update', 'read', 'self', 'list')
 
     class Create(OrgPermsMixin, UserFormMixin, SmartCreateView):
-        fields = ('full_name', 'chat_name', 'email', 'password', 'rooms', 'manage_rooms')
+        fields = ('full_name', 'chat_name', 'email', 'password', 'confirm_password', 'change_password', 'rooms', 'manage_rooms')
         form_class = UserForm
         permission = 'profiles.profile_user_create'
         success_message = _("New user created")
@@ -323,7 +348,7 @@ class UserCRUDL(SmartCRUDL):
             self.object = User.create(org, full_name, chat_name, obj.email, password, rooms, manage_rooms)
 
     class Update(OrgPermsMixin, UserFormMixin, SmartUpdateView):
-        fields = ('full_name', 'chat_name', 'email', 'new_password', 'rooms', 'manage_rooms', 'is_active')
+        fields = ('full_name', 'chat_name', 'email', 'new_password', 'confirm_password', 'rooms', 'manage_rooms', 'is_active')
         form_class = UserForm
         permission = 'profiles.profile_user_update'
         success_message = _("User updated")
@@ -334,21 +359,47 @@ class UserCRUDL(SmartCRUDL):
             initial['manage_rooms'] = self.object.manage_rooms.all()
             return initial
 
-        def pre_save(self, obj):
-            obj = super(UserCRUDL.Update, self).pre_save(obj)
-            obj.username = obj.email
-            return obj
-
         def post_save(self, obj):
             obj = super(UserCRUDL.Update, self).post_save(obj)
             obj.update_rooms(self.form.cleaned_data['rooms'], self.form.cleaned_data['manage_rooms'])
+            return obj
 
-            new_password = self.form.cleaned_data.get('new_password', "")
-            if new_password:
-                obj.set_password(new_password)
-                obj.save()
+    class Self(OrgPermsMixin, UserFormMixin, SmartUpdateView):
+        """
+        Limited update form for users to edit their own profiles
+        """
+        form_class = UserForm
+        success_url = '@home.chat'
+        success_message = _("Profile updated")
+        title = _("Edit My Profile")
+
+        @classmethod
+        def derive_url_pattern(cls, path, action):
+            return r'^profile/self/$'
+
+        def has_permission(self, request, *args, **kwargs):
+            return self.request.user.is_authenticated()
+
+        def get_object(self, queryset=None):
+            if not self.request.user.has_profile():
+                raise Http404(_("User doesn't have a chat profile"))
+
+            return self.request.user
+
+        def pre_save(self, obj):
+            obj = super(UserCRUDL.Self, self).pre_save(obj)
+            if 'password' in self.form.cleaned_data:
+                self.object.profile.change_password = False
 
             return obj
+
+        def derive_fields(self):
+            fields = ['full_name', 'chat_name', 'email']
+            if self.object.profile.change_password:
+                fields += ['password']
+            else:
+                fields += ['new_password']
+            return fields + ['confirm_password']
 
     class Read(OrgPermsMixin, UserFieldsMixin, SmartReadView):
         permission = 'profiles.profile_user_read'
@@ -390,43 +441,6 @@ class UserCRUDL(SmartCRUDL):
             else:
                 return _("User")
 
-    class Self(OrgPermsMixin, UserFormMixin, SmartUpdateView):
-        """
-        Limited update form for users to edit their own profiles
-        """
-        fields = ('full_name', 'chat_name', 'email', 'new_password')
-        form_class = UserForm
-        success_url = '@home.chat'
-        success_message = _("Profile updated")
-        title = _("Edit My Profile")
-
-        @classmethod
-        def derive_url_pattern(cls, path, action):
-            return r'^profile/self/$'
-
-        def has_permission(self, request, *args, **kwargs):
-            return self.request.user.is_authenticated()
-
-        def get_object(self, queryset=None):
-            if not self.request.user.has_profile():
-                raise Http404(_("User doesn't have a chat profile"))
-
-            return self.request.user
-
-        def pre_save(self, obj):
-            obj = super(UserCRUDL.Self, self).pre_save(obj)
-            obj.username = obj.email
-            return obj
-
-        def post_save(self, obj):
-            obj = super(UserCRUDL.Self, self).post_save(obj)
-
-            new_password = self.form.cleaned_data.get('new_password', "")
-            if new_password:
-                obj.set_password(new_password)
-                obj.save()
-            return obj
-
     class List(OrgPermsMixin, UserFieldsMixin, SmartListView):
         fields = ('full_name', 'chat_name', 'email', 'rooms', 'manages')
         permission = 'profiles.profile_user_list'
@@ -450,7 +464,7 @@ class ManageUserCRUDL(SmartCRUDL):
     actions = ('create', 'update', 'list')
 
     class Create(OrgPermsMixin, UserFormMixin, SmartCreateView):
-        fields = ('full_name', 'chat_name', 'email', 'password')
+        fields = ('full_name', 'chat_name', 'email', 'password', 'confirm_password')
         form_class = UserForm
 
         def save(self, obj):
@@ -460,21 +474,8 @@ class ManageUserCRUDL(SmartCRUDL):
             self.object = User.create(None, full_name, chat_name, obj.email, password)
 
     class Update(OrgPermsMixin, UserFormMixin, SmartUpdateView):
-        fields = ('full_name', 'chat_name', 'email', 'new_password', 'is_active')
+        fields = ('full_name', 'chat_name', 'email', 'new_password', 'confirm_password', 'is_active')
         form_class = UserForm
-
-        def pre_save(self, obj):
-            obj = super(ManageUserCRUDL.Update, self).pre_save(obj)
-            obj.username = obj.email
-            return obj
-
-        def post_save(self, obj):
-            obj = super(ManageUserCRUDL.Update, self).post_save(obj)
-            new_password = self.form.cleaned_data.get('new_password', "")
-            if new_password:
-                obj.set_password(new_password)
-                obj.save()
-            return obj
 
     class List(UserFieldsMixin, SmartListView):
         fields = ('full_name', 'chat_name', 'email', 'orgs')

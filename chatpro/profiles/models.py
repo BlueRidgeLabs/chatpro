@@ -120,5 +120,7 @@ class Profile(AbstractParticipant):
     """
     user = models.OneToOneField(User)
 
+    change_password = models.BooleanField(default=False, help_text=_("User must change password on next login"))
+
     def as_participant_json(self):
         return dict(id=self.user_id, type='U', full_name=self.full_name, chat_name=self.chat_name)

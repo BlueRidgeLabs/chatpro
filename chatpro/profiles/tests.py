@@ -243,12 +243,17 @@ class UserCRUDLTest(ChatProTest):
         self.assertFormError(response, 'form', 'password', 'This field is required.')
 
         # submit again with all required fields but invalid password
-        data = dict(full_name="Mo Chats", chat_name="momo", email="mo@chat.com", password="123")
+        data = dict(full_name="Mo Chats", chat_name="momo", email="mo@chat.com", password="123", confirm_password="123")
         response = self.url_post('unicef', url, data)
-        self.assertFormError(response, 'form', 'password', 'Ensure this value has at least 8 characters (it has 3).')
+        self.assertFormError(response, 'form', 'password', "Ensure this value has at least 8 characters (it has 3).")
 
-        # submit again with valid password
-        data = dict(full_name="Mo Chats", chat_name="momo", email="mo@chat.com", password="Qwerty123")
+        # submit again with valid password but mismatched confirmation
+        data = dict(full_name="Mo Chats", chat_name="momo", email="mo@chat.com", password="Qwerty123", confirm_password="123")
+        response = self.url_post('unicef', url, data)
+        self.assertFormError(response, 'form', 'confirm_password', "Passwords don't match.")
+
+        # submit again with valid password and confirmation
+        data = dict(full_name="Mo Chats", chat_name="momo", email="mo@chat.com", password="Qwerty123", confirm_password="Qwerty123")
         response = self.url_post('unicef', url, data)
         self.assertEqual(response.status_code, 302)
 
@@ -389,3 +394,45 @@ class UserCRUDLTest(ChatProTest):
         self.assertEqual(user.username, "mo2@chat.com")
         self.assertEqual(list(user.rooms.all()), [self.room1, self.room2])
         self.assertEqual(list(user.manage_rooms.all()), [self.room2])
+
+        # check when user is being forced to change their password
+        self.user1.profile.change_password = True
+        self.user1.profile.save()
+
+        # submit without password
+        data = dict(full_name="Morris", chat_name="momo2", email="mo2@chat.com")
+        response = self.url_post('unicef', url, data)
+        self.assertEqual(response.status_code, 200)
+        self.assertFormError(response, 'form', 'password', 'This field is required.')
+
+        # submit again with password but no confirmation
+        data = dict(full_name="Morris", chat_name="momo2", email="mo2@chat.com", password="Qwerty123")
+        response = self.url_post('unicef', url, data)
+        self.assertEqual(response.status_code, 200)
+        self.assertFormError(response, 'form', 'confirm_password', "Passwords don't match.")
+
+        # submit again with password and confirmation
+        data = dict(full_name="Morris", chat_name="momo2", email="mo2@chat.com",
+                    password="Qwerty123", confirm_password="Qwerty123")
+        response = self.url_post('unicef', url, data)
+        self.assertEqual(response.status_code, 302)
+
+
+class ForcePasswordChangeMiddlewareTest(ChatProTest):
+    def test_process_view(self):
+        self.user1.profile.change_password = True
+        self.user1.profile.save()
+
+        self.login(self.user1)
+
+        response = self.url_get('unicef', reverse('home.chat'))
+        self.assertRedirects(response, 'http://unicef.localhost/profile/self/')
+
+        response = self.url_get('unicef', reverse('profiles.user_self'))
+        self.assertEqual(response.status_code, 200)
+
+        self.user1.profile.change_password = False
+        self.user1.profile.save()
+
+        response = self.url_get('unicef', reverse('home.chat'))
+        self.assertEqual(response.status_code, 200)

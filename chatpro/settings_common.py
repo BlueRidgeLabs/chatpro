@@ -155,6 +155,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.locale.LocaleMiddleware',
     'dash.orgs.middleware.SetOrgMiddleware',
+    'chatpro.profiles.middleware.ForcePasswordChangeMiddleware',
 )
 
 ROOT_URLCONF = 'chatpro.urls'
