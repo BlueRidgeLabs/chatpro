@@ -12,7 +12,7 @@ from .models import Contact, Profile
 
 class UserPatchTest(ChatProTest):
     def test_create_user(self):
-        user = User.create(self.unicef, "Mo Chats", "momo", "mo@chat.com", "Qwerty123",
+        user = User.create(self.unicef, "Mo Chats", "momo", "mo@chat.com", "Qwerty123", False,
                            rooms=[self.room1], manage_rooms=[self.room2])
         self.assertEqual(user.profile.full_name, "Mo Chats")
         self.assertEqual(user.profile.chat_name, "momo")
@@ -21,6 +21,8 @@ class UserPatchTest(ChatProTest):
         self.assertEqual(user.last_name, "")
         self.assertEqual(user.email, "mo@chat.com")
         self.assertEqual(user.get_full_name(), "Mo Chats")
+        self.assertIsNotNone(user.password)
+        self.assertFalse(user.profile.change_password)
 
         self.assertEqual(user.rooms.count(), 2)
         self.assertEqual(user.manage_rooms.count(), 1)
@@ -449,6 +451,7 @@ class UserCRUDLTest(ChatProTest):
         self.assertNotEqual(user.password, old_password_hash)
 
         # check when user is being forced to change their password
+        old_password_hash = user.password
         self.user1.profile.change_password = True
         self.user1.profile.save()
 
@@ -470,9 +473,10 @@ class UserCRUDLTest(ChatProTest):
         response = self.url_post('unicef', url, data)
         self.assertEqual(response.status_code, 302)
         
-        # check password no longer has to be changed
+        # check password has changed and no longer has to be changed
         user = User.objects.get(pk=self.user1.pk)
         self.assertFalse(user.profile.change_password)
+        self.assertNotEqual(user.password, old_password_hash)
 
 
 class ForcePasswordChangeMiddlewareTest(ChatProTest):

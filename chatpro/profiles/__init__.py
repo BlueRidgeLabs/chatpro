@@ -7,7 +7,7 @@ from .models import Profile
 
 ######################### Monkey patching for the User class #########################
 
-def _user_create(cls, org, full_name, chat_name, email, password, rooms=(), manage_rooms=()):
+def _user_create(cls, org, full_name, chat_name, email, password, change_password=False, rooms=(), manage_rooms=()):
     """
     Creates a regular user with specific room-level permissions
     """
@@ -17,7 +17,7 @@ def _user_create(cls, org, full_name, chat_name, email, password, rooms=(), mana
     user.save()
 
     # add profile
-    Profile.objects.create(user=user, full_name=full_name, chat_name=chat_name)
+    Profile.objects.create(user=user, full_name=full_name, chat_name=chat_name, change_password=change_password)
 
     # setup as org editor with limited room permissions
     if org:

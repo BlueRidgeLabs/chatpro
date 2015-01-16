@@ -17,8 +17,8 @@ class RoomTest(ChatProTest):
     def test_create(self):
         testers = Room.create(self.unicef, "Testers", '000-007')
         jan = Contact.create(self.unicef, self.admin, "Jan", "janet", 'tel:1234', testers, '000-007')
-        bob = User.create(self.unicef, "Bob", "bobby", "bob@unicef.org", "pass", [testers], [])
-        ken = User.create(self.unicef, "Ken", "kenny", "ken@unicef.org", "pass", [], [testers])
+        bob = User.create(self.unicef, "Bob", "bobby", "bob@unicef.org", "pass", False, [testers], [])
+        ken = User.create(self.unicef, "Ken", "kenny", "ken@unicef.org", "pass", False, [], [testers])
 
         self.assertEqual(testers.org, self.unicef)
         self.assertEqual(testers.name, "Testers")

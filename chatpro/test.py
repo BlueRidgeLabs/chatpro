@@ -53,12 +53,14 @@ class ChatProTest(TestCase):
         return Room.create(org, name, uuid)
 
     def create_admin(self, org, full_name, chat_name, email):
-        user = User.create(None, full_name, chat_name, email, password=email)
+        user = User.create(None, full_name, chat_name, email, password=email, change_password=False)
         user.org_admins.add(org)
         return user
 
     def create_user(self, org, full_name, chat_name, email, rooms, manage_rooms):
-        return User.create(org, full_name, chat_name, email, password=email, rooms=rooms, manage_rooms=manage_rooms)
+        return User.create(org, full_name, chat_name, email,
+                           password=email, change_password=False,
+                           rooms=rooms, manage_rooms=manage_rooms)
 
     def create_contact(self, org, full_name, chat_name, urn, room, uuid):
         user = org.administrators.first()

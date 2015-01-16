@@ -313,13 +313,14 @@ class UserFormMixin(ParticipantFormMixin):
 
     def post_save(self, obj):
         obj = super(UserFormMixin, self).post_save(obj)
-        obj.profile.full_name = self.form.cleaned_data['full_name']
-        obj.profile.chat_name = self.form.cleaned_data['chat_name']
+        data = self.form.cleaned_data
+        obj.profile.full_name = data['full_name']
+        obj.profile.chat_name = data['chat_name']
         obj.profile.save()
 
-        new_password = self.form.cleaned_data.get('new_password', "")
-        if new_password:
-            obj.set_password(new_password)
+        password = data.get('new_password', None) or data.get('password', None)
+        if password:
+            obj.set_password(password)
             obj.save()
 
         return obj
@@ -351,9 +352,12 @@ class UserCRUDL(SmartCRUDL):
             full_name = self.form.cleaned_data['full_name']
             chat_name = self.form.cleaned_data['chat_name']
             password = self.form.cleaned_data['password']
+            change_password = self.form.cleaned_data['change_password']
             rooms = self.form.cleaned_data['rooms']
             manage_rooms = self.form.cleaned_data['manage_rooms']
-            self.object = User.create(org, full_name, chat_name, obj.email, password, rooms, manage_rooms)
+            self.object = User.create(org, full_name, chat_name, obj.email,
+                                      password, change_password,
+                                      rooms, manage_rooms)
 
     class Update(OrgPermsMixin, UserFormMixin, SmartUpdateView):
         fields = ('full_name', 'chat_name', 'email', 'new_password', 'confirm_password', 'rooms', 'manage_rooms', 'is_active')
@@ -472,14 +476,15 @@ class ManageUserCRUDL(SmartCRUDL):
     actions = ('create', 'update', 'list')
 
     class Create(OrgPermsMixin, UserFormMixin, SmartCreateView):
-        fields = ('full_name', 'chat_name', 'email', 'password', 'confirm_password')
+        fields = ('full_name', 'chat_name', 'email', 'password', 'confirm_password', 'change_password')
         form_class = UserForm
 
         def save(self, obj):
             full_name = self.form.cleaned_data['full_name']
             chat_name = self.form.cleaned_data['chat_name']
             password = self.form.cleaned_data['password']
-            self.object = User.create(None, full_name, chat_name, obj.email, password)
+            change_password = self.form.cleaned_data['change_password']
+            self.object = User.create(None, full_name, chat_name, obj.email, password, change_password)
 
     class Update(OrgPermsMixin, UserFormMixin, SmartUpdateView):
         fields = ('full_name', 'chat_name', 'email', 'new_password', 'confirm_password', 'is_active')

@@ -12,7 +12,7 @@ class HomeViewTest(ChatProTest):
 
         # login as superuser
         self.login(self.superuser)
-        
+
         # can access, but can't chat
         response = self.url_get('unicef', reverse('home.chat'))
         self.assertEqual(response.status_code, 200)
