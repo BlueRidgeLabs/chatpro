@@ -306,11 +306,6 @@ class UserFormMixin(ParticipantFormMixin):
             initial['chat_name'] = self.object.profile.chat_name
         return initial
 
-    def pre_save(self, obj):
-        obj = super(UserFormMixin, self).pre_save(obj)
-        obj.username = obj.email
-        return obj
-
     def post_save(self, obj):
         obj = super(UserFormMixin, self).post_save(obj)
         data = self.form.cleaned_data

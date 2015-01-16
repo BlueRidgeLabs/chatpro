@@ -2,6 +2,8 @@ from __future__ import absolute_import, unicode_literals
 
 from chatpro.rooms.models import Room
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.utils.translation import ugettext_lazy as _
 from .models import Profile
 
 
@@ -25,6 +27,16 @@ def _user_create(cls, org, full_name, chat_name, email, password, change_passwor
     if rooms or manage_rooms:
         user.update_rooms(rooms, manage_rooms)
     return user
+
+
+def _user_clean(user):
+    # we use email for login
+    if User.objects.filter(email=user.email).exclude(pk=user.pk).exists():
+        raise ValidationError(_("Email address already taken."))
+
+    user.username = user.email
+
+    super(User, user).clean()
 
 
 def _user_has_profile(user):
@@ -87,6 +99,7 @@ def _user_unicode(user):
 
 
 User.create = classmethod(_user_create)
+User.clean = _user_clean
 User.has_profile = _user_has_profile
 User.get_full_name = _user_get_full_name
 User.get_rooms = _user_get_rooms

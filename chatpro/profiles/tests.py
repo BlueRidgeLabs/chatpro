@@ -287,17 +287,20 @@ class UserCRUDLTest(ChatProTest):
         self.assertFormError(response, 'form', 'password', 'This field is required.')
 
         # submit again with all required fields but invalid password
-        data = dict(full_name="Mo Chats", chat_name="momo", email="mo@chat.com", password="123", confirm_password="123")
+        data = dict(full_name="Mo Chats", chat_name="momo", email="mo@chat.com",
+                    password="123", confirm_password="123")
         response = self.url_post('unicef', url, data)
         self.assertFormError(response, 'form', 'password', "Ensure this value has at least 8 characters (it has 3).")
 
         # submit again with valid password but mismatched confirmation
-        data = dict(full_name="Mo Chats", chat_name="momo", email="mo@chat.com", password="Qwerty123", confirm_password="123")
+        data = dict(full_name="Mo Chats", chat_name="momo", email="mo@chat.com",
+                    password="Qwerty123", confirm_password="123")
         response = self.url_post('unicef', url, data)
         self.assertFormError(response, 'form', 'confirm_password', "Passwords don't match.")
 
         # submit again with valid password and confirmation
-        data = dict(full_name="Mo Chats", chat_name="momo", email="mo@chat.com", password="Qwerty123", confirm_password="Qwerty123")
+        data = dict(full_name="Mo Chats", chat_name="momo", email="mo@chat.com",
+                    password="Qwerty123", confirm_password="Qwerty123")
         response = self.url_post('unicef', url, data)
         self.assertEqual(response.status_code, 302)
 
@@ -305,6 +308,14 @@ class UserCRUDLTest(ChatProTest):
         user = User.objects.get(email="mo@chat.com")
         self.assertEqual(user.profile.full_name, "Mo Chats")
         self.assertEqual(user.profile.chat_name, "momo")
+        self.assertEqual(user.email, "mo@chat.com")
+        self.assertEqual(user.username, "mo@chat.com")
+
+        # try again with same email address
+        data = dict(full_name="Mo Chats II", chat_name="momo2", email="mo@chat.com",
+                    password="Qwerty123", confirm_password="Qwerty123")
+        response = self.url_post('unicef', url, data)
+        self.assertFormError(response, 'form', None, "Email address already taken.")
 
     def test_update(self):
         url = reverse('profiles.user_update', args=[self.user1.pk])
@@ -338,6 +349,18 @@ class UserCRUDLTest(ChatProTest):
         self.assertEqual(user.username, "mo2@chat.com")
         self.assertEqual(list(user.rooms.all()), [self.room3])
         self.assertEqual(list(user.manage_rooms.all()), [self.room3])
+
+        # submit again for good measure
+        data = dict(full_name="Morris", chat_name="momo2", email="mo2@chat.com",
+                    password="Qwerty123", confirm_password="Qwerty123")
+        response = self.url_post('unicef', url, data)
+        self.assertEqual(response.status_code, 302)
+
+        # try giving user someone else's email address
+        data = dict(full_name="Morris", chat_name="momo2", email="eric@nyaruka.com",
+                    password="Qwerty123", confirm_password="Qwerty123")
+        response = self.url_post('unicef', url, data)
+        self.assertFormError(response, 'form', None, "Email address already taken.")
 
         # check de-activating user
         data = dict(full_name="Morris", chat_name="momo2", email="mo2@chat.com",
