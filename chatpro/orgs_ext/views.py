@@ -8,6 +8,12 @@ from django.utils.translation import ugettext_lazy as _
 from smartmin.users.views import SmartCRUDL
 
 
+def build_webhook(org, request, entity, action, params):
+    url = reverse('api.temba_handler', kwargs=dict(entity=entity, action=action))
+    url = request.build_absolute_uri('%s?token=%s&%s' % (url, org.get_secret_token(), params))
+    return 'POST %s' % url
+
+
 class OrgExtCRUDL(SmartCRUDL):
     actions = ('create', 'update', 'list', 'home', 'edit')
     model = Org
@@ -33,16 +39,13 @@ class OrgExtCRUDL(SmartCRUDL):
             return obj.get_chat_name_field()
 
         def get_new_message_webhook(self, obj):
-            url = reverse('api.temba_handler', kwargs=dict(entity='message', action='new'))
-            return self.request.build_absolute_uri('%s?token=%s&contact=@contact.uuid&text=@step.value&group=[GROUP_UUID]' % (url, obj.get_secret_token()))
+            return build_webhook(obj, self.request, 'message', 'new', 'contact=@contact.uuid&text=@step.value&group=[GROUP_UUID]')
 
         def get_new_contact_webhook(self, obj):
-            url = reverse('api.temba_handler', kwargs=dict(entity='contact', action='new'))
-            return self.request.build_absolute_uri('%s?token=%s&contact=@contact.uuid&group=[GROUP_UUID]' % (url, obj.get_secret_token()))
+            return build_webhook(obj, self.request, 'contact', 'new', 'contact=@contact.uuid&group=[GROUP_UUID]')
 
         def get_delete_contact_webhook(self, obj):
-            url = reverse('api.temba_handler', kwargs=dict(entity='contact', action='del'))
-            return self.request.build_absolute_uri('%s?token=%s&contact=@contact.uuid' % (url, obj.get_secret_token()))
+            return build_webhook(obj, self.request, 'contact', 'del', 'contact=@contact.uuid')
 
     class Edit(InferOrgMixin, OrgPermsMixin, SmartUpdateView):
         class OrgForm(forms.ModelForm):
