@@ -22,7 +22,7 @@ class OrgExtCRUDL(SmartCRUDL):
         pass
 
     class Home(OrgCRUDL.Home):
-        fields = ('name', 'api_token', 'chat_name_field', 'new_contact_webhook', 'new_message_webhook')
+        fields = ('name', 'api_token', 'chat_name_field', 'new_message_webhook', 'new_contact_webhook', 'delete_contact_webhook')
         field_config = {'api_token': {'label': _("RapidPro API Token")}}
         permission = 'orgs.org_home'
 
@@ -32,13 +32,17 @@ class OrgExtCRUDL(SmartCRUDL):
         def get_chat_name_field(self, obj):
             return obj.get_chat_name_field()
 
+        def get_new_message_webhook(self, obj):
+            url = reverse('api.temba_handler', kwargs=dict(entity='message', action='new'))
+            return self.request.build_absolute_uri('%s?token=%s&contact=@contact.uuid&text=@step.value&group=[GROUP_UUID]' % (url, obj.get_secret_token()))
+
         def get_new_contact_webhook(self, obj):
             url = reverse('api.temba_handler', kwargs=dict(entity='contact', action='new'))
             return self.request.build_absolute_uri('%s?token=%s&contact=@contact.uuid&group=[GROUP_UUID]' % (url, obj.get_secret_token()))
 
-        def get_new_message_webhook(self, obj):
-            url = reverse('api.temba_handler', kwargs=dict(entity='message', action='new'))
-            return self.request.build_absolute_uri('%s?token=%s&contact=@contact.uuid&text=@step.value&group=[GROUP_UUID]' % (url, obj.get_secret_token()))
+        def get_delete_contact_webhook(self, obj):
+            url = reverse('api.temba_handler', kwargs=dict(entity='contact', action='del'))
+            return self.request.build_absolute_uri('%s?token=%s&contact=@contact.uuid' % (url, obj.get_secret_token()))
 
     class Edit(InferOrgMixin, OrgPermsMixin, SmartUpdateView):
         class OrgForm(forms.ModelForm):

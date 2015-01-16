@@ -52,7 +52,23 @@ To run background tasks, you'll also need to start celery and have a local redis
 % coverage report -m --include="chatpro/*" --omit="*/migrations/*,*/tests.py"
 ```
 
-##RapidPro Integration 
+##RapidPro Integration
+
+To notify ChatPro when a new chat message has been received, add the following webhook to your group chat flow:
+
+ * URL: _/api/v1/message/new/_
+ * Method: _POST_
+ * Query parameters:
+     * contact: the UUID of the contact that received the message
+     * text: the text of the message
+     * group: the UUID of the contact group that the message was routed to
+     * token: your organization's ChatPro secret token
+ 
+For example:
+
+```
+http://chat.rapidpro.io/api/v1/message/new/?contact=@contact.uuid&text=@step.value&group=bef530c4-5d84-4c1e-ad82-7a563866446c&token=1234567890
+```
 
 To notify ChatPro when a new chat contact has been registered, add the following webhook to your registration flow:
 
@@ -69,18 +85,16 @@ For example:
 http://chat.rapidpro.io/api/v1/contact/new/?contact=@contact.uuid&group=bef530c4-5d84-4c1e-ad82-7a563866446c&token=1234567890
 ```
 
-To notify ChatPro when a new chat message has been received, add the following webhook to your group chat flow:
+To notify ChatPro when a contact has left group chat
 
- * URL: _/api/v1/message/new/_
+ * URL: _/api/v1/contact/del/_
  * Method: _POST_
  * Query parameters:
      * contact: the UUID of the contact that received the message
-     * text: the text of the message
-     * group: the UUID of the contact group that the message was routed to
      * token: your organization's ChatPro secret token
  
 For example:
 
 ```
-http://chat.rapidpro.io/api/v1/message/new/?contact=@contact.uuid&text=@step.value&group=bef530c4-5d84-4c1e-ad82-7a563866446c&token=1234567890
+http://chat.rapidpro.io/api/v1/message/new/?contact=@contact.uuid&token=1234567890
 ```

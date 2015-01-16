@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-from chatpro.profiles.models import Contact, Profile
+from chatpro.profiles.models import Contact
 from chatpro.rooms.models import Room
 from chatpro.msgs.models import Message
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, HttpResponseNotAllowed, JsonResponse
@@ -50,6 +50,14 @@ class TembaHandler(View):
             room = self._get_or_create_room(org, group_uuid)
             self._get_or_create_contact(org, room, contact_uuid)
 
+        elif entity == 'contact' and action == 'del':
+            contact_uuid = request.REQUEST.get('contact', None)
+
+            if not contact_uuid:
+                return HttpResponseBadRequest("Missing contact or group parameter")
+
+            self._del_contact(org, contact_uuid)
+
         return JsonResponse({})
 
     @staticmethod
@@ -84,3 +92,13 @@ class TembaHandler(View):
         else:
             temba_contact = org.get_temba_client().get_contact(contact_uuid)
             return Contact.from_temba(org, room, temba_contact)
+
+    @staticmethod
+    def _del_contact(org, contact_uuid):
+        """
+        Deletes (de-activates) a contact by UUID
+        """
+        contact = Contact.objects.filter(org=org, uuid=contact_uuid).first()
+        if contact:
+            contact.is_active = False
+            contact.save(update_fields=('is_active',))
