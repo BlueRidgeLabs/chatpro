@@ -65,21 +65,21 @@
                       %b.caret
                     %ul.dropdown-menu
                       %li
-                        %a{href:"{% url 'orgs.org_list' %}"}
+                        %a{href:"{% url 'orgs_ext.org_list' %}"}
                           - trans "Orgs"
                       %li
                         %a{ href:"{% url 'profiles.admin_list' %}"}
                           - trans "Users"
 
-                -if org_perms.orgs.org_edit or org_perms.rooms.room_list or org_perms.profiles.profile_user_list
+                -if org_perms.orgs.org_home or org_perms.rooms.room_list or org_perms.profiles.profile_user_list
                   %li.dropdown
                     %a.dropdown-toggle{href:"#", data-toggle:"dropdown"}
                       - trans "Administration"
                       %b.caret
                     %ul.dropdown-menu
-                      - if org_perms.orgs.org_edit
+                      - if org_perms.orgs.org_home
                         %li
-                          %a{ href:"{% url 'orgs.org_edit' %}" }
+                          %a{ href:"{% url 'orgs_ext.org_home' %}" }
                             - trans "Organization"
 
                       - if org_perms.rooms.room_list

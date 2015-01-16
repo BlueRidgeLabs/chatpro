@@ -89,6 +89,13 @@ def _user_has_room_access(user, room, manage=False):
         return user.rooms.filter(pk=room.pk).exists()
 
 
+def _user_is_admin_for(user, org):
+    """
+    Whether this user is an administrator for the given org
+    """
+    return org.administrators.filter(pk=user.pk).exists()
+
+
 def _user_unicode(user):
     if user.profile.full_name:
         return user.profile.full_name
@@ -105,4 +112,5 @@ User.get_full_name = _user_get_full_name
 User.get_rooms = _user_get_rooms
 User.update_rooms = _user_update_rooms
 User.has_room_access = _user_has_room_access
+User.is_admin_for = _user_is_admin_for
 User.__unicode__ = _user_unicode

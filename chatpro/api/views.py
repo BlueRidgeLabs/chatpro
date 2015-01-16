@@ -73,7 +73,7 @@ class TembaHandler(View):
         """
         Gets a contact by UUID, or creates it by fetching from Temba instance
         """
-        contact = Contact.objects.filter(org=org, uuid=contact_uuid).select_related('profile').first()
+        contact = Contact.objects.filter(org=org, uuid=contact_uuid).first()
         if contact:
             if not contact.is_active or contact.room_id != room.pk:
                 contact.is_active = True

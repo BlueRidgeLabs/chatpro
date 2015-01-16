@@ -47,6 +47,11 @@ class UserPatchTest(ChatProTest):
         self.assertEqual(self.admin.get_full_name(), "Richard")
         self.assertEqual(self.user1.get_full_name(), "Sam Sims")
 
+    def test_is_admin_for(self):
+        self.assertTrue(self.admin.is_admin_for(self.unicef))
+        self.assertFalse(self.admin.is_admin_for(self.nyaruka))
+        self.assertFalse(self.user1.is_admin_for(self.unicef))
+
     def test_unicode(self):
         self.assertEqual(unicode(self.user1), "Sam Sims")
         self.user1.profile.full_name = None

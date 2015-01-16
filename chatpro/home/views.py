@@ -32,10 +32,3 @@ class ChatView(OrgPermsMixin, SmartTemplateView):
         context['initial_room'] = initial_room
         context['msg_text_chars'] = msg_text_chars
         return context
-
-
-######################### Monkey patching for the OrgCRUDL class #########################
-
-
-from dash.orgs.views import OrgCRUDL
-OrgCRUDL.Edit.success_url = '@home.chat'

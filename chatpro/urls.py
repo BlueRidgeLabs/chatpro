@@ -8,7 +8,7 @@ urlpatterns = patterns('',
     url(r'', include('chatpro.msgs.urls')),
     url(r'', include('chatpro.profiles.urls')),
     url(r'', include('chatpro.rooms.urls')),
-    url(r'^manage/', include('dash.orgs.urls')),
+    url(r'^manage/', include('chatpro.orgs_ext.urls')),
     url(r'^users/', include('dash.users.urls')),  # TODO replace forget password views and remove
     url(r'^api/v1', include('chatpro.api.urls')),
     url(r'^i18n/', include('django.conf.urls.i18n')),

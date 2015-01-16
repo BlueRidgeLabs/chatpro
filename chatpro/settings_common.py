@@ -225,7 +225,7 @@ INSTALLED_APPS = (
     'dash.utils',
 
     # custom
-    'chatpro.dash_ext',
+    'chatpro.orgs_ext',
     'chatpro.api',
     'chatpro.rooms',
     'chatpro.profiles',
@@ -303,7 +303,7 @@ PERMISSIONS = {
           'delete', # can delete an object,
           'list'),  # can view a list of the objects
 
-    'orgs.org': ('choose', 'edit', 'home', 'manage_accounts', 'create_login', 'join'),
+    'orgs.org': ('create', 'update', 'list', 'edit', 'home'),
 
     'msgs.message': ('send', 'list'),
 
@@ -318,6 +318,7 @@ PERMISSIONS = {
 # assigns the permissions that each group should have
 GROUP_PERMISSIONS = {
     "Administrators": (
+        'orgs.org_home',
         'orgs.org_edit',
 
         'msgs.message.*',

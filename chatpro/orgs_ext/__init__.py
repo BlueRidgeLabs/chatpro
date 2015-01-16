@@ -1,20 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
 from dash.orgs.models import Org
-from django.contrib.auth.models import User
-
-
-######################### Monkey patching for the User class #########################
-
-def _user_is_admin_for(user, org):
-    """
-    Whether this user is an administrator for the given org
-    """
-    return org.administrators.filter(pk=user.pk).exists()
-
-
-User.is_admin_for = _user_is_admin_for
-
 
 ######################### Monkey patching for the Org class #########################
 
