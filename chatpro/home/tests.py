@@ -1,4 +1,4 @@
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
 from chatpro.test import ChatProTest
 from django.core.urlresolvers import reverse
@@ -18,15 +18,21 @@ class HomeViewTest(ChatProTest):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['rooms']), 0)
 
+        # login as administrator
+        self.login(self.admin)
+
+        response = self.url_get('unicef', reverse('home.chat'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['initial_room'], self.room3)  # first A-Z
+        self.assertEqual([r.name for r in response.context['rooms']], ["Bags", "Bees", "Cars"])
+
         # login as regular user
         self.login(self.user1)
 
         response = self.url_get('unicef', reverse('home.chat'))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['initial_room'], self.room1)
-        self.assertEqual(len(response.context['rooms']), 2)
-        self.assertEqual(response.context['rooms'][0], self.room1)
-        self.assertEqual(response.context['rooms'][1], self.room2)
+        self.assertEqual(response.context['initial_room'], self.room2)
+        self.assertEqual([r.name for r in response.context['rooms']], ["Bees", "Cars"])
 
         # specify initial room
         response = self.url_get('unicef', reverse('home.chat_in', args=[self.room2.pk]))

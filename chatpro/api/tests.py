@@ -1,4 +1,4 @@
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
 from chatpro.msgs.models import Message
 from chatpro.profiles.models import Contact

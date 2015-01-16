@@ -1,4 +1,4 @@
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
 from chatpro.msgs.models import Message, MESSAGE_MAX_LEN
 from chatpro.rooms.models import Room
@@ -19,7 +19,7 @@ class ChatView(OrgPermsMixin, SmartTemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(ChatView, self).get_context_data(**kwargs)
-        rooms = self.request.user.get_rooms(self.request.org)
+        rooms = self.request.user.get_rooms(self.request.org).order_by('name')
 
         if 'room' in self.kwargs:
             initial_room = Room.objects.get(pk=self.kwargs['room'])
