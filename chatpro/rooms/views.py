@@ -50,7 +50,7 @@ class RoomCRUDL(SmartCRUDL):
     class Select(OrgPermsMixin, SmartFormView):
         class GroupsForm(forms.Form):
             groups = forms.MultipleChoiceField(choices=(), label=_("Groups"),
-                                               help_text=_("Contact groups to be used as chat rooms"))
+                                               help_text=_("Contact groups to be used as chat rooms."))
 
             def __init__(self, *args, **kwargs):
                 org = kwargs['org']

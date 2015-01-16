@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 from chatpro.rooms.models import Room
-from chatpro.profiles.models import Contact, Profile
+from chatpro.profiles.models import Contact
 from dash.orgs.models import Org
 from django.contrib.auth.models import User
 from django.test import TestCase
@@ -13,7 +13,7 @@ class ChatProTest(TestCase):
     Base class for all test cases in ChatPro
     """
     def setUp(self):
-        self.superuser = User.objects.create_superuser(username="super", email="super@user.com", password="super")
+        self.superuser = User.objects.create_superuser(username="root", email="super@user.com", password="root")
 
         self.unicef = self.create_org("UNICEF", timezone="Asia/Kabul", subdomain="unicef")
         self.nyaruka = self.create_org("Nyaruka", timezone="Africa/Kigali", subdomain="nyaruka")

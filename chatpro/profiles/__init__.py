@@ -97,12 +97,15 @@ def _user_is_admin_for(user, org):
 
 
 def _user_unicode(user):
-    if user.profile.full_name:
-        return user.profile.full_name
-    elif user.profile.chat_name:
-        return user.profile.chat_name
+    if user.has_profile():
+        if user.profile.full_name:
+            return user.profile.full_name
+        elif user.profile.chat_name:
+            return user.profile.chat_name
     else:
-        return user.email
+        return user.username  # superuser
+
+    return user.email or user.username
 
 
 User.create = classmethod(_user_create)
