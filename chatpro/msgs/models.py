@@ -63,7 +63,7 @@ class Message(models.Model):
 
     @classmethod
     def get_user_prefix(cls, user):
-        return '%s: ' % user.profile.chat_name
+        return '%s: ' % user.profile.chat_name if user.has_profile() else ''
 
     def as_json(self):
         participant = self.user.profile if self.is_user_message() else self.contact

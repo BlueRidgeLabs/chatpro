@@ -49,6 +49,10 @@ class MessageTest(ChatProTest):
         # async task will have sent the message
         self.assertEqual(Message.objects.get(pk=msg.pk).status, STATUS_SENT)
 
+    def test_get_user_prefix(self):
+        self.assertEqual(Message.get_user_prefix(self.superuser), '')
+        self.assertEqual(Message.get_user_prefix(self.user1), 'sammy: ')
+
 
 class MessageCRUDLTest(ChatProTest):
     @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True, BROKER_BACKEND='memory')

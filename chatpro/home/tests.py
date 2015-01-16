@@ -10,6 +10,15 @@ class HomeViewTest(ChatProTest):
         response = self.url_get('unicef', reverse('home.chat'))
         self.assertLoginRedirect(response, 'unicef', '/')
 
+        # login as superuser
+        self.login(self.superuser)
+        
+        # can access, but can't chat
+        response = self.url_get('unicef', reverse('home.chat'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['rooms']), 0)
+
+        # login as regular user
         self.login(self.user1)
 
         response = self.url_get('unicef', reverse('home.chat'))
