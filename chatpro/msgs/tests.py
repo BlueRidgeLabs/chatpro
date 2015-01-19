@@ -109,7 +109,7 @@ class MessageCRUDLTest(ChatProTest):
         self.assertNotContains(response, "Msg 3")
 
         # by ids
-        response = self.url_get('unicef', reverse('msgs.message_list'), {'ids': [msg1.id, msg3.id]})
+        response = self.url_get('unicef', reverse('msgs.message_list'), {'ids': '%d,%d' % (msg1.id, msg3.id)})
         self.assertContains(response, "Msg 1", status_code=200)
         self.assertContains(response, "Msg 3")
         self.assertNotContains(response, "Msg 2")
@@ -142,7 +142,7 @@ class MessageCRUDLTest(ChatProTest):
         self.login(self.user1)
 
         # by ids ignores ids not in accessible rooms
-        response = self.url_get('unicef', reverse('msgs.message_list'), {'ids': [msg1.id, msg2.id, msg3.id]})
+        response = self.url_get('unicef', reverse('msgs.message_list'), {'ids': '%d,%d,%d' % (msg1.id, msg2.id, msg3.id)})
         self.assertContains(response, "Msg 1", status_code=200)
         self.assertContains(response, "Msg 2")
         self.assertNotContains(response, "Msg 3")

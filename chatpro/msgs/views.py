@@ -4,6 +4,7 @@ from chatpro.rooms.models import Room
 from chatpro.utils import parse_iso8601
 from dash.orgs.views import OrgPermsMixin
 from django.core.exceptions import PermissionDenied
+from django.db.transaction import non_atomic_requests
 from django.http import JsonResponse
 from smartmin.users.views import SmartCRUDL, SmartListView
 from smartmin.users.views import SmartCreateView
@@ -15,6 +16,7 @@ class MessageCRUDL(SmartCRUDL):
     actions = ('list', 'send')
 
     class Send(OrgPermsMixin, SmartCreateView):
+        @non_atomic_requests
         def post(self, request, *args, **kwargs):
             org = self.derive_org()
             room = Room.objects.get(pk=request.REQUEST.get('room'))
@@ -36,7 +38,7 @@ class MessageCRUDL(SmartCRUDL):
             qs = Message.objects.filter(org=org)
 
             room_id = self.request.REQUEST.get('room', None)
-            ids = self.request.REQUEST.getlist('ids')
+            ids = self.request.REQUEST.get('ids')
             before_id = self.request.REQUEST.get('before_id', None)
             after_id = self.request.REQUEST.get('after_id', None)
             before_time = self.request.REQUEST.get('before_time', None)
@@ -51,7 +53,7 @@ class MessageCRUDL(SmartCRUDL):
                 qs = qs.filter(room__in=self.request.user.get_rooms(org))
 
             if ids:
-                qs = qs.filter(pk__in=ids)
+                qs = qs.filter(pk__in=ids.split(','))
             if before_id:
                 qs = qs.filter(pk__lt=int(before_id))
             if after_id:
