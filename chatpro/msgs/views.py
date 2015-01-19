@@ -4,7 +4,6 @@ from chatpro.rooms.models import Room
 from chatpro.utils import parse_iso8601
 from dash.orgs.views import OrgPermsMixin
 from django.core.exceptions import PermissionDenied
-from django.db.transaction import non_atomic_requests
 from django.http import JsonResponse
 from smartmin.users.views import SmartCRUDL, SmartListView
 from smartmin.users.views import SmartCreateView
@@ -16,7 +15,6 @@ class MessageCRUDL(SmartCRUDL):
     actions = ('list', 'send')
 
     class Send(OrgPermsMixin, SmartCreateView):
-        @non_atomic_requests
         def post(self, request, *args, **kwargs):
             org = self.derive_org()
             room = Room.objects.get(pk=request.REQUEST.get('room'))

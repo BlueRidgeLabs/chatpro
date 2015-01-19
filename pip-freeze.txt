@@ -2,7 +2,7 @@ Django==1.7.2
 Markdown==2.5.2
 Pillow==2.7.0
 Pygments==2.0.1
--e git+https://github.com/rapidpro/rapidpro-python@6cb02e656fbd6db745578514ea55bc0530d297e6#egg=RapidPro_Python_Client-master
+-e git+https://github.com/rapidpro/rapidpro-python@47159fc3cb0bc9f3a551d80f8e1edfca6ebc99bd#egg=RapidPro_Python_Client-master
 amqp==1.4.6
 anyjson==0.3.3
 billiard==3.3.0.19
@@ -14,6 +14,7 @@ coverage==3.7.1
 dj-database-url==0.3.0
 django-appconf==0.6
 django-celery==3.1.16
+django-celery-transactions==0.2.0
 django-compressor==1.4
 django-debug-toolbar==1.2.2
 django-digest==1.13

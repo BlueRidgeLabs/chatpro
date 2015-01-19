@@ -9,7 +9,6 @@ from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
 from django.core.validators import MinLengthValidator
 from django.db.models import Q
-from django.db.transaction import non_atomic_requests
 from django.http import Http404, HttpResponseRedirect
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
@@ -123,7 +122,6 @@ class ContactCRUDL(SmartCRUDL):
         fields = ('full_name', 'chat_name', 'urn', 'room')
         form_class = ContactForm
 
-        @non_atomic_requests
         def dispatch(self, request, *args, **kwargs):
             return super(ContactCRUDL.Create, self).dispatch(request, *args, **kwargs)
 
@@ -142,7 +140,6 @@ class ContactCRUDL(SmartCRUDL):
         fields = ('full_name', 'chat_name', 'urn', 'room')
         form_class = ContactForm
 
-        @non_atomic_requests
         def dispatch(self, request, *args, **kwargs):
             return super(ContactCRUDL.Update, self).dispatch(request, *args, **kwargs)
 

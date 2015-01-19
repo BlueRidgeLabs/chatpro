@@ -2,14 +2,14 @@ from __future__ import absolute_import, unicode_literals
 
 import logging
 
-from celery import shared_task
 from chatpro.utils.temba import temba_sync_contact, temba_pull_contacts
 from dash.orgs.models import Org
+from djcelery_transactions import task
 
 logger = logging.getLogger(__name__)
 
 
-@shared_task
+@task
 def push_contact_change(contact_id, change_type):
     """
     Task to push a local contact change to RapidPro
@@ -26,7 +26,7 @@ def push_contact_change(contact_id, change_type):
     temba_sync_contact(org, contact, change_type, chat_group_uuids)
 
 
-@shared_task
+@task
 def sync_org_contacts(org_id):
     """
     Syncs all contacts for the given org
@@ -46,7 +46,7 @@ def sync_org_contacts(org_id):
                 % (org.id, len(created), len(updated), len(deleted)))
 
 
-@shared_task
+@task
 def sync_all_contacts():
     """
     Syncs all contacts for all orgs

@@ -2,12 +2,12 @@ from __future__ import unicode_literals
 
 import logging
 
-from celery import shared_task
+from djcelery_transactions import task
 
 logger = logging.getLogger(__name__)
 
 
-@shared_task
+@task
 def send_message(message_id):
     from .models import Message, STATUS_SENT, STATUS_FAILED
 
