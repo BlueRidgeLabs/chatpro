@@ -12,7 +12,7 @@ def format_iso8601(_datetime):
 
 
 def parse_iso8601(text):
-    return datetime.datetime.strptime(text, ISO8601_FORMAT)
+    return datetime.datetime.strptime(text, ISO8601_FORMAT).replace(tzinfo=pytz.UTC)
 
 
 def intersection(*args):
