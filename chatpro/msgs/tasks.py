@@ -1,10 +1,9 @@
 from __future__ import unicode_literals
 
-import logging
-
+from celery.utils.log import get_task_logger
 from djcelery_transactions import task
 
-logger = logging.getLogger(__name__)
+logger = get_task_logger(__name__)
 
 
 @task

@@ -1,12 +1,11 @@
 from __future__ import absolute_import, unicode_literals
 
-import logging
-
+from celery.utils.log import get_task_logger
 from chatpro.utils.temba import temba_sync_contact, temba_pull_contacts
 from dash.orgs.models import Org
 from djcelery_transactions import task
 
-logger = logging.getLogger(__name__)
+logger = get_task_logger(__name__)
 
 
 @task
@@ -43,7 +42,7 @@ def sync_org_contacts(org_id):
     created, updated, deleted = temba_pull_contacts(org, primary_groups, Room, Contact)
 
     logger.info("Finished contact sync for org #%d (%d created, %d updated, %d deleted)"
-                % (org.id, len(created), len(updated), len(deleted)))
+                           % (org.id, len(created), len(updated), len(deleted)))
 
 
 @task
@@ -51,5 +50,7 @@ def sync_all_contacts():
     """
     Syncs all contacts for all orgs
     """
+    logger.info("Starting contact sync for all orgs...")
+
     for org in Org.objects.filter(is_active=True):
         sync_org_contacts(org.id)
