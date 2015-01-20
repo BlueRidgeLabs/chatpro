@@ -31,10 +31,10 @@
           .{ ng-controller:"RoomMessagesController", ng-init:"init({{ room.id }})", ng-show:"active_room_id == room_id" }
             %table.room-messages{ width:"100%" }
               %tr.message{ ng-repeat:"message in messages", infinite-scroll:"loadOldMessages()", infinite-scroll-disabled:"loading_old || !has_older" }
-                %td.message-sender{ ng-class:'{"message-sender-contact": message.from_contact, "message-sender-user": message.from_user}' }
-                  %a{ href:"/contact/read/[[ message.sender.id ]]", ng-if:"message.from_contact" }
+                %td.message-sender{ ng-class:'{"message-sender-contact": message.sender.is_contact, "message-sender-user": !message.sender.is_contact}' }
+                  %a{ href:"/contact/read/[[ message.sender.id ]]", ng-if:"message.sender.is_contact" }
                     [[ message.sender.full_name ]]
-                  %a{ href:"/user/read/[[ message.sender.id ]]", ng-if:"message.from_user" }
+                  %a{ href:"/user/read/[[ message.sender.id ]]", ng-if:"!message.sender.is_contact" }
                     [[ message.sender.full_name ]]
                 %td.message-text
                   .message-time.pull-away

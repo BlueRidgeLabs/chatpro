@@ -139,7 +139,8 @@ services.factory 'MessageService', ['$rootScope', '$http', '$timeout', ($rootSco
         sender: {
           id: user_id,
           type: 'U',
-          full_name: user_name
+          full_name: user_name,
+          is_contact: false
         }, text: text,
         room_id: room_id,
         temp: true
@@ -167,8 +168,7 @@ services.factory 'MessageService', ['$rootScope', '$http', '$timeout', ($rootSco
         msg.time = parse_iso8601 msg.time
 
         # simplify figuring out which messages are from contacts vs users
-        msg.from_contact = msg.sender.type == 'C'
-        msg.from_user = msg.sender.type == 'U'
+        msg.sender.is_contact = msg.sender.type == 'C'
 
         # track pending messages
         if msg.status == 'P'
