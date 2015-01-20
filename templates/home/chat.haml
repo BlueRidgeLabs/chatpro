@@ -1,6 +1,8 @@
 - extends "smartmin/base.html"
 - load smartmin i18n compress
 
+- block pre-content
+
 - block content
 
   - if rooms
@@ -76,6 +78,9 @@
 -block extra-style
   {{ block.super }}
   :css
+    .content {
+      padding-top: 20px;
+    }
     .messages-sendform {
       text-align: center;
       padding-bottom: 1em;
