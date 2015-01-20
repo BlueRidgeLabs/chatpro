@@ -166,6 +166,10 @@ services.factory 'MessageService', ['$rootScope', '$http', '$timeout', ($rootSco
         # parse datetime string
         msg.time = parse_iso8601 msg.time
 
+        # simplify figuring out which messages are from contacts vs users
+        msg.from_contact = msg.sender.type == 'C'
+        msg.from_user = msg.sender.type == 'U'
+
         # track pending messages
         if msg.status == 'P'
           @pending_ids.push msg.id
