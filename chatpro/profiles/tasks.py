@@ -42,7 +42,7 @@ def sync_org_contacts(org_id):
     created, updated, deleted = temba_pull_contacts(org, primary_groups, Room, Contact)
 
     logger.info("Finished contact sync for org #%d (%d created, %d updated, %d deleted)"
-                           % (org.id, len(created), len(updated), len(deleted)))
+                % (org.id, len(created), len(updated), len(deleted)))
 
 
 @task

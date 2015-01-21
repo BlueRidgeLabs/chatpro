@@ -7,7 +7,7 @@ from django.test.utils import override_settings
 from django.utils import timezone
 from mock import patch
 from temba.types import Contact as TembaContact
-from .models import Contact, Profile
+from .models import Contact
 
 
 class UserPatchTest(ChatProTest):

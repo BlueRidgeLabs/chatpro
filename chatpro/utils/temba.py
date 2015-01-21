@@ -44,19 +44,24 @@ def temba_sync_contact(org, contact, change_type, primary_groups):
         # fetch contact so that we can merge with its URNs, fields and groups
         remote_contact = client.get_contact(contact.uuid)
         local_contact = contact.as_temba()
-        merged_contact = temba_merge_contacts(local_contact, remote_contact, primary_groups)
 
-        client.update_contact(merged_contact.uuid,
-                              merged_contact.name,
-                              merged_contact.urns,
-                              merged_contact.fields,
-                              merged_contact.groups)
+        if temba_compare_contacts(remote_contact, local_contact):
+            merged_contact = temba_merge_contacts(local_contact, remote_contact, primary_groups)
+
+            client.update_contact(merged_contact.uuid,
+                                  merged_contact.name,
+                                  merged_contact.urns,
+                                  merged_contact.fields,
+                                  merged_contact.groups)
 
     elif change_type == ChangeType.deleted:
         client.delete_contact(contact.uuid)
 
 
 def temba_pull_contacts(org, primary_groups, group_class, contact_class):
+    """
+    Pulls contacts from RapidPro and syncs with local contacts
+    """
     client = org.get_temba_client()
 
     # get all existing contacts and organize by their UUID
@@ -68,6 +73,7 @@ def temba_pull_contacts(org, primary_groups, group_class, contact_class):
 
     # organize incoming contacts by the UUID of their primary group
     incoming_by_primary = defaultdict(list)
+    incoming_uuids = set()
     for incoming_contact in incoming_contacts:
         # ignore contacts with no URN
         if not incoming_contact.urns:
@@ -82,9 +88,10 @@ def temba_pull_contacts(org, primary_groups, group_class, contact_class):
             continue
 
         incoming_by_primary[contact_primary_groups[0]].append(incoming_contact)
+        incoming_uuids.add(incoming_contact.uuid)
 
     created_uuids = []
-    updated_uuids = set()
+    updated_uuids = []
     deleted_uuids = []
 
     for primary_group in primary_groups:
@@ -94,21 +101,32 @@ def temba_pull_contacts(org, primary_groups, group_class, contact_class):
         for incoming in incoming_contacts:
             if incoming.uuid in existing_by_uuid:
                 existing = existing_by_uuid[incoming.uuid]
-                existing.update_from_temba(org, group_obj, incoming)
 
-                updated_uuids.add(incoming.uuid)
+                if temba_compare_contacts(incoming, existing.as_temba()) or not existing.is_active:
+                    existing.update_from_temba(org, group_obj, incoming)
+                    updated_uuids.append(incoming.uuid)
             else:
                 created = contact_class.from_temba(org, group_obj, incoming)
                 created_uuids.append(created.uuid)
 
-    # any existing contact not updated, is now deleted
-    for existing_uuid in existing_by_uuid.keys():
-        if existing_uuid not in updated_uuids:
+    # any existing contact not in the incoming set, is now deleted if not already deleted
+    for existing_uuid, existing in existing_by_uuid.iteritems():
+        if existing_uuid not in incoming_uuids and existing.is_active:
             deleted_uuids.append(existing_uuid)
 
     existing_contacts.filter(uuid__in=deleted_uuids).update(is_active=False)
 
     return created_uuids, updated_uuids, deleted_uuids
+
+
+def temba_compare_contacts(first, second):
+    """
+    Compares two Temba contacts to determine if there are differences
+    """
+    if first.uuid != second.uuid:  # pragma: no cover
+        raise ValueError("Can't compare contacts with different UUIDs")
+
+    return first.name != second.name or sorted(first.urns) != sorted(second.urns) or first.fields != second.fields or sorted(first.groups) != sorted(second.groups)
 
 
 def temba_merge_contacts(first, second, primary_groups):
