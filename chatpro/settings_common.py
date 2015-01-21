@@ -375,7 +375,7 @@ CELERY_RESULT_BACKEND = 'redis://localhost:6379/13'
 CELERYBEAT_SCHEDULE = {
     'sync-all-contacts': {
         'task': 'chatpro.profiles.tasks.sync_all_contacts',
-        'schedule': datetime.timedelta(hours=1),
+        'schedule': datetime.timedelta(minutes=30),
         'args': ()
     },
 }
