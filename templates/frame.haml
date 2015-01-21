@@ -33,6 +33,7 @@
         %link{ type:"text/css", rel:"stylesheet", href:"{{ STATIC_URL }}css/bootstrap-theme.css"}
         %link{ type:"text/css", rel:"stylesheet", href:"{{ STATIC_URL }}css/smartmin_styles.css"}
         %link{ type:"text/less", rel:"stylesheet", href:"{{ STATIC_URL }}less/chat.less"}
+        %link{ type:"text/less", rel:"stylesheet", href:"{{ STATIC_URL }}less/chat-{{ lang_direction }}.less"}
 
     - block extra-less
     - block extra-style
@@ -176,44 +177,6 @@
         });
       });
     </script>
-
-    {% if lang_direction == 'rtl' %}
-    <style type="text/css">
-      :css
-        /* Bootstrap tweaks for RTL */
-        /* TODO this isn't working for send message text box */
-        .input-group .form-control:first-child {
-          border-radius: 0 4px 4px 0;
-        }
-        .input-group-btn:last-child > .btn  {
-          border-radius: 4px 0 0 4px;
-        }
-        .input-group-btn > .btn + .btn {
-          margin-right: -1px;
-        }
-        .input-group-btn:first-child > .btn,
-        .input-group-btn:first-child > .btn-group {
-          margin-left: -1px;
-        }
-        .input-group-btn:last-child > .btn,
-        .input-group-btn:last-child > .btn-group {
-          margin-right: -1px;
-        }
-
-        /* Smartmin tweaks for RTL */
-        .pagination-text {
-          text-align: left;
-        }
-
-        /* ChatPro tweaks for RTL */
-        .pull-away {
-          float: left;
-        }
-        .pull-back {
-          float: right;
-        }
-    </style>
-    {% endif %}
 
     {# media associated with any form we are displaying #}
     {% if form %}
