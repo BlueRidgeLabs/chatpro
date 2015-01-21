@@ -33,10 +33,15 @@
         %link{ type:"text/css", rel:"stylesheet", href:"{{ STATIC_URL }}css/bootstrap-theme.css"}
         %link{ type:"text/css", rel:"stylesheet", href:"{{ STATIC_URL }}css/smartmin_styles.css"}
         %link{ type:"text/less", rel:"stylesheet", href:"{{ STATIC_URL }}less/chat.less"}
-        %link{ type:"text/less", rel:"stylesheet", href:"{{ STATIC_URL }}less/chat-{{ lang_direction }}.less"}
 
     - block extra-less
     - block extra-style
+
+    {% if lang_direction == 'ltr' %}
+      %link{ type:"text/css", rel:"stylesheet", href:"{{ STATIC_URL }}css/chat-ltr.css"}
+    {% elif lang_direction == 'rtl' %}
+      %link{ type:"text/css", rel:"stylesheet", href:"{{ STATIC_URL }}css/chat-rtl.css"}
+    {% endif %}
 
   %body.pattern-bg
     - block navbar

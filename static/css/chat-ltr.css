@@ -1,20 +1,19 @@
 /* ChatPro */
 
 .pull-away {
-  float: right;
+    float: right;
 }
 .pull-back {
-  float: left;
+    float: left;
 }
 
-.message {
-  .message-sender-contact {
+
+.message-sender-contact {
     border-left: 0.25em solid #B5DBB7;
-  }
-  .message-sender-user {
+}
+.message-sender-user {
     border-left: 0.25em solid #BEBCDD;
-  }
-  .message-time {
+}
+.message-time {
     padding-left: 3px
-  }
 }
