@@ -129,6 +129,12 @@ LOGGING = {
         'celery.task': {
             'level': 'INFO',
             'handlers': ['console', 'sentry'],
+            'propagate': False,
+        },
+        'chatpro': {
+            'level': 'INFO',
+            'handlers': ['console', 'sentry'],
+            'propagate': False,
         },
     },
 }
