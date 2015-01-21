@@ -1,8 +1,8 @@
 from __future__ import unicode_literals
 
 from chatpro.rooms.models import Room
-from chatpro.utils import parse_iso8601
 from dash.orgs.views import OrgPermsMixin
+from dash.utils import parse_iso8601
 from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse
 from smartmin.users.views import SmartCRUDL, SmartListView

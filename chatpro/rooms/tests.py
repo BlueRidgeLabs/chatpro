@@ -32,8 +32,8 @@ class RoomTest(ChatProTest):
         self.assertEqual(len(Room.get_all(self.nyaruka)), 1)
 
     @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True, BROKER_BACKEND='memory')
-    @patch('chatpro.utils.temba.TembaClient.get_groups')
-    @patch('chatpro.utils.temba.TembaClient.get_contacts')
+    @patch('dash.orgs.models.TembaClient.get_groups')
+    @patch('dash.orgs.models.TembaClient.get_contacts')
     def test_update_room_groups(self, mock_get_contacts, mock_get_groups):
         mock_get_groups.return_value = [TembaGroup.create(uuid='000-007', name="New group", size=2)]
         mock_get_contacts.return_value = [

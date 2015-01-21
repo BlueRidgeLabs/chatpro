@@ -66,7 +66,7 @@ class UserPatchTest(ChatProTest):
 
 class ContactTest(ChatProTest):
     @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True, BROKER_BACKEND='memory')
-    @patch('chatpro.utils.temba.TembaClient.create_contact')
+    @patch('dash.orgs.models.TembaClient.create_contact')
     def test_create(self, mock_create_contact):
         mock_create_contact.return_value = TembaContact.create(uuid='RRR-007', name="Mo Chats", urns=['tel:078123'],
                                                                groups=['000-007'], fields=dict(chat_name="momo"),
@@ -115,7 +115,7 @@ class ContactTest(ChatProTest):
         self.assertEqual(temba_contact.uuid, '000-001')
 
     @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True, BROKER_BACKEND='memory')
-    @patch('chatpro.utils.temba.TembaClient.delete_contact')
+    @patch('dash.orgs.models.TembaClient.delete_contact')
     def test_release(self, mock_delete_contact):
         self.contact1.release()
         self.assertFalse(self.contact1.is_active)

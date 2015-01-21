@@ -1,7 +1,8 @@
 from __future__ import absolute_import, unicode_literals
 
-from chatpro.utils import random_string
 from dash.orgs.models import Org
+from dash.utils import random_string
+
 
 ######################### Monkey patching for the Org class #########################
 

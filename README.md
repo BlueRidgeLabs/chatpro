@@ -16,8 +16,8 @@ Install dependencies
 
 Create the database
 
- * name: _chat_
- * username: _chat_
+ * name: _chatpro_
+ * username: _chatpro_
  * password: _nyaruka_
 
 Link up a settings file

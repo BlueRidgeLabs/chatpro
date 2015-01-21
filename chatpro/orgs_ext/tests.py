@@ -15,7 +15,7 @@ class OrgExtCRUDLTest(ChatProTest):
         response = self.url_get('unicef', url)
         self.assertEqual(response.status_code, 200)
 
-    @patch('chatpro.utils.temba.TembaClient.get_fields')
+    @patch('dash.orgs.models.TembaClient.get_fields')
     def test_edit(self, mock_get_fields):
         mock_get_fields.return_value = [TembaField.create(key='chat_name', label="Chat name", value_type='T')]
 

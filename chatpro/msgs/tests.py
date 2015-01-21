@@ -4,7 +4,7 @@ import pytz
 
 from chatpro.msgs.models import Message, STATUS_PENDING, STATUS_SENT
 from chatpro.test import ChatProTest
-from chatpro.utils import format_iso8601
+from dash.utils import format_iso8601
 from datetime import datetime
 from django.core.urlresolvers import reverse
 from django.test.utils import override_settings
@@ -14,7 +14,7 @@ from temba.types import Broadcast as TembaBroadcast
 
 class MessageTest(ChatProTest):
     @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True, BROKER_BACKEND='memory')
-    @patch('chatpro.utils.temba.TembaClient.create_broadcast')
+    @patch('dash.orgs.models.TembaClient.create_broadcast')
     def test_create(self, mock_create_broadcast):
         mock_create_broadcast.return_value = TembaBroadcast.create(messages=[1, 2, 3])
 
@@ -56,7 +56,7 @@ class MessageTest(ChatProTest):
 
 class MessageCRUDLTest(ChatProTest):
     @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True, BROKER_BACKEND='memory')
-    @patch('chatpro.utils.temba.TembaClient.create_broadcast')
+    @patch('dash.orgs.models.TembaClient.create_broadcast')
     def test_send(self, mock_create_broadcast):
         mock_create_broadcast.return_value = TembaBroadcast.create(messages=[1, 2, 3])
 
