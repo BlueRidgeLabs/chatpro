@@ -1,8 +1,8 @@
 from __future__ import absolute_import, unicode_literals
 
 from chatpro.rooms.models import Room
-from chatpro.utils.temba import ChangeType
 from dash.orgs.views import OrgPermsMixin, OrgObjPermsMixin
+from dash.utils.temba import ChangeType
 from django import forms
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
@@ -77,13 +77,13 @@ class ContactForm(AbstractParticipantForm):
     urn = URNField(label=_("Phone/Twitter"), help_text=_("Phone number or Twitter handle of this contact."))
 
     room = forms.ModelChoiceField(label=_("Room"), queryset=Room.objects.filter(pk=-1),
-                                  help_text=_("Chat rooms which this contact can chat in."))
+                                  help_text=_("Chat room which this contact can chat in."))
 
     def __init__(self, *args, **kwargs):
         super(ContactForm, self).__init__(*args, **kwargs)
 
         if self.user.is_admin_for(self.user.get_org()):
-            self.fields['room'].queryset = Room.objects.filter(org=self.user.get_org()).order_by('name')
+            self.fields['room'].queryset = Room.get_all(self.user.get_org()).order_by('name')
         else:
             self.fields['room'].queryset = self.user.manage_rooms.all()
 
@@ -283,7 +283,7 @@ class UserForm(AbstractParticipantForm):
         super(UserForm, self).__init__(*args, **kwargs)
 
         if self.user.get_org():
-            org_rooms = Room.objects.filter(org=self.user.get_org(), is_active=True).order_by('name')
+            org_rooms = Room.get_all(self.user.get_org()).order_by('name')
             self.fields['rooms'].queryset = org_rooms
             self.fields['manage_rooms'].queryset = org_rooms
 

@@ -28,11 +28,11 @@ class Room(models.Model):
 
     @classmethod
     def create(cls, org, name, uuid):
-        return Room.objects.create(org=org, name=name, uuid=uuid)
+        return cls.objects.create(org=org, name=name, uuid=uuid)
 
     @classmethod
     def get_all(cls, org):
-        return Room.objects.filter(org=org, is_active=True)
+        return cls.objects.filter(org=org, is_active=True)
 
     @classmethod
     def update_room_groups(cls, org, group_uuids):

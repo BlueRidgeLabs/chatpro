@@ -45,7 +45,7 @@ class RoomCRUDL(SmartCRUDL):
             return Room.get_all(org).order_by('name')
 
         def get_contacts(self, obj):
-            return obj.contacts.filter(is_active=True).count()
+            return obj.get_contacts().count()
 
     class Select(OrgPermsMixin, SmartFormView):
         class GroupsForm(forms.Form):

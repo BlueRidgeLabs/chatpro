@@ -1,5 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
+import json
+
 from dash.orgs.models import Org
 from dash.utils import random_string
 
@@ -22,10 +24,9 @@ def _org_clean(org):
     super(Org, org).clean()
 
     # set config defaults
-    if not org.get_secret_token():
-        org.set_config(ORG_CONFIG_SECRET_TOKEN, random_string(16).lower())
-    if not org.get_chat_name_field():
-        org.set_config(ORG_CONFIG_CHAT_NAME_FIELD, 'chat_name')
+    if not org.config:
+        org.config = json.dumps({ORG_CONFIG_SECRET_TOKEN: random_string(16).lower(),
+                                 ORG_CONFIG_CHAT_NAME_FIELD: 'chat_name'})
 
 
 Org.get_secret_token = _org_get_secret_token

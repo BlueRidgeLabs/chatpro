@@ -1,8 +1,8 @@
 from __future__ import absolute_import, unicode_literals
 
 from chatpro.rooms.models import Room
-from chatpro.utils.temba import ChangeType
 from dash.orgs.models import Org
+from dash.utils.temba import ChangeType
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
