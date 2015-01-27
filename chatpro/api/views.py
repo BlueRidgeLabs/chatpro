@@ -91,7 +91,7 @@ class TembaHandler(View):
             return contact
         else:
             temba_contact = org.get_temba_client().get_contact(contact_uuid)
-            return Contact.from_temba(org, room, temba_contact)
+            return Contact.objects.create(**Contact.kwargs_from_temba(org, temba_contact))
 
     @staticmethod
     def _del_contact(org, contact_uuid):

@@ -68,8 +68,8 @@ class ContactTest(ChatProTest):
     @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True, BROKER_BACKEND='memory')
     @patch('dash.orgs.models.TembaClient.create_contact')
     def test_create(self, mock_create_contact):
-        mock_create_contact.return_value = TembaContact.create(uuid='RRR-007', name="Mo Chats", urns=['tel:078123'],
-                                                               groups=['000-007'], fields=dict(chat_name="momo"),
+        mock_create_contact.return_value = TembaContact.create(uuid='C-007', name="Mo Chats", urns=['tel:078123'],
+                                                               groups=['G-001'], fields=dict(chat_name="momo"),
                                                                language='eng', modified_on=timezone.now())
 
         contact = Contact.create(self.unicef, self.user1, "Mo Chats", "momo", 'tel:078123', self.room1)
@@ -85,34 +85,26 @@ class ContactTest(ChatProTest):
 
         # reload and check UUID was updated by push task
         contact = Contact.objects.get(pk=contact.pk)
-        self.assertEqual(contact.uuid, 'RRR-007')
+        self.assertEqual(contact.uuid, 'C-007')
 
         self.assertEqual(mock_create_contact.call_count, 1)
 
-    def test_from_temba(self):
-        temba_contact = TembaContact.create(uuid='000-007', name="Jan", urns=['tel:123'],
-                                            groups=['000-007'], fields=dict(chat_name="jxn"),
+    def test_kwargs_from_temba(self):
+        temba_contact = TembaContact.create(uuid='C-007', name="Jan", urns=['tel:123'],
+                                            groups=['G-001'], fields=dict(chat_name="jxn"),
                                             language='eng', modified_on=timezone.now())
+        kwargs = Contact.kwargs_from_temba(self.unicef, temba_contact)
 
-        contact = Contact.from_temba(self.unicef, self.room1, temba_contact)
-
-        self.assertEqual(contact.full_name, "Jan")
-        self.assertEqual(contact.chat_name, "jxn")
-        self.assertEqual(contact.room, self.room1)
-        self.assertEqual(contact.urn, 'tel:123')
-        self.assertEqual(contact.uuid, '000-007')
-        self.assertIsNone(contact.created_by)
-        self.assertIsNotNone(contact.created_on)
-        self.assertIsNone(contact.modified_by)
-        self.assertIsNotNone(contact.modified_on)
+        self.assertEqual(kwargs, dict(org=self.unicef, full_name="Jan", chat_name="jxn", room=self.room1,
+                                      urn='tel:123', uuid='C-007'))
 
     def test_as_temba(self):
         temba_contact = self.contact1.as_temba()
         self.assertEqual(temba_contact.name, "Ann")
         self.assertEqual(temba_contact.urns, ['tel:1234'])
         self.assertEqual(temba_contact.fields, {'chat_name': "ann"})
-        self.assertEqual(temba_contact.groups, ['000-001'])
-        self.assertEqual(temba_contact.uuid, '000-001')
+        self.assertEqual(temba_contact.groups, ['G-001'])
+        self.assertEqual(temba_contact.uuid, 'C-001')
 
     @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True, BROKER_BACKEND='memory')
     @patch('dash.orgs.models.TembaClient.delete_contact')

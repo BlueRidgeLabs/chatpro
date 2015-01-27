@@ -15,14 +15,14 @@ from temba.types import Contact as TembaContact, Group as TembaGroup
 
 class RoomTest(ChatProTest):
     def test_create(self):
-        testers = Room.create(self.unicef, "Testers", '000-007')
-        jan = Contact.create(self.unicef, self.admin, "Jan", "janet", 'tel:1234', testers, '000-007')
+        testers = Room.create(self.unicef, "Testers", 'G-007')
+        jan = Contact.create(self.unicef, self.admin, "Jan", "janet", 'tel:1234', testers, 'C-007')
         bob = User.create(self.unicef, "Bob", "bobby", "bob@unicef.org", "pass", False, [testers], [])
         ken = User.create(self.unicef, "Ken", "kenny", "ken@unicef.org", "pass", False, [], [testers])
 
         self.assertEqual(testers.org, self.unicef)
         self.assertEqual(testers.name, "Testers")
-        self.assertEqual(testers.uuid, '000-007')
+        self.assertEqual(testers.uuid, 'G-007')
         self.assertEqual(list(testers.get_contacts()), [jan])
         self.assertEqual(list(testers.get_users().order_by('profile__full_name')), [bob, ken])
         self.assertEqual(list(testers.get_managers()), [ken])
@@ -35,20 +35,20 @@ class RoomTest(ChatProTest):
     @patch('dash.orgs.models.TembaClient.get_groups')
     @patch('dash.orgs.models.TembaClient.get_contacts')
     def test_update_room_groups(self, mock_get_contacts, mock_get_groups):
-        mock_get_groups.return_value = [TembaGroup.create(uuid='000-007', name="New group", size=2)]
+        mock_get_groups.return_value = [TembaGroup.create(uuid='G-007', name="New group", size=2)]
         mock_get_contacts.return_value = [
-            TembaContact.create(uuid='000-007', name="Jan", urns=['tel:123'], groups=['000-007'],
+            TembaContact.create(uuid='C-007', name="Jan", urns=['tel:123'], groups=['G-007'],
                                 fields=dict(chat_name="jan"), language='eng', modified_on=timezone.now()),
-            TembaContact.create(uuid='000-008', name="Ken", urns=['tel:234'], groups=['000-007'],
+            TembaContact.create(uuid='C-008', name="Ken", urns=['tel:234'], groups=['G-007'],
                                 fields=dict(chat_name="ken"), language='eng', modified_on=timezone.now())
         ]
 
         # select one new group
-        Room.update_room_groups(self.unicef, ['000-007'])
+        Room.update_room_groups(self.unicef, ['G-007'])
         self.assertEqual(self.unicef.rooms.filter(is_active=True).count(), 1)
         self.assertEqual(self.unicef.rooms.filter(is_active=False).count(), 3)  # existing de-activated
 
-        new_room = Room.objects.get(uuid='000-007')
+        new_room = Room.objects.get(uuid='G-007')
         self.assertEqual(new_room.name, "New group")
         self.assertTrue(new_room.is_active)
 
@@ -56,7 +56,7 @@ class RoomTest(ChatProTest):
         self.assertEqual(self.unicef.contacts.filter(is_active=True).count(), 2)
         self.assertEqual(self.unicef.contacts.filter(is_active=False).count(), 5)  # existing de-activated
 
-        jan = Contact.objects.get(uuid='000-007')
+        jan = Contact.objects.get(uuid='C-007')
         self.assertEqual(jan.full_name, "Jan")
         self.assertEqual(jan.chat_name, "jan")
         self.assertEqual(jan.urn, 'tel:123')
@@ -70,7 +70,7 @@ class RoomTest(ChatProTest):
         Contact.objects.filter(full_name="Ken").update(is_active=False)
 
         # re-select new group
-        Room.update_room_groups(self.unicef, ['000-007'])
+        Room.update_room_groups(self.unicef, ['G-007'])
 
         # local changes should be overwritten
         self.assertEqual(self.unicef.rooms.get(is_active=True).name, 'New group')

@@ -4,19 +4,19 @@ import pytz
 
 from chatpro.msgs.models import Message, STATUS_PENDING, STATUS_SENT
 from chatpro.test import ChatProTest
-from dash.utils import format_iso8601
 from datetime import datetime
 from django.core.urlresolvers import reverse
 from django.test.utils import override_settings
 from mock import patch
 from temba.types import Broadcast as TembaBroadcast
+from temba.utils import format_iso8601
 
 
 class MessageTest(ChatProTest):
     @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True, BROKER_BACKEND='memory')
     @patch('dash.orgs.models.TembaClient.create_broadcast')
     def test_create(self, mock_create_broadcast):
-        mock_create_broadcast.return_value = TembaBroadcast.create(messages=[1, 2, 3])
+        mock_create_broadcast.return_value = TembaBroadcast.create(contacts=[self.contact1.uuid])
 
         # test from contact
         msg = Message.create_for_contact(self.unicef, self.contact1, "Hello", self.room1)
@@ -58,7 +58,7 @@ class MessageCRUDLTest(ChatProTest):
     @override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True, BROKER_BACKEND='memory')
     @patch('dash.orgs.models.TembaClient.create_broadcast')
     def test_send(self, mock_create_broadcast):
-        mock_create_broadcast.return_value = TembaBroadcast.create(messages=[1, 2, 3])
+        mock_create_broadcast.return_value = TembaBroadcast.create(contacts=[self.contact1.uuid])
 
         send_url = reverse('msgs.message_send')
 

@@ -2,7 +2,8 @@ from __future__ import absolute_import, unicode_literals
 
 from chatpro.rooms.models import Room
 from dash.orgs.models import Org
-from dash.utils.temba import ChangeType
+from dash.utils import intersection
+from dash.utils.sync import ChangeType
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
@@ -68,19 +69,20 @@ class Contact(AbstractParticipant):
         return contact
 
     @classmethod
-    def from_temba(cls, org, room, temba_contact):
-        full_name = temba_contact.name
-        chat_name = temba_contact.fields.get(org.get_chat_name_field(), None)
-        urn = temba_contact.urns[0]
-        return cls.create(org, None, full_name, chat_name, urn, room, temba_contact.uuid)
+    def kwargs_from_temba(cls, org, temba_contact):
+        org_room_uuids = [r.uuid for r in org.rooms.all()]
+        room_uuids = intersection(org_room_uuids, temba_contact.groups)
+        room = Room.objects.get(org=org, uuid=room_uuids[0]) if room_uuids else None
 
-    def update_from_temba(self, org, room, temba_contact):
-        self.is_active = True
-        self.full_name = temba_contact.name
-        self.chat_name = temba_contact.fields.get(org.get_chat_name_field(), None)
-        self.urn = temba_contact.urns[0]
-        self.room = room
-        self.save()
+        if not room:
+            raise ValueError("No room with uuid in %s" % ", ".join(temba_contact.groups))
+
+        return dict(org=org,
+                    full_name=temba_contact.name,
+                    chat_name=temba_contact.fields.get(org.get_chat_name_field(), None),
+                    urn=temba_contact.urns[0],
+                    room=room,
+                    uuid=temba_contact.uuid)
 
     def as_temba(self):
         temba_contact = TembaContact()

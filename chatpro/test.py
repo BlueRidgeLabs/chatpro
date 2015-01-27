@@ -22,10 +22,10 @@ class ChatProTest(TestCase):
         self.nic = self.create_admin(self.nyaruka, "Nicholas", "nic", "nic@nyaruka.com")
 
         # create some chat rooms
-        self.room1 = self.create_room(self.unicef, "Cars", '000-001')
-        self.room2 = self.create_room(self.unicef, "Bees", '000-002')
-        self.room3 = self.create_room(self.unicef, "Bags", '000-003')
-        self.room4 = self.create_room(self.nyaruka, "Code", '000-004')
+        self.room1 = self.create_room(self.unicef, "Cars", 'G-001')
+        self.room2 = self.create_room(self.unicef, "Bees", 'G-002')
+        self.room3 = self.create_room(self.unicef, "Bags", 'G-003')
+        self.room4 = self.create_room(self.nyaruka, "Code", 'G-004')
 
         # create some room users and managers
         self.user1 = self.create_user(self.unicef, "Sam Sims", "sammy", "sam@unicef.org",
@@ -35,12 +35,12 @@ class ChatProTest(TestCase):
         self.user3 = self.create_user(self.nyaruka, "Eric", "newcomer", "eric@nyaruka.com",
                                       rooms=[], manage_rooms=[self.room4])
 
-        self.contact1 = self.create_contact(self.unicef, "Ann", "ann", "tel:1234", self.room1, '000-001')
-        self.contact2 = self.create_contact(self.unicef, "Bob", "bob", "tel:2345", self.room1, '000-002')
-        self.contact3 = self.create_contact(self.unicef, "Cat", "cat", "tel:3456", self.room2, '000-003')
-        self.contact4 = self.create_contact(self.unicef, "Dan", "dan", "twitter:danny", self.room2, '000-004')
-        self.contact5 = self.create_contact(self.unicef, "Eve", "eve", "twitter:evee", self.room3, '000-005')
-        self.contact6 = self.create_contact(self.nyaruka, "Bosco", "bosco", 'tel:07899', self.room4, '000-006')
+        self.contact1 = self.create_contact(self.unicef, "Ann", "ann", "tel:1234", self.room1, 'C-001')
+        self.contact2 = self.create_contact(self.unicef, "Bob", "bob", "tel:2345", self.room1, 'C-002')
+        self.contact3 = self.create_contact(self.unicef, "Cat", "cat", "tel:3456", self.room2, 'C-003')
+        self.contact4 = self.create_contact(self.unicef, "Dan", "dan", "twitter:danny", self.room2, 'C-004')
+        self.contact5 = self.create_contact(self.unicef, "Eve", "eve", "twitter:evee", self.room3, 'C-005')
+        self.contact6 = self.create_contact(self.nyaruka, "Bosco", "bosco", 'tel:07899', self.room4, 'C-006')
 
     def create_org(self, name, timezone, subdomain):
         org = Org.objects.create(name=name, timezone=timezone, subdomain=subdomain, api_token=unicode(uuid4()),

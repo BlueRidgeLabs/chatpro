@@ -18,15 +18,15 @@ class TembaHandlerTest(ChatProTest):
         url = reverse('api.temba_handler', kwargs=dict(entity='message', action='new'))
 
         # GET is not allowed
-        response = self.url_get('unicef', '%s?%s' % (url, 'contact=000-001&text=Hello%20World&group=000-001&token=1234567890'))
+        response = self.url_get('unicef', '%s?%s' % (url, 'contact=C-001&text=Hello%20World&group=G-001&token=1234567890'))
         self.assertEqual(response.status_code, 405)
 
         # bad request if you forget a parameter
-        response = self.url_post('unicef', '%s?%s' % (url, 'text=Hello%20World&group=000-001&token=1234567890'))
+        response = self.url_post('unicef', '%s?%s' % (url, 'text=Hello%20World&group=G-001&token=1234567890'))
         self.assertEqual(response.status_code, 400)
 
         # make a valid request for new message from an existing contact to an existing group
-        response = self.url_post('unicef', '%s?%s' % (url, 'contact=000-001&text=Hello%20World&group=000-001&token=1234567890'))
+        response = self.url_post('unicef', '%s?%s' % (url, 'contact=C-001&text=Hello%20World&group=G-001&token=1234567890'))
         self.assertEqual(response.status_code, 200)
 
         # check new message created
@@ -35,11 +35,11 @@ class TembaHandlerTest(ChatProTest):
         self.assertEqual(msg.room, self.room1)
 
         # try with new room/group that must be fetched
-        mock_get_group.return_value = TembaGroup.create(uuid='001-007', name="New group", size=2)
+        mock_get_group.return_value = TembaGroup.create(uuid='G-007', name="New group", size=2)
 
-        response = self.url_post('unicef', '%s?%s' % (url, 'contact=000-001&text=Hello%20Again&group=001-007&token=1234567890'))
+        response = self.url_post('unicef', '%s?%s' % (url, 'contact=C-001&text=Hello%20Again&group=G-007&token=1234567890'))
         self.assertEqual(response.status_code, 200)
-        new_room = Room.objects.get(uuid='001-007', name="New group")
+        new_room = Room.objects.get(uuid='G-007', name="New group")
 
         # check new message created
         msg = Message.objects.get(text="Hello Again")
@@ -47,15 +47,15 @@ class TembaHandlerTest(ChatProTest):
         self.assertEqual(msg.room, new_room)
 
         # try with new contact and new room/group that must be fetched
-        mock_get_group.return_value = TembaGroup.create(uuid='001-008', name="Newest group", size=2)
-        mock_get_contact.return_value = TembaContact.create(uuid='001-007', name="Ken", urns=['tel:234'],
-                                                            groups=['001-108'], fields=dict(chat_name="ken"),
+        mock_get_group.return_value = TembaGroup.create(uuid='G-008', name="Newest group", size=2)
+        mock_get_contact.return_value = TembaContact.create(uuid='C-007', name="Ken", urns=['tel:234'],
+                                                            groups=['G-008'], fields=dict(chat_name="ken"),
                                                             language='eng', modified_on=timezone.now())
 
         response = self.url_post('unicef', '%s?%s' % (url, 'contact=001-007&text=Goodbye&group=001-008&token=1234567890'))
         self.assertEqual(response.status_code, 200)
-        new_contact = Contact.objects.get(uuid='001-007')
-        new_room = Room.objects.get(uuid='001-008', name="Newest group")
+        new_contact = Contact.objects.get(uuid='C-007')
+        new_room = Room.objects.get(uuid='G-008', name="Newest group")
 
         # check new message created
         msg = Message.objects.get(text="Goodbye")
@@ -68,44 +68,44 @@ class TembaHandlerTest(ChatProTest):
         url = reverse('api.temba_handler', kwargs=dict(entity='contact', action='new'))
 
         # GET is not allowed
-        response = self.url_get('unicef', '%s?%s' % (url, 'contact=000-007&group=000-001&token=1234567890'))
+        response = self.url_get('unicef', '%s?%s' % (url, 'contact=C-007&group=G-001&token=1234567890'))
         self.assertEqual(response.status_code, 405)
 
         # forbidden response if you don't include secret token
-        response = self.url_post('unicef', '%s?%s' % (url, 'contact=001-007&group=000-001'))
+        response = self.url_post('unicef', '%s?%s' % (url, 'contact=C-007&group=G-001'))
         self.assertEqual(response.status_code, 403)
 
         # bad request if you forget a parameter
-        response = self.url_post('unicef', '%s?%s' % (url, 'group=000-001&token=1234567890'))
+        response = self.url_post('unicef', '%s?%s' % (url, 'group=G-001&token=1234567890'))
         self.assertEqual(response.status_code, 400)
 
         # make a valid request for new contact in an existing group
-        mock_get_contact.return_value = TembaContact.create(uuid='001-007', name="Jan", urns=['tel:123'],
-                                                            groups=['000-001'], fields=dict(chat_name="jan"),
+        mock_get_contact.return_value = TembaContact.create(uuid='C-007', name="Jan", urns=['tel:123'],
+                                                            groups=['G-001'], fields=dict(chat_name="jan"),
                                                             language='eng', modified_on=timezone.now())
 
-        response = self.url_post('unicef', '%s?%s' % (url, 'contact=001-007&group=000-001&token=1234567890'))
+        response = self.url_post('unicef', '%s?%s' % (url, 'contact=C-007&group=G-001&token=1234567890'))
         self.assertEqual(response.status_code, 200)
 
         # check new contact created
-        contact = Contact.objects.get(uuid='001-007')
+        contact = Contact.objects.get(uuid='C-007')
         self.assertEqual(contact.full_name, "Jan")
         self.assertEqual(contact.chat_name, "jan")
         self.assertEqual(contact.urn, 'tel:123')
-        self.assertEqual(contact.room, Room.objects.get(uuid='000-001'))
+        self.assertEqual(contact.room, Room.objects.get(uuid='G-001'))
 
         # try with new room/group that must be fetched
-        mock_get_contact.return_value = TembaContact.create(uuid='001-008', name="Ken", urns=['tel:234'],
-                                                            groups=['000-001'], fields=dict(chat_name="ken"),
+        mock_get_contact.return_value = TembaContact.create(uuid='C-008', name="Ken", urns=['tel:234'],
+                                                            groups=['G-007'], fields=dict(chat_name="ken"),
                                                             language='eng', modified_on=timezone.now())
-        mock_get_group.return_value = TembaGroup.create(uuid='001-007', name="New group", size=2)
+        mock_get_group.return_value = TembaGroup.create(uuid='G-007', name="New group", size=2)
 
-        response = self.url_post('unicef', '%s?%s' % (url, 'contact=001-008&group=001-007&token=1234567890'))
+        response = self.url_post('unicef', '%s?%s' % (url, 'contact=C-008&group=G-007&token=1234567890'))
         self.assertEqual(response.status_code, 200)
-        new_room = Room.objects.get(uuid='001-007', name="New group")
+        new_room = Room.objects.get(uuid='G-007', name="New group")
 
         # check new contact and room created
-        contact = Contact.objects.get(uuid='001-008')
+        contact = Contact.objects.get(uuid='C-008')
         self.assertEqual(contact.full_name, "Ken")
         self.assertEqual(contact.chat_name, "ken")
         self.assertEqual(contact.urn, 'tel:234')
@@ -115,12 +115,12 @@ class TembaHandlerTest(ChatProTest):
         new_room.is_active = False
         new_room.save()
 
-        response = self.url_post('unicef', '%s?%s' % (url, 'contact=001-008&group=001-007&token=1234567890'))
+        response = self.url_post('unicef', '%s?%s' % (url, 'contact=C-008&group=G-007&token=1234567890'))
         self.assertEqual(response.status_code, 200)
-        Room.objects.get(uuid='001-007', name="New group", is_active=True)
+        Room.objects.get(uuid='G-007', name="New group", is_active=True)
 
         # repeating a request shouldn't create duplicates
-        response = self.url_post('unicef', '%s?%s' % (url, 'contact=001-008&group=001-007&token=1234567890'))
+        response = self.url_post('unicef', '%s?%s' % (url, 'contact=C-008&group=G-007&token=1234567890'))
         self.assertEqual(response.status_code, 200)
 
     def test_del_contact(self):
@@ -131,14 +131,14 @@ class TembaHandlerTest(ChatProTest):
         self.assertEqual(response.status_code, 400)
 
         # make a valid request to delete contact #1
-        response = self.url_post('unicef', '%s?%s' % (url, 'contact=000-001&token=1234567890'))
+        response = self.url_post('unicef', '%s?%s' % (url, 'contact=C-001&token=1234567890'))
         self.assertEqual(response.status_code, 200)
 
         contact = Contact.objects.get(pk=self.contact1.pk)
         self.assertFalse(contact.is_active)
 
         # try to delete a contact in another org
-        response = self.url_post('unicef', '%s?%s' % (url, 'contact=000-006&token=1234567890'))
+        response = self.url_post('unicef', '%s?%s' % (url, 'contact=C-006&token=1234567890'))
         self.assertEqual(response.status_code, 200)
 
         contact = Contact.objects.get(pk=self.contact6.pk)
