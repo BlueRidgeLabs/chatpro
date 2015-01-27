@@ -2,7 +2,7 @@
 
 Dashboard for managing "Group Chat" applications hosted in [RapidPro](http://rapidpro.io)
 
-Built for UNICEF by [Nyaruka](http://nyaruka.com)
+Built for UNICEF by [Nyaruka](http://nyaruka.com).
 
 ##Development Setup
 
