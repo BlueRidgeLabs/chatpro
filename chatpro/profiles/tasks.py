@@ -33,8 +33,7 @@ def sync_org_contacts(org_id):
     from chatpro.profiles.models import Contact
 
     org = Org.objects.get(pk=org_id)
-    rooms = org.rooms.all()
-    primary_groups = [r.uuid for r in rooms]
+    primary_groups = [r.uuid for r in org.rooms.filter(is_active=True)]
 
     logger.info('Starting contact sync task for org #%d' % org.id)
 
