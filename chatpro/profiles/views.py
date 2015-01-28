@@ -2,7 +2,7 @@ from __future__ import absolute_import, unicode_literals
 
 from chatpro.rooms.models import Room
 from dash.orgs.views import OrgPermsMixin, OrgObjPermsMixin
-from dash.utils.temba import ChangeType
+from dash.utils.sync import ChangeType
 from django import forms
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
