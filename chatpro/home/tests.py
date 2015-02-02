@@ -38,3 +38,7 @@ class HomeViewTest(ChatProTest):
         response = self.url_get('unicef', reverse('home.chat_in', args=[self.room2.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['initial_room'], self.room2)
+
+        # try to specify an initial room we don't have access to
+        response = self.url_get('unicef', reverse('home.chat_in', args=[self.room3.pk]))
+        self.assertEqual(response.status_code, 403)
