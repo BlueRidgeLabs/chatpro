@@ -32,7 +32,7 @@ class Message(models.Model):
     contact = models.ForeignKey(Contact, null=True, verbose_name=_("Contact"), related_name='messages',
                                 help_text=_("The contact that sent this message"))
 
-    text = models.CharField(max_length=640)
+    text = models.CharField(max_length=MESSAGE_MAX_LEN)
 
     room = models.ForeignKey(Room, verbose_name=_("Room"), related_name='messages',
                              help_text=_("The room which this message was sent to"))
