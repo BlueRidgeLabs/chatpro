@@ -85,6 +85,7 @@ MIDDLEWARE_CLASSES = (
     'smartmin.middleware.AjaxRedirect',
     'django.middleware.locale.LocaleMiddleware',
     'dash.orgs.middleware.SetOrgMiddleware',
+    'chatpro.profiles.middleware.ForcePasswordChangeMiddleware',
 )
 
 LOGGING = {
