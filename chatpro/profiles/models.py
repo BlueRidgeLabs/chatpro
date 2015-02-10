@@ -70,7 +70,7 @@ class Contact(AbstractParticipant):
 
     @classmethod
     def kwargs_from_temba(cls, org, temba_contact):
-        org_room_uuids = [r.uuid for r in org.rooms.all()]
+        org_room_uuids = [r.uuid for r in Room.get_all(org)]
         room_uuids = intersection(org_room_uuids, temba_contact.groups)
         room = Room.objects.get(org=org, uuid=room_uuids[0]) if room_uuids else None
 
