@@ -195,16 +195,17 @@ class ContactCRUDL(SmartCRUDL):
 
     class List(OrgPermsMixin, ContactFieldsMixin, SmartListView):
         fields = ('full_name', 'chat_name', 'urn', 'room')
+        default_order = ('full_name',)
 
-        def get_queryset(self, **kwargs):
-            qs = super(ContactCRUDL.List, self).get_queryset(**kwargs)
+        def derive_queryset(self, **kwargs):
+            qs = super(ContactCRUDL.List, self).derive_queryset(**kwargs)
 
             rooms = self.request.user.get_rooms(self.request.org)
-            qs = qs.filter(org=self.request.org, is_active=True, room__in=rooms)
-            return qs.order_by('full_name')
+            return qs.filter(org=self.request.org, is_active=True, room__in=rooms)
 
     class Filter(OrgPermsMixin, ContactFieldsMixin, SmartListView):
         fields = ('full_name', 'chat_name', 'urn')
+        default_order = ('full_name',)
 
         @classmethod
         def derive_url_pattern(cls, path, action):
@@ -227,8 +228,8 @@ class ContactCRUDL(SmartCRUDL):
             self._room = room
             return room
 
-        def get_queryset(self, **kwargs):
-            return self.derive_room().get_contacts().order_by('full_name')
+        def derive_queryset(self, **kwargs):
+            return self.derive_room().get_contacts()
 
         def get_context_data(self, **kwargs):
             context = super(ContactCRUDL.Filter, self).get_context_data(**kwargs)
@@ -456,12 +457,12 @@ class UserCRUDL(SmartCRUDL):
 
     class List(OrgPermsMixin, UserFieldsMixin, SmartListView):
         fields = ('full_name', 'chat_name', 'email', 'rooms', 'manages')
+        default_order = ('profile__full_name',)
         permission = 'profiles.profile_user_list'
 
-        def get_queryset(self, **kwargs):
-            qs = super(UserCRUDL.List, self).get_queryset(**kwargs)
-            qs = qs.filter(pk__in=self.request.org.get_org_editors(), is_active=True).select_related('profile')
-            return qs
+        def derive_queryset(self, **kwargs):
+            qs = super(UserCRUDL.List, self).derive_queryset(**kwargs)
+            return qs.filter(pk__in=self.request.org.get_org_editors(), is_active=True).select_related('profile')
 
         def get_manages(self, obj):
             return ", ".join([unicode(r) for r in obj.manage_rooms.all()])
@@ -495,10 +496,9 @@ class ManageUserCRUDL(SmartCRUDL):
         fields = ('full_name', 'chat_name', 'email', 'orgs')
         default_order = ('profile__full_name',)
 
-        def get_queryset(self, **kwargs):
-            qs = super(ManageUserCRUDL.List, self).get_queryset(**kwargs)
-            qs = qs.filter(is_active=True).exclude(profile=None).select_related('profile', 'org_admins', 'org_editors')
-            return qs
+        def derive_queryset(self, **kwargs):
+            qs = super(ManageUserCRUDL.List, self).derive_queryset(**kwargs)
+            return qs.filter(is_active=True).exclude(profile=None).select_related('profile', 'org_admins', 'org_editors')
 
         def get_orgs(self, obj):
             orgs = set(obj.org_admins.all()) | set(obj.org_editors.all())

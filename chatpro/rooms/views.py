@@ -39,10 +39,10 @@ class RoomCRUDL(SmartCRUDL):
 
     class List(OrgPermsMixin, SmartListView):
         fields = ('name', 'contacts')
+        default_order = ('name',)
 
-        def get_queryset(self, **kwargs):
-            org = self.request.user.get_org()
-            return Room.get_all(org).order_by('name')
+        def derive_queryset(self, **kwargs):
+            return Room.get_all(self.request.user.get_org())
 
         def get_contacts(self, obj):
             return obj.get_contacts().count()
