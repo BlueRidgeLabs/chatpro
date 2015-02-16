@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 from chatpro.rooms.models import Room
+from dash.utils import get_obj_cacheable
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
@@ -55,14 +56,14 @@ def _user_get_full_name(user):
 
 
 def _user_get_rooms(user, org):
-    if not hasattr(user, '_rooms'):
+    def calculate():
         # org admins have implicit access to all rooms
         if user.is_admin_for(org):
-            user._rooms = Room.get_all(org)
+            return Room.get_all(org)
         else:
-            user._rooms = user.rooms.filter(is_active=True)
+            return user.rooms.filter(is_active=True)
 
-    return user._rooms
+    return get_obj_cacheable(user, '_rooms', calculate)
 
 
 def _user_update_rooms(user, rooms, manage_rooms):

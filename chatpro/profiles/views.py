@@ -2,6 +2,7 @@ from __future__ import absolute_import, unicode_literals
 
 from chatpro.rooms.models import Room
 from dash.orgs.views import OrgPermsMixin, OrgObjPermsMixin
+from dash.utils import get_obj_cacheable
 from dash.utils.sync import ChangeType
 from django import forms
 from django.contrib.auth.models import User
@@ -215,18 +216,16 @@ class ContactCRUDL(SmartCRUDL):
             return _("Contacts in %s") % self.derive_room().name
 
         def derive_room(self):
-            if hasattr(self, '_room'):
-                return self._room
+            def fetch():
+                room = Room.objects.filter(pk=self.kwargs['room'], org=self.request.org).first()
+                if not room:
+                    raise Http404("No such room in this org")
 
-            room = Room.objects.filter(pk=self.kwargs['room'], org=self.request.org).first()
-            if not room:
-                raise Http404("No such room in this org")
+                if room not in self.request.user.get_rooms(self.request.org):
+                    raise PermissionDenied()
+                return room
 
-            if room not in self.request.user.get_rooms(self.request.org):
-                raise PermissionDenied()
-
-            self._room = room
-            return room
+            return get_obj_cacheable(self, '_room', fetch)
 
         def derive_queryset(self, **kwargs):
             return self.derive_room().get_contacts()
