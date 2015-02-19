@@ -346,7 +346,8 @@ class UserCRUDL(SmartCRUDL):
         fields = ('full_name', 'chat_name', 'email', 'password', 'confirm_password', 'change_password', 'rooms', 'manage_rooms')
         form_class = UserForm
         permission = 'profiles.profile_user_create'
-        success_message = _("New user created")
+        success_message = _("New supervisor created")
+        title = _("Create Supervisor")
 
         def save(self, obj):
             org = self.request.user.get_org()
@@ -364,7 +365,8 @@ class UserCRUDL(SmartCRUDL):
         fields = ('full_name', 'chat_name', 'email', 'new_password', 'confirm_password', 'rooms', 'manage_rooms', 'is_active')
         form_class = UserForm
         permission = 'profiles.profile_user_update'
-        success_message = _("User updated")
+        success_message = _("Supervisor updated")
+        title = _("Edit Supervisor")
 
         def derive_initial(self):
             initial = super(UserCRUDL.Update, self).derive_initial()
@@ -430,11 +432,12 @@ class UserCRUDL(SmartCRUDL):
             return fields
 
         def get_queryset(self):
-            queryset = super(UserCRUDL.Read, self).get_queryset()
+            qs = super(UserCRUDL.Read, self).get_queryset()
 
-            # only allow access to active users attached to this org
+            # only allow access to active editors or administrators attached to this org
             org = self.request.org
-            return queryset.filter(Q(org_editors=org) | Q(org_admins=org)).filter(is_active=True)
+            qs = qs.filter(Q(org_editors=org) | Q(org_admins=org)).filter(is_active=True)
+            return qs.select_related('profile').distinct()
 
         def get_context_data(self, **kwargs):
             context = super(UserCRUDL.Read, self).get_context_data(**kwargs)
@@ -452,16 +455,21 @@ class UserCRUDL(SmartCRUDL):
             if obj.is_admin_for(self.request.org):
                 return _("Administrator")
             else:
-                return _("User")
+                return _("Supervisor")
 
     class List(OrgPermsMixin, UserFieldsMixin, SmartListView):
         fields = ('full_name', 'chat_name', 'email', 'rooms', 'manages')
         default_order = ('profile__full_name',)
         permission = 'profiles.profile_user_list'
+        title = _("Supervisors")
 
         def derive_queryset(self, **kwargs):
             qs = super(UserCRUDL.List, self).derive_queryset(**kwargs)
-            return qs.filter(pk__in=self.request.org.get_org_editors(), is_active=True).select_related('profile')
+
+            # only show active editors - exclude administrators
+            org = self.request.org
+            qs = qs.filter(org_editors=org, is_active=True).exclude(org_admins=org)
+            return qs.select_related('profile').distinct()
 
         def get_manages(self, obj):
             return ", ".join([unicode(r) for r in obj.manage_rooms.all()])
