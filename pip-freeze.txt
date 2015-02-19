@@ -2,7 +2,7 @@ Django==1.7.2
 Markdown==2.5.2
 Pillow==2.7.0
 Pygments==2.0.2
--e git+https://github.com/rapidpro/rapidpro-python@3da5c916ae6bf98fe4ebe56fe5e96260d67fb94d#egg=rapidpro-python
+-e git+https://github.com/rapidpro/rapidpro-python@89597b7cd899a44a9bdb6cd04efba9d60561cf1e#egg=rapidpro-python
 amqp==1.4.6
 anyjson==0.3.3
 billiard==3.3.0.19
@@ -10,7 +10,7 @@ boto==2.36.0
 celery==3.1.17
 celery-with-redis==3.0
 coverage==3.7.1
--e git+https://github.com/rapidpro/dash.git@9f5a355b3353490cb26302700fe4ed2bd5240e76#egg=dash-master
+-e git+https://github.com/rapidpro/dash.git@3deffb95d7dd745baebf7f6015e6504ed0aecc13#egg=dash-master
 dj-database-url==0.3.0
 django-appconf==1.0.1
 django-celery==3.1.16
@@ -36,6 +36,7 @@ phonenumbers==7.0.2
 pisa==3.0.33
 polib==1.0.4
 psycopg2==2.6
+python-dateutil==2.4.0
 pytz==2014.10
 raven==5.2.0
 redis==2.10.3

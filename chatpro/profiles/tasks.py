@@ -33,14 +33,13 @@ def sync_org_contacts(org_id):
     from chatpro.profiles.models import Contact
 
     org = Org.objects.get(pk=org_id)
-    primary_groups = [r.uuid for r in org.rooms.filter(is_active=True)]
 
     logger.info('Starting contact sync task for org #%d' % org.id)
 
-    created, updated, deleted = sync_pull_contacts(org, primary_groups, Contact)
+    created, updated, deleted, errored = sync_pull_contacts(org, Contact)
 
-    logger.info("Finished contact sync for org #%d (%d created, %d updated, %d deleted)"
-                % (org.id, len(created), len(updated), len(deleted)))
+    logger.info("Finished contact sync for org #%d (%d created, %d updated, %d deleted, %d errored)"
+                % (org.id, len(created), len(updated), len(deleted), len(errored)))
 
 
 @task
