@@ -33,13 +33,17 @@ def sync_org_contacts(org_id):
     Syncs all contacts for the given org
     """
     from chatpro.orgs_ext import TaskType
+    from chatpro.rooms.models import Room
     from .models import Contact
 
     org = Org.objects.get(pk=org_id)
 
     logger.info('Starting contact sync task for org #%d' % org.id)
 
-    created, updated, deleted, failed = sync_pull_contacts(org, Contact)
+    sync_fields = [org.get_chat_name_field()]
+    sync_groups = [r.uuid for r in Room.get_all(org)]
+
+    created, updated, deleted, failed = sync_pull_contacts(org, Contact, fields=sync_fields, groups=sync_groups)
 
     task_result = dict(time=datetime_to_ms(timezone.now()),
                        counts=dict(created=len(created),
