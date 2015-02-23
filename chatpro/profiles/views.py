@@ -197,6 +197,7 @@ class ContactCRUDL(SmartCRUDL):
     class List(OrgPermsMixin, ContactFieldsMixin, SmartListView):
         fields = ('full_name', 'chat_name', 'urn', 'room')
         default_order = ('full_name',)
+        search_fields = ('full_name__icontains', 'chat_name__icontains', 'urn__icontains')
 
         def derive_queryset(self, **kwargs):
             qs = super(ContactCRUDL.List, self).derive_queryset(**kwargs)

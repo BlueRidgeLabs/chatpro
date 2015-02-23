@@ -225,6 +225,11 @@ class ContactCRUDLTest(ChatProTest):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['object_list']), 5)
 
+        response = self.url_get('unicef', '%s?search=an' % url)
+        self.assertEqual(len(response.context['object_list']), 2)
+        self.assertContains(response, "Ann")
+        self.assertContains(response, "Dan")
+
     def test_filter(self):
         self.login(self.user1)
 
