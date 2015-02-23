@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: UReport\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-01-21 16:06+0000\n"
+"POT-Creation-Date: 2015-02-23 11:26+0000\n"
 "PO-Revision-Date: 2014-09-21 21:58+0000\n"
 "Last-Translator: TextIt <info@textit.in>\n"
 "Language-Team: French (http://www.transifex.com/projects/p/ureport/language/"
@@ -20,7 +20,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: chatpro/home/views.py:14
+#: chatpro/home/views.py:15
 msgid "Chat"
 msgstr ""
 
@@ -36,12 +36,12 @@ msgstr ""
 msgid "Failed"
 msgstr ""
 
-#: chatpro/msgs/models.py:27 chatpro/profiles/models.py:30
+#: chatpro/msgs/models.py:27 chatpro/profiles/models.py:31
 #: chatpro/rooms/models.py:16 env/src/dash/dash/orgs/views.py:114
 msgid "Organization"
 msgstr "Organisation"
 
-#: chatpro/msgs/models.py:29 chatpro/profiles/views.py:455
+#: chatpro/msgs/models.py:29
 #, fuzzy
 #| msgid "Users"
 msgid "User"
@@ -53,7 +53,7 @@ msgstr "Utilisateurs"
 msgid "The user that sent this message"
 msgstr "Le nom pour décrire cette image"
 
-#: chatpro/msgs/models.py:32 chatpro/profiles/views.py:179
+#: chatpro/msgs/models.py:32 chatpro/profiles/views.py:180
 #, fuzzy
 #| msgid "Content"
 msgid "Contact"
@@ -65,8 +65,8 @@ msgstr "Contenu"
 msgid "The contact that sent this message"
 msgstr "Le nom pour décrire cette image"
 
-#: chatpro/msgs/models.py:37 chatpro/profiles/models.py:32
-#: chatpro/profiles/views.py:79
+#: chatpro/msgs/models.py:37 chatpro/profiles/models.py:33
+#: chatpro/profiles/views.py:80
 msgid "Room"
 msgstr ""
 
@@ -93,41 +93,41 @@ msgstr ""
 msgid "Current status of this message"
 msgstr ""
 
-#: chatpro/orgs_ext/views.py:32
+#: chatpro/orgs_ext/views.py:35
 msgid "RapidPro API Token"
 msgstr ""
 
-#: chatpro/orgs_ext/views.py:36
+#: chatpro/orgs_ext/views.py:39
 #, fuzzy
 #| msgid "Organization"
 msgid "My Organization"
 msgstr "Organisation"
 
-#: chatpro/orgs_ext/views.py:52
+#: chatpro/orgs_ext/views.py:66
 #, fuzzy
 #| msgid "Secret"
 msgid "Secret token"
 msgstr "Secret"
 
-#: chatpro/orgs_ext/views.py:53
+#: chatpro/orgs_ext/views.py:67
 msgid "Secret token for all calls from RapidPro."
 msgstr ""
 
-#: chatpro/orgs_ext/views.py:55
+#: chatpro/orgs_ext/views.py:69
 msgid "Chat name field"
 msgstr ""
 
-#: chatpro/orgs_ext/views.py:56
+#: chatpro/orgs_ext/views.py:70
 msgid "Contact field to use as the chat name."
 msgstr ""
 
-#: chatpro/orgs_ext/views.py:76
+#: chatpro/orgs_ext/views.py:90
 #, fuzzy
 #| msgid "Organization"
 msgid "Edit My Organization"
 msgstr "Organisation"
 
-#: chatpro/profiles/__init__.py:35
+#: chatpro/profiles/__init__.py:36
 msgid "Email address already taken."
 msgstr ""
 
@@ -135,65 +135,65 @@ msgstr ""
 msgid "You are required to change your password"
 msgstr ""
 
-#: chatpro/profiles/models.py:15 chatpro/profiles/views.py:62
+#: chatpro/profiles/models.py:16 chatpro/profiles/views.py:63
 #, fuzzy
 #| msgid "Your last name"
 msgid "Full name"
 msgstr "Votre nom"
 
-#: chatpro/profiles/models.py:17 chatpro/profiles/views.py:65
+#: chatpro/profiles/models.py:18 chatpro/profiles/views.py:66
 #, fuzzy
 #| msgid "Your last name"
 msgid "Chat name"
 msgstr "Votre nom"
 
-#: chatpro/profiles/models.py:18
+#: chatpro/profiles/models.py:19
 msgid "Shorter name used for chat messages"
 msgstr ""
 
-#: chatpro/profiles/models.py:33
+#: chatpro/profiles/models.py:34
 msgid "Room which this contact belongs in"
 msgstr ""
 
-#: chatpro/profiles/models.py:35
+#: chatpro/profiles/models.py:36
 msgid "URN"
 msgstr ""
 
-#: chatpro/profiles/models.py:37
+#: chatpro/profiles/models.py:38
 msgid "Whether this contact is active"
 msgstr ""
 
-#: chatpro/profiles/models.py:123
+#: chatpro/profiles/models.py:125
 msgid "User must change password on next login"
 msgstr ""
 
-#: chatpro/profiles/views.py:21
+#: chatpro/profiles/views.py:22
 msgid "Phone"
 msgstr ""
 
-#: chatpro/profiles/views.py:21
+#: chatpro/profiles/views.py:22
 msgid "Twitter"
 msgstr ""
 
-#: chatpro/profiles/views.py:65
+#: chatpro/profiles/views.py:66
 msgid "Name used for sending chat messages."
 msgstr ""
 
-#: chatpro/profiles/views.py:77 chatpro/profiles/views.py:112
+#: chatpro/profiles/views.py:78 chatpro/profiles/views.py:113
 msgid "Phone/Twitter"
 msgstr ""
 
-#: chatpro/profiles/views.py:77
+#: chatpro/profiles/views.py:78
 #, fuzzy
 #| msgid "The Twitter handle for this organization"
 msgid "Phone number or Twitter handle of this contact."
 msgstr "Le lien Twitter de cette organisation"
 
-#: chatpro/profiles/views.py:80
-msgid "Chat rooms which this contact can chat in."
+#: chatpro/profiles/views.py:81
+msgid "Chat room which this contact can chat in."
 msgstr ""
 
-#: chatpro/profiles/views.py:214
+#: chatpro/profiles/views.py:216
 #, fuzzy, python-format
 #| msgid "Contact Us Content"
 msgid "Contacts in %s"
@@ -272,34 +272,52 @@ msgid "Passwords don't match."
 msgstr ""
 
 #: chatpro/profiles/views.py:349
-msgid "New user created"
+msgid "New supervisor created"
 msgstr ""
 
-#: chatpro/profiles/views.py:367
+#: chatpro/profiles/views.py:350
+#, fuzzy
+#| msgid "Create"
+msgid "Create Supervisor"
+msgstr "Créer"
+
+#: chatpro/profiles/views.py:368
 #, fuzzy
 #| msgid "User group"
-msgid "User updated"
+msgid "Supervisor updated"
 msgstr "Groupe utilisateur"
 
-#: chatpro/profiles/views.py:386
+#: chatpro/profiles/views.py:369
+msgid "Edit Supervisor"
+msgstr ""
+
+#: chatpro/profiles/views.py:388
 msgid "Profile updated"
 msgstr ""
 
-#: chatpro/profiles/views.py:387
+#: chatpro/profiles/views.py:389
 msgid "Edit My Profile"
 msgstr ""
 
-#: chatpro/profiles/views.py:398
+#: chatpro/profiles/views.py:400
 msgid "User doesn't have a chat profile"
 msgstr ""
 
-#: chatpro/profiles/views.py:422
+#: chatpro/profiles/views.py:424
 msgid "My Profile"
 msgstr ""
 
-#: chatpro/profiles/views.py:453 env/src/dash/dash/orgs/models.py:271
+#: chatpro/profiles/views.py:456 env/src/dash/dash/orgs/models.py:271
 msgid "Administrator"
 msgstr "Administrateur"
+
+#: chatpro/profiles/views.py:458
+msgid "Supervisor"
+msgstr ""
+
+#: chatpro/profiles/views.py:464
+msgid "Supervisors"
+msgstr ""
 
 #: chatpro/rooms/models.py:18 env/src/dash/dash/orgs/models.py:22
 #: env/src/dash/dash/orgs/models.py:336
@@ -355,27 +373,27 @@ msgstr ""
 msgid "Updated contact groups to use as chat rooms"
 msgstr ""
 
-#: chatpro/settings_common.py:64
+#: chatpro/settings_common.py:65
 msgid "English"
 msgstr ""
 
-#: chatpro/settings_common.py:64
+#: chatpro/settings_common.py:65
 msgid "French"
 msgstr ""
 
-#: chatpro/settings_common.py:64
+#: chatpro/settings_common.py:65
 msgid "Pashto"
 msgstr ""
 
-#: chatpro/settings_common.py:64
+#: chatpro/settings_common.py:65
 msgid "Persian"
 msgstr ""
 
-#: chatpro/settings_common.py:178
+#: chatpro/settings_common.py:179
 msgid "Secret token to include in all webhook requests from RapidPro"
 msgstr ""
 
-#: chatpro/settings_common.py:181
+#: chatpro/settings_common.py:182
 msgid "Contact field to use as the chat name"
 msgstr ""
 
@@ -2864,14 +2882,14 @@ msgid "%s Blocks"
 msgstr "%s Blocs"
 
 #: env/src/dash/dash/dashblocks/views.py:147
-#: env/src/smartmin/smartmin/views.py:1091
+#: env/src/smartmin/smartmin/views.py:1093
 #, fuzzy, python-format
 #| msgid "Edit"
 msgid "Edit %s"
 msgstr "Editer"
 
 #: env/src/dash/dash/dashblocks/views.py:166
-#: env/src/smartmin/smartmin/views.py:1280
+#: env/src/smartmin/smartmin/views.py:1282
 #, fuzzy, python-format
 #| msgid "Create"
 msgid "Create %s"
@@ -3112,7 +3130,7 @@ msgstr "Un des emails que vous avez saisi est erroné"
 msgid "Manage %(name)s Accounts"
 msgstr "Gérer les comptes de %(name)s"
 
-#: env/src/dash/dash/orgs/views.py:443 env/src/smartmin/smartmin/views.py:1255
+#: env/src/dash/dash/orgs/views.py:443 env/src/smartmin/smartmin/views.py:1257
 msgid "Create"
 msgstr "Créer"
 
@@ -3667,25 +3685,25 @@ msgid ""
 "entering your email here."
 msgstr ""
 
-#: env/src/smartmin/smartmin/views.py:832
+#: env/src/smartmin/smartmin/views.py:834
 msgid "Submit"
 msgstr ""
 
-#: env/src/smartmin/smartmin/views.py:839
+#: env/src/smartmin/smartmin/views.py:841
 msgid "Form"
 msgstr ""
 
-#: env/src/smartmin/smartmin/views.py:1160
+#: env/src/smartmin/smartmin/views.py:1162
 msgid "Save Changes"
 msgstr ""
 
-#: env/src/smartmin/smartmin/views.py:1271
+#: env/src/smartmin/smartmin/views.py:1273
 #, fuzzy, python-format
 #| msgid "Your poll has been updated."
 msgid "Your new %s has been created."
 msgstr "Votre sondage a été mis a jour."
 
-#: env/src/smartmin/smartmin/views.py:1290
+#: env/src/smartmin/smartmin/views.py:1292
 #, python-format
 msgid "Import %s"
 msgstr ""
