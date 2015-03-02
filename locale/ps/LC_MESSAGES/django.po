@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-02-23 11:26+0000\n"
+"POT-Creation-Date: 2015-03-02 08:10+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -168,118 +168,118 @@ msgstr ""
 msgid "Chat room which this contact can chat in."
 msgstr ""
 
-#: chatpro/profiles/views.py:216
+#: chatpro/profiles/views.py:217
 #, python-format
 msgid "Contacts in %s"
 msgstr ""
 
-#: chatpro/profiles/views.py:256
+#: chatpro/profiles/views.py:257
 msgid "Active"
 msgstr ""
 
-#: chatpro/profiles/views.py:257
+#: chatpro/profiles/views.py:258
 msgid "Whether this user is active, disable to remove access."
 msgstr ""
 
-#: chatpro/profiles/views.py:260 env/src/dash/dash/orgs/models.py:280
+#: chatpro/profiles/views.py:261 env/src/dash/dash/orgs/models.py:280
 msgid "Email"
 msgstr ""
 
-#: chatpro/profiles/views.py:260
+#: chatpro/profiles/views.py:261
 msgid "Email address and login."
 msgstr ""
 
-#: chatpro/profiles/views.py:263 env/src/smartmin/smartmin/users/views.py:78
+#: chatpro/profiles/views.py:264 env/src/smartmin/smartmin/users/views.py:78
 #: env/src/smartmin/smartmin/users/views.py:199
 #: env/src/smartmin/smartmin/users/views.py:247
 msgid "Password"
 msgstr ""
 
-#: chatpro/profiles/views.py:263
+#: chatpro/profiles/views.py:264
 msgid "Password used to log in (minimum of 8 characters)."
 msgstr ""
 
-#: chatpro/profiles/views.py:266
+#: chatpro/profiles/views.py:267
 msgid "New password"
 msgstr ""
 
-#: chatpro/profiles/views.py:267
+#: chatpro/profiles/views.py:268
 msgid "Password used to login (minimum of 8 characters, optional)."
 msgstr ""
 
-#: chatpro/profiles/views.py:269
+#: chatpro/profiles/views.py:270
 msgid "Confirm password"
 msgstr ""
 
-#: chatpro/profiles/views.py:271
+#: chatpro/profiles/views.py:272
 msgid "Require change"
 msgstr ""
 
-#: chatpro/profiles/views.py:272
+#: chatpro/profiles/views.py:273
 msgid "Whether user must change password on next login."
 msgstr ""
 
-#: chatpro/profiles/views.py:274
+#: chatpro/profiles/views.py:275
 msgid "Rooms (chatting)"
 msgstr ""
 
-#: chatpro/profiles/views.py:276
+#: chatpro/profiles/views.py:277
 msgid "Chat rooms which this user can chat in."
 msgstr ""
 
-#: chatpro/profiles/views.py:278
+#: chatpro/profiles/views.py:279
 msgid "Rooms (manage)"
 msgstr ""
 
-#: chatpro/profiles/views.py:280
+#: chatpro/profiles/views.py:281
 msgid "Chat rooms which this user can manage."
 msgstr ""
 
-#: chatpro/profiles/views.py:297
+#: chatpro/profiles/views.py:298
 msgid "Passwords don't match."
 msgstr ""
 
-#: chatpro/profiles/views.py:349
+#: chatpro/profiles/views.py:350
 msgid "New supervisor created"
 msgstr ""
 
-#: chatpro/profiles/views.py:350
+#: chatpro/profiles/views.py:351
 msgid "Create Supervisor"
 msgstr ""
 
-#: chatpro/profiles/views.py:368
+#: chatpro/profiles/views.py:369
 msgid "Supervisor updated"
 msgstr ""
 
-#: chatpro/profiles/views.py:369
+#: chatpro/profiles/views.py:370
 msgid "Edit Supervisor"
 msgstr ""
 
-#: chatpro/profiles/views.py:388
+#: chatpro/profiles/views.py:389
 msgid "Profile updated"
 msgstr ""
 
-#: chatpro/profiles/views.py:389
+#: chatpro/profiles/views.py:390
 msgid "Edit My Profile"
 msgstr ""
 
-#: chatpro/profiles/views.py:400
+#: chatpro/profiles/views.py:401
 msgid "User doesn't have a chat profile"
 msgstr ""
 
-#: chatpro/profiles/views.py:424
+#: chatpro/profiles/views.py:425
 msgid "My Profile"
 msgstr ""
 
-#: chatpro/profiles/views.py:456 env/src/dash/dash/orgs/models.py:271
+#: chatpro/profiles/views.py:457 env/src/dash/dash/orgs/models.py:271
 msgid "Administrator"
 msgstr ""
 
-#: chatpro/profiles/views.py:458
+#: chatpro/profiles/views.py:459
 msgid "Supervisor"
 msgstr ""
 
-#: chatpro/profiles/views.py:464
+#: chatpro/profiles/views.py:465
 msgid "Supervisors"
 msgstr ""
 
