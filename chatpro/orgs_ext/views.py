@@ -18,7 +18,7 @@ def build_webhook(org, request, entity, action, params):
 
 
 class OrgExtCRUDL(SmartCRUDL):
-    actions = ('create', 'update', 'list', 'home', 'edit')
+    actions = ('create', 'update', 'list', 'home', 'edit', 'chooser', 'choose')
     model = Org
 
     class Create(OrgCRUDL.Create):
@@ -101,3 +101,9 @@ class OrgExtCRUDL(SmartCRUDL):
             obj.set_config(ORG_CONFIG_SECRET_TOKEN, self.form.cleaned_data['secret_token'])
             obj.set_config(ORG_CONFIG_CHAT_NAME_FIELD, self.form.cleaned_data['chat_name_field'])
             return obj
+
+    class Chooser(OrgCRUDL.Chooser):
+        pass
+
+    class Choose(OrgCRUDL.Choose):
+        pass

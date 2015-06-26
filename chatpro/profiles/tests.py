@@ -251,7 +251,8 @@ class ContactCRUDLTest(ChatProTest):
 
         # delete contact
         response = self.url_post('unicef', reverse('profiles.contact_delete', args=[self.contact1.pk]))
-        self.assertRedirects(response, 'http://unicef.localhost/contact/')
+
+        self.assertRedirects(response, 'http://unicef.localhost/contact/', fetch_redirect_response=False)
         self.assertFalse(Contact.objects.get(pk=self.contact1.pk).is_active)
 
         # try to delete contact from other org
@@ -264,7 +265,7 @@ class ContactCRUDLTest(ChatProTest):
 
         # delete contact from room we manage
         response = self.url_post('unicef', reverse('profiles.contact_delete', args=[self.contact3.pk]))
-        self.assertRedirects(response, 'http://unicef.localhost/contact/')
+        self.assertRedirects(response, 'http://unicef.localhost/contact/', fetch_redirect_response=False)
         contact = Contact.objects.get(pk=self.contact3.pk)
         self.assertFalse(contact.is_active)
         self.assertEqual(contact.modified_by, self.user1)
@@ -514,7 +515,7 @@ class ForcePasswordChangeMiddlewareTest(ChatProTest):
         self.login(self.user1)
 
         response = self.url_get('unicef', reverse('home.chat'))
-        self.assertRedirects(response, 'http://unicef.localhost/profile/self/')
+        self.assertRedirects(response, 'http://unicef.localhost/profile/self/', fetch_redirect_response=False)
 
         response = self.url_get('unicef', reverse('profiles.user_self'))
         self.assertEqual(response.status_code, 200)
