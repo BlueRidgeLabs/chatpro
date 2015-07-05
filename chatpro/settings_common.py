@@ -196,9 +196,6 @@ INSTALLED_APPS = (
     # mo-betta permission management
     'guardian',
 
-    # error logging
-    'raven.contrib.django',
-
     # versioning of our data
     'reversion',
 
